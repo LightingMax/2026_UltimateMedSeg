@@ -4,7 +4,7 @@
 
 This project supports 136 complete network architectures (123 standard + 13 text-guided), accessible via the `architecture` field.
 
-## CNN (33)
+## CNN (35)
 
 CNN-based architectures, classic UNet and variants.
 
@@ -24,7 +24,6 @@ CNN-based architectures, classic UNet and variants.
 | `pan` | PAN (Pyramid Attention Network) | BMVC 2018 | - |
 | `linknet` | LinkNet | VCIP 2017 | - |
 | `pspnet` | PSPNet | CVPR 2017 | - |
-| `double_unet` | DoubleU-Net | CBMS 2020 | - |
 | `fr_unet` | FR-UNet (Full-Resolution) | IEEE TMI 2022 | - |
 | `dcsaunet` | DCSAU-Net | Computers in Biology and Medicine 2023 | [xq141839/DCSAU-Net](https://github.com/xq141839/DCSAU-Net) |
 | `cfanet` | CFA-Net | Computers in Biology and Medicine 2024 | [ZhangJD-ong/CFA-Net](https://github.com/ZhangJD-ong/CFA-Net) |
@@ -44,8 +43,10 @@ CNN-based architectures, classic UNet and variants.
 | `dscnet` | DSCNet | MICCAI 2023 | - |
 | `dconnnet` | DconnNet | MICCAI 2023 | - |
 | `stu_net` | STU-Net | arXiv 2023 | - |
+| `polyper` | Polyper | - | - |
+| `hovernet_lite` | HoverNet Lite | - | - |
 
-## Transformer (32)
+## Transformer (36)
 
 Transformer-based segmentation networks.
 
@@ -82,8 +83,12 @@ Transformer-based segmentation networks.
 | `ldnet` | LDNet | MICCAI 2022 | - |
 | `esfpnet` | ESFPNet | MICCAI 2022 | - |
 | `mist` | MIST | IEEE TMI 2023 | - |
+| `double_unet` | DoubleU-Net | CBMS 2020 | - |
+| `sepnet` | SEPNet | - | - |
+| `ctnet` | CTNet | - | - |
+| `nulite` | NuLite | - | - |
 
-## Mamba / SSM (15)
+## Mamba / SSM (25)
 
 Mamba / State-Space Model based networks.
 
@@ -105,8 +110,17 @@ Mamba / State-Space Model based networks.
 | `nnmamba_2d` | nnMamba (2D) | arXiv 2024 |
 | `polyp_mamba` | Polyp-Mamba | arXiv 2024 |
 | `hc_mamba` | HC-Mamba | arXiv 2024 |
+| `ac_mambaseg` | AC-MambaSeg | arXiv 2024 |
+| `dcm_net` | DCM-Net | arXiv 2024 |
+| `dermomamba` | DermoMamba | arXiv 2024 |
+| `mucm_net` | MUCM-Net | arXiv 2024 |
+| `serp_mamba` | Serp-Mamba | arXiv 2024 |
+| `skin_mamba` | SkinMamba | arXiv 2024 |
+| `mamba_vesselnet_pp` | Mamba-VesselNet++ | arXiv 2024 |
+| `vim_unet` | ViM-UNet | arXiv 2024 |
+| `uu_mamba` | UU-Mamba | arXiv 2024 |
 
-## SAM (13)
+## SAM (12)
 
 SAM (Segment Anything Model) based networks.
 
@@ -125,14 +139,17 @@ SAM (Segment Anything Model) based networks.
 | `auto_sam` | AutoSAM | arXiv 2023 |
 | `lite_medsam` | Lite-MedSAM | arXiv 2024 |
 
-## KAN / MLP (4)
+## KAN / MLP (7)
 
 | Name | Paper | Published |
 |---|---|---|
 | `ukan` | U-KAN | arXiv 2024 |
 | `wav_kan_unet` | Wav-KAN UNet | arXiv 2024 |
 | `unext` | UNeXt | MICCAI 2022 |
-| `rolling_unet` / `_m` / `_l` / `_s` | Rolling-UNet | arXiv 2024 |
+| `rolling_unet` | Rolling-UNet | arXiv 2024 |
+| `rolling_unet_s` | Rolling-UNet (small) | arXiv 2024 |
+| `rolling_unet_m` | Rolling-UNet (medium) | arXiv 2024 |
+| `rolling_unet_l` | Rolling-UNet (large) | arXiv 2024 |
 
 ## RWKV (4)
 
@@ -143,12 +160,13 @@ SAM (Segment Anything Model) based networks.
 | `md_rwkv_unet` | MD-RWKV-UNet | arXiv 2024 |
 | `rir_zigzag` | RIR-Zigzag | arXiv 2024 |
 
-## Linear Attention (2)
+## Linear Attention (4)
 
 | Name | Paper | Published |
 |---|---|---|
 | `ttt_unet` | TTT-UNet | arXiv 2024 |
 | `xlstm_unet_bot` / `xlstm_unet_enc` | xLSTM-UNet | arXiv 2024 |
+| `u_vixlstm` | U-VixLSTM | arXiv 2024 |
 
 ## Text-guided (13)
 

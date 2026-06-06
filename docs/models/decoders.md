@@ -24,7 +24,7 @@ Dense connection decoders.
 | `unetpp` | UNet++ dense nested decoder |
 | `unet3plus` | UNet 3+ full-scale skip connection decoder |
 
-## Cascade (8)
+## Cascade (10)
 
 Cascade decoders that progressively refine segmentation.
 
@@ -38,6 +38,8 @@ Cascade decoders that progressively refine segmentation.
 | `edldnet` | EDLDNet decoder |
 | `gcascade` | G-CASCADE with add fusion |
 | `gcascade_cat` | G-CASCADE with concat fusion |
+| `merit_add` | MERIT decoder (add fusion) |
+| `merit_cat` | MERIT decoder (concat fusion) |
 
 ## Pyramid (1)
 

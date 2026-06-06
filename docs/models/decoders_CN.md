@@ -24,7 +24,7 @@
 | `unetpp` | UNet++ 密集嵌套解码器 |
 | `unet3plus` | UNet 3+ 全尺度跳跃连接解码器 |
 
-## 级联 (8)
+## 级联 (10)
 
 级联解码器，逐步细化分割结果。
 
@@ -38,6 +38,8 @@
 | `edldnet` | EDLDNet 解码器 |
 | `gcascade` | G-CASCADE（add 融合） |
 | `gcascade_cat` | G-CASCADE（concat 融合） |
+| `merit_add` | MERIT 解码器（add 融合） |
+| `merit_cat` | MERIT 解码器（concat 融合） |
 
 ## 金字塔 (1)
 
