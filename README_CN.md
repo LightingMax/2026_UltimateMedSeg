@@ -196,16 +196,16 @@ segmentation_tool/
 │   │   │   ├── mamba/            (1 module)     #     Mamba: SK-VM++ (BSPC 2025)
 │   │   │   └── fusion/           (6 modules)    #     CNN融合: BiFusion, Deformable, MultiScale, FeatureRefine, CCM, SDI
 │   │   ├── networks/                            #   136 个完整网络
-│   │   │   ├── cnn/              (40 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, ACC-UNet, CMUNeXt, STUNet, ...
-│   │   │   ├── transformer/      (33 registered)#     Transformer: TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, CTNet, ...
-│   │   │   ├── mamba/            (23 registered)#     Mamba: VMUNet, UMamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
+│   │   │   ├── cnn/              (35 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, ACC-UNet, CMUNeXt, STUNet, ...
+│   │   │   ├── transformer/      (36 registered)#     Transformer: TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, CTNet, ...
+│   │   │   ├── mamba/            (25 registered)#     Mamba: VMUNet, UMamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
 │   │   │   ├── sam/              (12 registered)#     SAM 家族: MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, ...
 │   │   │   ├── rwkv/             (4 registered) #     RWKV: U-RWKV, RWKV-UNet, MD-RWKV, RIR-Zigzag
 │   │   │   ├── kan_mlp/          (7 registered) #     KAN/MLP: UKAN, Rolling-UNet (4 变体), UNeXt, Wav-KAN
 │   │   │   └── linear_attn/      (4 registered) #     线性注意力: TTT-UNet, xLSTM-UNet (2 变体), U-VixLSTM
 │   │   └── text_unet/            (13 modules)   #   文本引导: CRIS, BiomedParse, LanGuideMedSeg, LViT, TGANet, TPRO, ...
 │   ├── training/                                # 训练范式
-│   │   ├── semi/                 (23 modules)   #   21 个半监督: MeanTeacher, CPS, UniMatch, FixMatch, AugSeg, CorrMatch, ...
+│   │   ├── semi/                 (23 modules)   #   21 个半监督: MeanTeacher, CPS, UniMatch, FixMatch, SSL4MIS-U, CorrMatch, ...
 │   │   ├── domain_adaptation/    (18 modules)   #   18 个域适应: AdvEnt, DANN, TENT, FDA, MIC, HRDA, SePiCo, ...
 │   │   ├── distillation/         (28 modules)   #   27 个蒸馏: VanillaKD, DKD, MGD, DIST, CWD, ReviewKD, SimKD, NORM, ...
 │   │   └── weakly_supervised/    (28 modules)   #   28 个弱监督: Box, CAM, Point, Scribble, SEAM, PuzzleCAM, EPS, ...
@@ -245,7 +245,7 @@ segmentation_tool/
 │   └── grounding_dino_example.py                #   GroundingDINO 检测示例
 ├── configs/                      (878 yamls)    # YAML 配置
 │   ├── architectures/            (751 yamls)    #   网络结构配置
-│   │   ├── networks/             (281 yamls)    #     完整网络 (general/acdc/synapse × 120+ arch)
+│   │   ├── networks/             (281 yamls)    #     完整网络 (136 arch across general/acdc/synapse)
 │   │   ├── combinations/         (166 yamls)    #     encoder+decoder 自由组合
 │   │   ├── decoder_study/        (121 yamls)    #     Decoder 消融 (3 enc × 40 dec)
 │   │   ├── skip_study/           (75 yamls)     #     skip 消融 (3 enc × 25 skip)
@@ -307,9 +307,9 @@ segmentation_tool/
 
 | 类别 | 数量 | 代表模型 |
 |---|---|---|
-| CNN | 40 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, ACC-UNet, CMUNeXt |
-| Transformer | 33 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
-| Mamba / SSM | 23 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
+| CNN | 35 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, ACC-UNet, CMUNeXt |
+| Transformer | 36 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
+| Mamba / SSM | 25 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
 | SAM 家族 | 12 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM |
 | KAN / MLP | 7 | U-KAN, Rolling-UNet (4 变体), UNeXt, Wav-KAN |
 | 线性注意力 | 4 | TTT-UNet, xLSTM-UNet (2 变体), U-VixLSTM |
@@ -439,13 +439,13 @@ training:
 
 ### 半监督 — 21 个方法
 
-Mean Teacher · CPS · CCT · UniMatch · FixMatch · FlexMatch · FreeMatch · SoftMatch · UA-MT · URPC · Deep Co-Training · Pi-Model · Temporal Ensembling · Pseudo-Label · ICT · R-Drop · Cross-Teaching · AugSeg · CorrMatch · AllSpark · DDFP · DiffRect · AD-MT · PMT
+Mean Teacher · CPS · CCT · UniMatch · FixMatch · FlexMatch · FreeMatch · SoftMatch · UA-MT · URPC · Deep Co-Training · Pi-Model · Temporal Ensembling · Pseudo-Label · ICT · R-Drop · Cross-Teaching · CorrMatch · AllSpark · DiffRect · SSL4MIS-U
 
 > 详细: [docs/paradigms/semi_supervised.md](docs/paradigms/semi_supervised.md)
 
 ### 域适应 — 18 个方法
 
-AdvEnt · DANN · TENT · DPL · CBMT · FDA · CRST · PixMatch · MIC · DAFormer · HRDA · PiPa · DDB · SePiCo · DiGA · MICDrop · SemiVL
+Source Only · AdvEnt · DANN · TENT · DPL · CBMT · FDA · CRST · PixMatch · MIC · DAFormer · HRDA · PiPa · DDB · SePiCo · DiGA · MICDrop · SemiVL
 
 > 详细: [docs/paradigms/domain_adaptation.md](docs/paradigms/domain_adaptation.md)
 

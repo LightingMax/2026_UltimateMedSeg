@@ -195,16 +195,16 @@ segmentation_tool/
 │   │   │   ├── mamba/            (1 module)     #     Mamba: SK-VM++ (BSPC 2025)
 │   │   │   └── fusion/           (6 modules)    #     CNN fusion: BiFusion, Deformable, MultiScale, FeatureRefine, CCM, SDI
 │   │   ├── networks/                            #   136 complete architectures
-│   │   │   ├── cnn/              (40 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, ACC-UNet, CMUNeXt, STUNet, ...
-│   │   │   ├── transformer/      (33 registered)#     Transformer: TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, CTNet, ...
-│   │   │   ├── mamba/            (23 registered)#     Mamba: VMUNet, UMamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
+│   │   │   ├── cnn/              (35 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, ACC-UNet, CMUNeXt, STUNet, ...
+│   │   │   ├── transformer/      (36 registered)#     Transformer: TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, CTNet, ...
+│   │   │   ├── mamba/            (25 registered)#     Mamba: VMUNet, UMamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
 │   │   │   ├── sam/              (12 registered)#     SAM family: MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, ...
 │   │   │   ├── rwkv/             (4 registered) #     RWKV: U-RWKV, RWKV-UNet, MD-RWKV, RIR-Zigzag
 │   │   │   ├── kan_mlp/          (7 registered) #     KAN/MLP: UKAN, Rolling-UNet (4 variants), UNeXt, Wav-KAN
 │   │   │   └── linear_attn/      (4 registered) #     Linear attention: TTT-UNet, xLSTM-UNet (2 variants), U-VixLSTM
 │   │   └── text_unet/            (13 modules)   #   Text-guided: CRIS, BiomedParse, LanGuideMedSeg, LViT, TGANet, TPRO, ...
 │   ├── training/                                # Training paradigms
-│   │   ├── semi/                 (23 modules)   #   21 semi-supervised: MeanTeacher, CPS, UniMatch, FixMatch, AugSeg, CorrMatch, ...
+│   │   ├── semi/                 (23 modules)   #   21 semi-supervised: MeanTeacher, CPS, UniMatch, FixMatch, SSL4MIS-U, CorrMatch, ...
 │   │   ├── domain_adaptation/    (18 modules)   #   18 domain adaptation: AdvEnt, DANN, TENT, FDA, MIC, HRDA, SePiCo, ...
 │   │   ├── distillation/         (28 modules)   #   27 distillation: VanillaKD, DKD, MGD, DIST, CWD, ReviewKD, SimKD, NORM, ...
 │   │   └── weakly_supervised/    (28 modules)   #   28 weakly supervised: Box, CAM, Point, Scribble, SEAM, PuzzleCAM, EPS, ...
@@ -244,7 +244,7 @@ segmentation_tool/
 │   └── grounding_dino_example.py                #   GroundingDINO detection example
 ├── configs/                      (878 yamls)    # YAML configs
 │   ├── architectures/            (751 yamls)    #   Network architecture configs
-│   │   ├── networks/             (281 yamls)    #     Complete networks (general/acdc/synapse × 120+ arch)
+│   │   ├── networks/             (281 yamls)    #     Complete networks (136 arch across general/acdc/synapse)
 │   │   ├── combinations/         (166 yamls)    #     Encoder+decoder free combinations
 │   │   ├── decoder_study/        (121 yamls)    #     Decoder ablation (3 enc × 40 dec)
 │   │   ├── skip_study/           (75 yamls)     #     Skip ablation (3 enc × 25 skip)
@@ -306,9 +306,9 @@ segmentation_tool/
 
 | Category | Count | Examples |
 |---|---|---|
-| CNN | 40 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, ACC-UNet, CMUNeXt |
-| Transformer | 33 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
-| Mamba / SSM | 23 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
+| CNN | 35 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, ACC-UNet, CMUNeXt |
+| Transformer | 36 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
+| Mamba / SSM | 25 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
 | SAM family | 12 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM |
 | KAN / MLP | 7 | U-KAN, Rolling-UNet (4 variants), UNeXt, Wav-KAN |
 | Linear Attention | 4 | TTT-UNet, xLSTM-UNet (2 variants), U-VixLSTM |
@@ -438,13 +438,13 @@ training:
 
 ### Semi-Supervised — 21 Methods
 
-Mean Teacher · CPS · CCT · UniMatch · FixMatch · FlexMatch · FreeMatch · SoftMatch · UA-MT · URPC · Deep Co-Training · Pi-Model · Temporal Ensembling · Pseudo-Label · ICT · R-Drop · Cross-Teaching · AugSeg · CorrMatch · AllSpark · DDFP · DiffRect · AD-MT · PMT
+Mean Teacher · CPS · CCT · UniMatch · FixMatch · FlexMatch · FreeMatch · SoftMatch · UA-MT · URPC · Deep Co-Training · Pi-Model · Temporal Ensembling · Pseudo-Label · ICT · R-Drop · Cross-Teaching · CorrMatch · AllSpark · DiffRect · SSL4MIS-U
 
 > Details: [docs/paradigms/semi_supervised.md](docs/paradigms/semi_supervised.md)
 
 ### Domain Adaptation — 18 Methods
 
-AdvEnt · DANN · TENT · DPL · CBMT · FDA · CRST · PixMatch · MIC · DAFormer · HRDA · PiPa · DDB · SePiCo · DiGA · MICDrop · SemiVL
+Source Only · AdvEnt · DANN · TENT · DPL · CBMT · FDA · CRST · PixMatch · MIC · DAFormer · HRDA · PiPa · DDB · SePiCo · DiGA · MICDrop · SemiVL
 
 > Details: [docs/paradigms/domain_adaptation.md](docs/paradigms/domain_adaptation.md)
 
