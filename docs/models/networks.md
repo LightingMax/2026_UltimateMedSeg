@@ -2,7 +2,7 @@
 
 [中文文档](networks_CN.md)
 
-This project supports 136 complete network architectures (123 standard + 13 text-guided), accessible via the `architecture` field.
+This project supports 128 complete network architectures (136 registered, size variants merged; 123 standard + 13 text-guided), accessible via the `architecture` field.
 
 ## CNN (35)
 
@@ -46,7 +46,7 @@ CNN-based architectures, classic UNet and variants.
 | `polyper` | Polyper | - | - |
 | `hovernet_lite` | HoverNet Lite | - | - |
 
-## Transformer (36)
+## Transformer (35)
 
 Transformer-based segmentation networks.
 
@@ -88,7 +88,7 @@ Transformer-based segmentation networks.
 | `ctnet` | CTNet | - | - |
 | `nulite` | NuLite | - | - |
 
-## Mamba / SSM (25)
+## Mamba / SSM (24)
 
 Mamba / State-Space Model based networks.
 
@@ -120,7 +120,7 @@ Mamba / State-Space Model based networks.
 | `vim_unet` | ViM-UNet | arXiv 2024 |
 | `uu_mamba` | UU-Mamba | arXiv 2024 |
 
-## SAM (12)
+## SAM (10)
 
 SAM (Segment Anything Model) based networks.
 
@@ -139,7 +139,7 @@ SAM (Segment Anything Model) based networks.
 | `auto_sam` | AutoSAM | arXiv 2023 |
 | `lite_medsam` | Lite-MedSAM | arXiv 2024 |
 
-## KAN / MLP (7)
+## KAN / MLP (4)
 
 | Name | Paper | Published |
 |---|---|---|
@@ -160,7 +160,7 @@ SAM (Segment Anything Model) based networks.
 | `md_rwkv_unet` | MD-RWKV-UNet | arXiv 2024 |
 | `rir_zigzag` | RIR-Zigzag | arXiv 2024 |
 
-## Linear Attention (4)
+## Linear Attention (3)
 
 | Name | Paper | Published |
 |---|---|---|

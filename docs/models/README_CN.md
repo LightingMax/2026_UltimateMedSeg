@@ -8,7 +8,7 @@
 
 | 模块 | 数量 |
 |---|---|
-| 完整网络 | 136 |
+| 完整网络 | 128 |
 | 编码器 | 172 |
 | 解码器 | 40 |
 | 跳跃连接 | 25 |
@@ -28,7 +28,7 @@
 
 | 文档 | 内容 |
 |---|---|
-| [networks.md](networks.md) | 136 个完整网络架构 |
+| [networks.md](networks.md) | 128 个完整网络架构 |
 | [encoders.md](encoders.md) | 172 个编码器（含 Foundation 模型） |
 | [decoders.md](decoders.md) | 40 个解码器 |
 | [skip_connections.md](skip_connections.md) | 25 个跳跃连接 |

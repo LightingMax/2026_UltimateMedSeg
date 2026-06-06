@@ -2,7 +2,7 @@
 
 [English](networks.md)
 
-本项目支持 136 个完整网络架构（123 个标准架构 + 13 个文本引导架构），通过 `architecture` 字段直接使用。
+本项目支持 128 个完整网络架构（136 注册，合并尺寸变体；123 个标准 + 13 个文本引导），通过 `architecture` 字段直接使用。
 
 ## CNN (35)
 
@@ -46,7 +46,7 @@
 | `polyper` | Polyper | - | - |
 | `hovernet_lite` | HoverNet Lite | - | - |
 
-## Transformer (36)
+## Transformer (35)
 
 基于 Transformer 的分割网络。
 
@@ -88,7 +88,7 @@
 | `ctnet` | CTNet | - | - |
 | `nulite` | NuLite | - | - |
 
-## Mamba / SSM (25)
+## Mamba / SSM (24)
 
 基于 Mamba (Selective State Space Model) 的网络。
 
@@ -120,7 +120,7 @@
 | `vim_unet` | ViM-UNet | arXiv 2024 |
 | `uu_mamba` | UU-Mamba | arXiv 2024 |
 
-## SAM (12)
+## SAM (10)
 
 基于 Segment Anything Model 的网络。
 
@@ -139,7 +139,7 @@
 | `auto_sam` | AutoSAM | arXiv 2023 |
 | `lite_medsam` | Lite-MedSAM | arXiv 2024 |
 
-## KAN / MLP (7)
+## KAN / MLP (4)
 
 | 名称 | 论文 | 发表 |
 |---|---|---|
@@ -160,7 +160,7 @@
 | `md_rwkv_unet` | MD-RWKV-UNet | arXiv 2024 |
 | `rir_zigzag` | RIR-Zigzag | arXiv 2024 |
 
-## Linear Attention (4)
+## Linear Attention (3)
 
 | 名称 | 论文 | 发表 |
 |---|---|---|

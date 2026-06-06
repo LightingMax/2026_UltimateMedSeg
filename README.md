@@ -13,7 +13,7 @@
   </p>
 </div>
 
-> **136** networks · **172** encoders · **40** decoders · **88** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **878** YAML configs · switch anything with one line of YAML
+> **128** networks · **172** encoders · **40** decoders · **88** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **878** YAML configs · switch anything with one line of YAML
 
 ---
 
@@ -192,9 +192,9 @@ segmentation_tool/
 │   │   │   ├── basic/            (2 modules)    #     Basic: concat, dense
 │   │   │   ├── attention/        (10 modules)   #     Attention: AG, CAB, SAB, SCSE, CBAM, Gating, GRU, GAB, SC-Att, TA-MoSC
 │   │   │   ├── transformer/      (5 modules)    #     Transformer: CrossAttn, TransFusion, AggAttn, MISSFormer, UCTrans
-│   │   │   ├── mamba/            (1 module)     #     Mamba: SK-VM++ (BSPC 2025)
+│   │   │   ├── mamba/            (1 module)     #     Mamba: SK-VM++
 │   │   │   └── fusion/           (6 modules)    #     CNN fusion: BiFusion, Deformable, MultiScale, FeatureRefine, CCM, SDI
-│   │   ├── networks/                            #   136 complete architectures
+│   │   ├── networks/                            #   128 complete architectures (136 registered, size variants merged)
 │   │   │   ├── cnn/              (35 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, ACC-UNet, CMUNeXt, STUNet, ...
 │   │   │   ├── transformer/      (36 registered)#     Transformer: TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, CTNet, ...
 │   │   │   ├── mamba/            (25 registered)#     Mamba: VMUNet, UMamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
@@ -212,7 +212,7 @@ segmentation_tool/
 │   │   └── mllm/                 (16 modules)   #   MLLM pipeline: 5 detector × 4 segmenter = 20 combinations
 │   │       │                                    #     Detector: GroundingDINO, Qwen2/2.5/3-VL, InternVL
 │   │       │                                    #     Segmenter: SAM2, MedSAM, SAM-Med2D, LiteMedSAM
-│   │       └── medisee/          (3 modules)    #     MediSee: LLM reasoning segmenter (ACM MM 2025)
+│   │       └── medisee/          (3 modules)    #     MediSee: LLM reasoning segmenter
 │   ├── losses/                   (15 modules)   # 88 losses
 │   │                                            #   Supervised: CE, Dice, Focal, Tversky, Lovász, Boundary, Hausdorff, ...
 │   │                                            #   Distillation: VanillaKD, DKD, CWD, MGD, DIST, AT, RKD, ...
@@ -244,7 +244,7 @@ segmentation_tool/
 │   └── grounding_dino_example.py                #   GroundingDINO detection example
 ├── configs/                      (878 yamls)    # YAML configs
 │   ├── architectures/            (751 yamls)    #   Network architecture configs
-│   │   ├── networks/             (281 yamls)    #     Complete networks (136 arch across general/acdc/synapse)
+│   │   ├── networks/             (281 yamls)    #     Complete networks (128 arch across general/acdc/synapse)
 │   │   ├── combinations/         (166 yamls)    #     Encoder+decoder free combinations
 │   │   ├── decoder_study/        (121 yamls)    #     Decoder ablation (3 enc × 40 dec)
 │   │   ├── skip_study/           (75 yamls)     #     Skip ablation (3 enc × 25 skip)
@@ -302,16 +302,16 @@ segmentation_tool/
 
 > Detailed docs: [docs/models/](docs/models/README.md)
 
-### Complete Networks — 136
+### Complete Networks — 128
 
 | Category | Count | Examples |
 |---|---|---|
 | CNN | 35 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, ACC-UNet, CMUNeXt |
-| Transformer | 36 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
-| Mamba / SSM | 25 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
-| SAM family | 12 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM |
-| KAN / MLP | 7 | U-KAN, Rolling-UNet (4 variants), UNeXt, Wav-KAN |
-| Linear Attention | 4 | TTT-UNet, xLSTM-UNet (2 variants), U-VixLSTM |
+| Transformer | 35 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
+| Mamba / SSM | 24 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
+| SAM family | 10 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM |
+| KAN / MLP | 4 | U-KAN, Rolling-UNet, UNeXt, Wav-KAN |
+| Linear Attention | 3 | TTT-UNet, xLSTM-UNet, U-VixLSTM |
 | RWKV | 4 | U-RWKV, RWKV-UNet, MD-RWKV-UNet, RIR-Zigzag |
 | Text-guided | 13 | CRIS, BiomedParse, LanGuideMedSeg, LViT, TGANet, TPRO, CausalCLIPSeg |
 
