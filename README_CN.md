@@ -181,11 +181,11 @@ segmentation_tool/
 │   │   ├── decoders/                            #   40 个解码器
 │   │   │   ├── basic/            (4 registered) #     基础上采样: UNet, Bilinear, Deconv, DepthwiseSep
 │   │   │   ├── dense/            (2 registered) #     密集连接: UNet++, UNet3+
-│   │   │   ├── cascade/          (5 registered) #     CASCADE, EMCAD (2 变体), G-CASCADE, CFM
+│   │   │   ├── cascade/          (10 registered)#     CASCADE, EMCAD (2 变体), G-CASCADE (2 变体), CFM, MERIT (2 变体), EDLDNet
 │   │   │   ├── attention/        (3 registered) #     注意力门控, HAM, Lawin
-│   │   │   ├── transformer/      (7 registered) #     DAEFormer, MTUNet, nnFormer, SwinUNet, H2Former, MISSFormer, ScaleFormer
+│   │   │   ├── transformer/      (5 registered) #     DAEFormer, MTUNet, nnFormer, SwinUNet, UCTransNet
 │   │   │   ├── mlp/              (2 registered) #     SegFormer MLP, MLP 解码器
-│   │   │   ├── specific/         (15 registered)#     TransUNet CUP, HiFormer, UCTransNet, FAT-Net, MALUNet, EGE-UNet, MERIT, ...
+│   │   │   ├── specific/         (12 registered)#     TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, ...
 │   │   │   ├── pyramid/          (1 registered) #     金字塔: UPerNet
 │   │   │   └── mamba/            (1 registered) #     Mamba: VM-UNet
 │   │   ├── bottlenecks/          (17 modules)   #   17 个瓶颈层: none, basic, ASPP, DenseASPP, PPM, Transformer, SE, CBAM, ...
@@ -352,11 +352,11 @@ encoder:
 |---|---|---|
 | 基础上采样 | 4 | UNet, Bilinear, Deconv, DepthwiseSep |
 | 密集连接 | 2 | UNet++, UNet3+ |
-| 级联 | 5 | CASCADE, EMCAD, G-CASCADE, CFM |
+| 级联 | 10 | CASCADE, EMCAD (2 变体), G-CASCADE (2 变体), CFM, MERIT (2 变体), EDLDNet |
 | 注意力 | 3 | Attention Gate, HAM, Lawin |
-| Transformer | 7 | DAEFormer, MTUNet, SwinUNet, nnFormer, H2Former, MISSFormer, ScaleFormer |
+| Transformer | 5 | DAEFormer, MTUNet, SwinUNet, nnFormer, UCTransNet |
 | MLP | 2 | SegFormer MLP, MLP 解码器 |
-| 网络专属 | 15 | TransUNet CUP, HiFormer, UCTransNet, FAT-Net, MALUNet, EGE-UNet, MERIT, ... |
+| 网络专属 | 12 | TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, ... |
 | Mamba | 1 | VM-UNet |
 | 金字塔 | 1 | UPerNet |
 

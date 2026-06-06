@@ -180,11 +180,11 @@ segmentation_tool/
 │   │   ├── decoders/                            #   40 decoders
 │   │   │   ├── basic/            (4 registered) #     Basic upsampling: UNet, Bilinear, Deconv, DepthwiseSep
 │   │   │   ├── dense/            (2 registered) #     Dense connections: UNet++, UNet3+
-│   │   │   ├── cascade/          (5 registered) #     CASCADE, EMCAD (2 variants), G-CASCADE, CFM
+│   │   │   ├── cascade/          (10 registered)#     CASCADE, EMCAD (2 variants), G-CASCADE (2 variants), CFM, MERIT (2 variants), EDLDNet
 │   │   │   ├── attention/        (3 registered) #     Attention Gate, HAM, Lawin
-│   │   │   ├── transformer/      (7 registered) #     DAEFormer, MTUNet, nnFormer, SwinUNet, H2Former, MISSFormer, ScaleFormer
+│   │   │   ├── transformer/      (5 registered) #     DAEFormer, MTUNet, nnFormer, SwinUNet, UCTransNet
 │   │   │   ├── mlp/              (2 registered) #     SegFormer MLP, MLP Decoder
-│   │   │   ├── specific/         (15 registered)#     TransUNet CUP, HiFormer, UCTransNet, FAT-Net, MALUNet, EGE-UNet, MERIT, ...
+│   │   │   ├── specific/         (12 registered)#     TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, ...
 │   │   │   ├── pyramid/          (1 registered) #     UPerNet
 │   │   │   └── mamba/            (1 registered) #     VM-UNet
 │   │   ├── bottlenecks/          (17 modules)   #   17 bottlenecks: none, basic, ASPP, DenseASPP, PPM, Transformer, SE, CBAM, ...
@@ -351,11 +351,11 @@ encoder:
 |---|---|---|
 | Basic (upsampling) | 4 | UNet, Bilinear, Deconv, DepthwiseSep |
 | Dense (connections) | 2 | UNet++, UNet3+ |
-| Cascade | 5 | CASCADE, EMCAD, G-CASCADE, CFM |
+| Cascade | 10 | CASCADE, EMCAD (2 variants), G-CASCADE (2 variants), CFM, MERIT (2 variants), EDLDNet |
 | Attention | 3 | Attention Gate, HAM, Lawin |
-| Transformer | 7 | DAEFormer, MTUNet, SwinUNet, nnFormer, H2Former, MISSFormer, ScaleFormer |
+| Transformer | 5 | DAEFormer, MTUNet, SwinUNet, nnFormer, UCTransNet |
 | MLP | 2 | SegFormer MLP, MLP Decoder |
-| Specific (network) | 15 | TransUNet CUP, HiFormer, UCTransNet, FAT-Net, MALUNet, EGE-UNet, MERIT, ... |
+| Specific (network) | 12 | TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, ... |
 | Mamba | 1 | VM-UNet |
 | Pyramid | 1 | UPerNet |
 
