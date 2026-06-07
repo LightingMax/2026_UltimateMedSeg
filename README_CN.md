@@ -14,7 +14,7 @@
   </p>
 </div>
 
-> **128** 完整网络 · **172** 编码器 · **40** 解码器 · **88** 损失函数 · **25** 跳跃连接 · **17** 瓶颈层 · **6** 大训练范式 · **24** 种数据增强 · **878** YAML 配置 · 一行 YAML 完成切换
+> **128** 完整网络 · **169** 编码器 · **40** 解码器 · **88** 损失函数 · **25** 跳跃连接 · **17** 瓶颈层 · **6** 大训练范式 · **24** 种数据增强 · **872** YAML 配置 · 一行 YAML 完成切换
 
 ---
 
@@ -160,19 +160,19 @@ print(f"可训练参数量: {trainable / 1e6:.2f}M")
 segmentation_tool/
 ├── medseg/                                      # 核心框架
 │   ├── models/                                  # 模型组件
-│   │   ├── encoders/                            #   172 个编码器
+│   │   ├── encoders/                            #   169 个编码器
 │   │   │   ├── cnn/              (12 modules)   #     CNN: basic, ResNet, ConvNeXt, EfficientNet, MedNeXt, MEW, R2U, AttUNet, ...
 │   │   │   ├── transformer/      (18 modules)   #     Transformer: TransUNet, SwinUNet, MISSFormer, DAEFormer, HiFormer, PVTv2, MaxViT, ...
 │   │   │   ├── mamba/            (10 modules)   #     Mamba/SSM: VMUNet, UMamba, LKM, LoG-VMamba, UltraLight-VM, VMKLA, ...
 │   │   │   ├── rwkv/             (4 modules)    #     RWKV: RWKV-UNet, U-RWKV, MD-RWKV, RIR-Zigzag
 │   │   │   ├── linear_attn/      (5 modules)    #     线性注意力: RetNet, Linformer, Performer, TTT, xLSTM
 │   │   │   ├── kan_mlp/          (4 modules)    #     KAN/MLP: UKAN, Rolling-UNet, UNeXt, Wav-KAN
-│   │   │   ├── foundation/       (38 modules)   #     Foundation 模型 (DPT head)
+│   │   │   ├── foundation/       (35 modules)   #     Foundation 模型 (DPT head)
 │   │   │   │   ├── general/      (5)            #       DINOv2, DINOv3, DINO, CLIP-ViT, SAM-ViT
-│   │   │   │   ├── pathology/    (6)            #       Phikon, UNI, PLIP, MUSK, PathFoundation, Phikon-v2
-│   │   │   │   ├── radiology/    (4)            #       Rad-DINO, CXR-Foundation, OmniRad, MedSigLIP
+│   │   │   │   ├── pathology/    (5)            #       Phikon, UNI, PLIP, MUSK, Phikon-v2
+│   │   │   │   ├── radiology/    (3)            #       Rad-DINO, OmniRad, MedSigLIP
 │   │   │   │   ├── ophthalmology/(4)            #       RETFound-DINOv2, FLAIR, OphMAE, RETFound
-│   │   │   │   ├── dermatology/  (4)            #       DermFoundation, PanDerm, DermCLIP, MonetDerm
+│   │   │   │   ├── dermatology/  (3)            #       PanDerm, DermCLIP, MonetDerm
 │   │   │   │   ├── multimodal_med/(3)           #       BiomedCLIP, MedCLIP, KEEP
 │   │   │   │   ├── mllm_vision/  (8)            #       Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, ...
 │   │   │   │   ├── endoscopy/    (1)            #       EndoViT
@@ -243,14 +243,14 @@ segmentation_tool/
 │   └── logo.png                                 #   项目 logo
 ├── examples/                                    # 使用示例
 │   └── grounding_dino_example.py                #   GroundingDINO 检测示例
-├── configs/                      (878 yamls)    # YAML 配置
-│   ├── architectures/            (751 yamls)    #   网络结构配置
+├── configs/                      (872 yamls)    # YAML 配置
+│   ├── architectures/            (745 yamls)    #   网络结构配置
 │   │   ├── networks/             (281 yamls)    #     完整网络 (128 arch across general/acdc/synapse)
 │   │   ├── combinations/         (166 yamls)    #     encoder+decoder 自由组合
 │   │   ├── decoder_study/        (121 yamls)    #     Decoder 消融 (3 enc × 40 dec)
 │   │   ├── skip_study/           (75 yamls)     #     skip 消融 (3 enc × 25 skip)
 │   │   ├── bottleneck_study/     (51 yamls)     #     bottleneck 消融 (3 enc × 17 bn)
-│   │   └── foundation/           (57 yamls)     #     Foundation 模型 (9 模态 × 38 编码器)
+│   │   └── foundation/           (51 yamls)     #     Foundation 模型 (9 模态 × 35 编码器)
 │   ├── training_paradigms/       (99 yamls)     #   训练范式配置
 │   │   ├── semi_supervision/     (21 yamls)     #     半监督 (21 方法)
 │   │   ├── domain_adaptation/    (18 yamls)     #     域适应 (18 方法)
@@ -318,17 +318,17 @@ segmentation_tool/
 
 > 详细列表: [docs/models/networks.md](docs/models/networks.md)
 
-### 编码器 — 172 个
+### 编码器 — 169 个
 
-**亮点：38 个 Foundation 模型编码器，覆盖 9 个医学模态**
+**亮点：35 个 Foundation 模型编码器，覆盖 9 个医学模态**
 
 | 模态 | 数量 | 模型 |
 |---|---|---|
 | 通用 | 5 | DINOv2, DINOv3, DINO, CLIP-ViT, SAM-ViT |
-| 病理 | 6 | Phikon, Phikon-v2, UNI, PLIP, MUSK, PathFoundation |
-| 放射 | 4 | Rad-DINO, CXR-Foundation, OmniRad, MedSigLIP |
+| 病理 | 5 | Phikon, Phikon-v2, UNI, PLIP, MUSK |
+| 放射 | 3 | Rad-DINO, OmniRad, MedSigLIP |
 | 眼科 | 4 | RETFound-DINOv2, RETFound, FLAIR, OphMAE |
-| 皮肤 | 4 | DermFoundation, DermCLIP, MoNet, PanDerm |
+| 皮肤 | 3 | DermCLIP, MoNet, PanDerm |
 | 多模态医学 | 3 | BiomedCLIP, MedCLIP, KEEP |
 | MLLM视觉 | 8 | Qwen2.5-VL, Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, HealthGPT, HuLuMed, LingShu |
 | 超声 | 3 | UltraDINO, UltraFedFM, US-FMAE |

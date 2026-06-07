@@ -29,7 +29,7 @@
 | 文档 | 内容 |
 |---|---|
 | [networks.md](networks.md) | 128 个完整网络架构 |
-| [encoders.md](encoders.md) | 172 个编码器（含 Foundation 模型） |
+| [encoders.md](encoders.md) | 169 个编码器（含 Foundation 模型） |
 | [decoders.md](decoders.md) | 40 个解码器 |
 | [skip_connections.md](skip_connections.md) | 25 个跳跃连接 |
 | [bottlenecks.md](bottlenecks.md) | 17 个瓶颈层 |

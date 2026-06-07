@@ -8,23 +8,23 @@
 
 ### 监督损失 (15)
 
-| 名称 | 说明 |
-|------|------|
-| `ce` | 交叉熵 |
-| `dice` | Dice 损失 |
-| `focal` | Focal 损失 (Lin et al.) |
-| `tversky` | Tversky 损失 |
-| `lovasz` | Lovasz-Softmax |
-| `boundary` | 边界损失 (距离图) |
-| `hausdorff` | Hausdorff 距离损失 |
-| `nsd` | 归一化表面距离 |
-| `edge` | 边缘损失 |
-| `el_loss` | 指数对数损失 |
-| `contrastive` | 监督对比损失 |
-| `wasserstein_dice` | Wasserstein Dice |
-| `kl_divergence` | KL 散度 |
-| `compound` | 组合损失 (加权组合) |
-| `deep_supervision` | 深度监督包装器 |
+| 名称 | 说明 | 源码 |
+|------|------|------|
+| `ce` | 交叉熵 | [ce_loss.py](../../medseg/losses/ce_loss.py) |
+| `dice` | Dice 损失 | [dice_loss.py](../../medseg/losses/dice_loss.py) |
+| `focal` | Focal 损失 (Lin et al.) | [focal_loss.py](../../medseg/losses/focal_loss.py) |
+| `tversky` | Tversky 损失 | [tversky_loss.py](../../medseg/losses/tversky_loss.py) |
+| `lovasz` | Lovasz-Softmax | [lovasz_loss.py](../../medseg/losses/lovasz_loss.py) |
+| `boundary` | 边界损失 (距离图) | [boundary_loss.py](../../medseg/losses/boundary_loss.py) |
+| `hausdorff` | Hausdorff 距离损失 | [hausdorff_loss.py](../../medseg/losses/hausdorff_loss.py) |
+| `nsd` | 归一化表面距离 | [nsd_loss.py](../../medseg/losses/nsd_loss.py) |
+| `edge` | 边缘损失 | [edge_loss.py](../../medseg/losses/edge_loss.py) |
+| `el_loss` | 指数对数损失 | [el_loss.py](../../medseg/losses/el_loss.py) |
+| `contrastive` | 监督对比损失 | [contrastive_loss.py](../../medseg/losses/contrastive_loss.py) |
+| `wasserstein_dice` | Wasserstein Dice | [wasserstein_dice_loss.py](../../medseg/losses/wasserstein_dice_loss.py) |
+| `kl_divergence` | KL 散度 | [kl_loss.py](../../medseg/losses/kl_loss.py) |
+| `compound` | 组合损失 (加权组合) | [compound_loss.py](../../medseg/losses/compound_loss.py) |
+| `deep_supervision` | 深度监督包装器 | [deep_supervision_loss.py](../../medseg/losses/deep_supervision_loss.py) |
 
 ### 半监督损失 (21)
 

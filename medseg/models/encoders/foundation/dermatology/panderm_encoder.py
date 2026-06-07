@@ -8,14 +8,15 @@ PanDerm is a self-supervised ViT-Large/16 (``embed_dim=1024``,
 ``patch_size=16``) pretrained on over 2 million real-world skin disease
 images.  The official code is at ``SiyuanYan1/PanDerm`` on GitHub.
 
-Weights are loaded via ``hf_hub_download`` from the PanDerm release or
-from a local checkpoint.  ``pretrained=True`` auto-downloads;
-``pretrained=False`` raises ``RuntimeError``.
+No public HuggingFace Hub artifact exists.  Weights are distributed via
+Google Drive (see GitHub README).  ``pretrained=True`` requires a local
+checkpoint via ``pretrained_path``; ``pretrained=False`` raises ``RuntimeError``.
 
 Registered as ``"panderm"`` in ``ENCODER_REGISTRY``.
 """
 # Source: https://github.com/SiyuanYan1/PanDerm
 # Paper:  https://arxiv.org/abs/2410.15038  (Nature Medicine 2025)
+# HF Hub: NONE — weights distributed via Google Drive only.
 
 from __future__ import annotations
 
@@ -27,12 +28,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from medseg.registry import ENCODER_REGISTRY
-from medseg.models.encoders.foundation._base import (BaseFoundationEncoder, load_hf_vit,
-                     hf_hub_download_vision_weights, HuggingFaceViTWrapper, DPTHead)
+from medseg.models.encoders.foundation._base import (BaseFoundationEncoder,
+                     HuggingFaceViTWrapper, DPTHead)
 
 
-_PRIMARY_HF_NAME = "SiyuanYan1/PanDerm"
-PRIMARY_BACKBONE_NAME = _PRIMARY_HF_NAME
+PRIMARY_BACKBONE_NAME = "SiyuanYan1/PanDerm"  # GitHub repo (no HF Hub artifact)
 _EMBED_DIM = 1024
 _PATCH_SIZE = 16
 
@@ -66,34 +66,42 @@ class PanDermEncoder(BaseFoundationEncoder):
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — try HF ViTModel first, then fallback to manual weight loading.
+        # Backbone — PanDerm has no HF Hub artifact; require local checkpoint.
         if pretrained:
-            try:
-                self.backbone = load_hf_vit(
-                    hf_name=_PRIMARY_HF_NAME,
-                    pretrained_path=pretrained_path,
-                    model_cls_name="ViTModel",
-                    trust_remote_code=True,
+            if not pretrained_path:
+                raise RuntimeError(
+                    "PanDerm has no public HuggingFace Hub artifact. "
+                    "Download weights from the Google Drive link in "
+                    "https://github.com/SiyuanYan1/PanDerm and pass the "
+                    "local path via pretrained_path=..."
                 )
-            except Exception:
-                # Fallback: build ViT-L/16 skeleton and download weights.
-                import transformers
-                _skel = transformers.ViTModel(transformers.ViTConfig(
-                    hidden_size=1024, num_hidden_layers=24,
-                    num_attention_heads=16, intermediate_size=4096,
-                    patch_size=16, image_size=224,
-                ))
-                _state = hf_hub_download_vision_weights(
-                    repo_id=_PRIMARY_HF_NAME,
-                    prefix_strip=("vision_encoder.", "vision_tower.",
-                                  "image_encoder.", "vit.",
-                                  "encoder.", "backbone.",
-                                  "trunk.", "module.",
-                                  "model.", "state_dict."),
-                )
-                _msg = _skel.load_state_dict(_state, strict=False)
-                warnings.warn(f"[panderm] loaded via hf_hub_download: {_msg}")
-                self.backbone = HuggingFaceViTWrapper(_skel)
+            # Build ViT-L/16 skeleton and load local weights.
+            import transformers
+            _skel = transformers.ViTModel(transformers.ViTConfig(
+                hidden_size=1024, num_hidden_layers=24,
+                num_attention_heads=16, intermediate_size=4096,
+                patch_size=16, image_size=224,
+            ))
+            _state = torch.load(pretrained_path, map_location="cpu")
+            if isinstance(_state, dict):
+                for key in ("model", "state_dict", "module", "teacher"):
+                    if key in _state and isinstance(_state[key], dict):
+                        _state = _state[key]
+                        break
+            cleaned = {}
+            for k, v in _state.items():
+                nk = k
+                for pref in ("vision_encoder.", "vision_tower.",
+                             "image_encoder.", "vit.",
+                             "encoder.", "backbone.",
+                             "trunk.", "module.",
+                             "model.", "state_dict."):
+                    if nk.startswith(pref):
+                        nk = nk[len(pref):]
+                cleaned[nk] = v
+            _msg = _skel.load_state_dict(cleaned, strict=False)
+            warnings.warn(f"[panderm] loaded from pretrained_path: {_msg}")
+            self.backbone = HuggingFaceViTWrapper(_skel)
         else:
             raise RuntimeError(
                 "PanDermEncoder does not support pretrained=False. "

@@ -8,40 +8,40 @@
 
 ### Classic KD (23)
 
-| Method | Paper | Published | GitHub | Description |
-|--------|-------|-------|--------|-------------|
-| `vanilla_kd` | Hinton et al. | NeurIPS-W 2014 | [peterliht/knowledge-distillation-pytorch](https://github.com/peterliht/knowledge-distillation-pytorch) | Soft-label KD |
-| `unet_distillation` | Hinton et al. | - | - | Logit/feature/attention multi-scale KD |
-| `hint_distillation` | Romero et al. (FitNets) | ICLR 2015 | [adri-romsor/FitNets](https://github.com/adri-romsor/FitNets) | Intermediate hint layers |
-| `attention_mimicry` | Simplified attention | - | - | Attention map mimicry baseline |
-| `at` | Zagoruyko & Komodakis | ICLR 2017 | [szagoruyko/attention-transfer](https://github.com/szagoruyko/attention-transfer) | Attention transfer |
-| `fsp` | Yim et al. (A Gift from KD) | CVPR 2017 | [yoshitomo-matsubara/torchdistill](https://github.com/yoshitomo-matsubara/torchdistill) | Flow of solution procedure |
-| `nst` | Huang & Wang | 2017 | [HobbitLong/RepDistiller](https://github.com/HobbitLong/RepDistiller) | Neuron selectivity transfer |
-| `rkd` | Park et al. | CVPR 2019 | [lenscloth/RKD](https://github.com/lenscloth/RKD) | Relational KD |
-| `vid` | Ahn et al. | CVPR 2019 | [HobbitLong/RepDistiller](https://github.com/HobbitLong/RepDistiller) | Variational information distillation |
-| `dkd` | Zhao et al. | CVPR 2022 | [megvii-research/mdistiller](https://github.com/megvii-research/mdistiller) | Decoupled KD |
-| `mgd` | Yang et al. | ECCV 2022 | [yzd-v/MGD](https://github.com/yzd-v/MGD) | Masked generative distillation |
-| `dist` | Huang et al. | NeurIPS 2022 | [hunto/DIST_KD](https://github.com/hunto/DIST_KD) | DIST distillation |
-| `cirkd_minibatch` | Yang et al. | CVPR 2022 | [winycg/CIRKD](https://github.com/winycg/CIRKD) | Cross-image relational KD |
-| `cwd` | Shu et al. | ICCV 2021 | [irfanICMLL/TorchDistiller](https://github.com/irfanICMLL/TorchDistiller) | Channel-wise distillation |
-| `review_kd` | Chen et al. | CVPR 2021 | [dvlab-research/ReviewKD](https://github.com/dvlab-research/ReviewKD) | Knowledge review |
-| `simkd` | Chen et al. | CVPR 2022 | [DefangChen/SimKD](https://github.com/DefangChen/SimKD) | Simple KD with projector |
-| `norm_kd` | Liu et al. (NORM) | ICLR 2023 | [xyliu7/NORM](https://github.com/xyliu7/NORM) | Normalized logits KD |
-| `sdd` | Wei et al. | CVPR 2024 | [shicaiwei123/SDD-CVPR2024](https://github.com/shicaiwei123/SDD-CVPR2024) | Scale decoupled distillation |
-| `aicsd` | Mansurian et al. | TNNLS 2024 | [AmirMansurian/AICSD](https://github.com/AmirMansurian/AICSD) | Adaptive inter-class similarity |
-| `logit_std_kd` | Sun et al. | CVPR 2024 | [sunshangquan/logit-standardization-KD](https://github.com/sunshangquan/logit-standardization-KD) | Logit standardization |
-| `ttm_kd` | Zheng & Yang | ICLR 2024 | [zkxufo/TTM](https://github.com/zkxufo/TTM) | Transformed teacher matching |
-| `ctkd` | Li et al. | AAAI 2023 | [zhengli97/CTKD](https://github.com/zhengli97/CTKD) | Curriculum temperature |
-| `mlkd` | Jin et al. | CVPR 2023 | [Jin-Ying/Multi-Level-Logit-Distillation](https://github.com/Jin-Ying/Multi-Level-Logit-Distillation) | Multi-level logit distillation |
+| Method | Paper | Published | GitHub | Description | YAML |
+|--------|-------|-------|--------|-------------|------|
+| `vanilla_kd` | Hinton et al. | NeurIPS-W 2014 | [peterliht/knowledge-distillation-pytorch](https://github.com/peterliht/knowledge-distillation-pytorch) | Soft-label KD | [vanilla_kd.yaml](../../configs/training_paradigms/distillation/vanilla_kd.yaml) |
+| `unet_distillation` | Hinton et al. | - | - | Logit/feature/attention multi-scale KD | - |
+| `hint_distillation` | Romero et al. (FitNets) | ICLR 2015 | [adri-romsor/FitNets](https://github.com/adri-romsor/FitNets) | Intermediate hint layers | - |
+| `attention_mimicry` | Simplified attention | - | - | Attention map mimicry baseline | - |
+| `at` | Zagoruyko & Komodakis | ICLR 2017 | [szagoruyko/attention-transfer](https://github.com/szagoruyko/attention-transfer) | Attention transfer | [at.yaml](../../configs/training_paradigms/distillation/at.yaml) |
+| `fsp` | Yim et al. (A Gift from KD) | CVPR 2017 | [yoshitomo-matsubara/torchdistill](https://github.com/yoshitomo-matsubara/torchdistill) | Flow of solution procedure | [fsp.yaml](../../configs/training_paradigms/distillation/fsp.yaml) |
+| `nst` | Huang & Wang | 2017 | [HobbitLong/RepDistiller](https://github.com/HobbitLong/RepDistiller) | Neuron selectivity transfer | [nst.yaml](../../configs/training_paradigms/distillation/nst.yaml) |
+| `rkd` | Park et al. | CVPR 2019 | [lenscloth/RKD](https://github.com/lenscloth/RKD) | Relational KD | [rkd.yaml](../../configs/training_paradigms/distillation/rkd.yaml) |
+| `vid` | Ahn et al. | CVPR 2019 | [HobbitLong/RepDistiller](https://github.com/HobbitLong/RepDistiller) | Variational information distillation | [vid.yaml](../../configs/training_paradigms/distillation/vid.yaml) |
+| `dkd` | Zhao et al. | CVPR 2022 | [megvii-research/mdistiller](https://github.com/megvii-research/mdistiller) | Decoupled KD | - |
+| `mgd` | Yang et al. | ECCV 2022 | [yzd-v/MGD](https://github.com/yzd-v/MGD) | Masked generative distillation | - |
+| `dist` | Huang et al. | NeurIPS 2022 | [hunto/DIST_KD](https://github.com/hunto/DIST_KD) | DIST distillation | - |
+| `cirkd_minibatch` | Yang et al. | CVPR 2022 | [winycg/CIRKD](https://github.com/winycg/CIRKD) | Cross-image relational KD | - |
+| `cwd` | Shu et al. | ICCV 2021 | [irfanICMLL/TorchDistiller](https://github.com/irfanICMLL/TorchDistiller) | Channel-wise distillation | [cwd.yaml](../../configs/training_paradigms/distillation/cwd.yaml) |
+| `review_kd` | Chen et al. | CVPR 2021 | [dvlab-research/ReviewKD](https://github.com/dvlab-research/ReviewKD) | Knowledge review | [review_kd.yaml](../../configs/training_paradigms/distillation/review_kd.yaml) |
+| `simkd` | Chen et al. | CVPR 2022 | [DefangChen/SimKD](https://github.com/DefangChen/SimKD) | Simple KD with projector | - |
+| `norm_kd` | Liu et al. (NORM) | ICLR 2023 | [xyliu7/NORM](https://github.com/xyliu7/NORM) | Normalized logits KD | [norm_kd.yaml](../../configs/training_paradigms/distillation/norm_kd.yaml) |
+| `sdd` | Wei et al. | CVPR 2024 | [shicaiwei123/SDD-CVPR2024](https://github.com/shicaiwei123/SDD-CVPR2024) | Scale decoupled distillation | [sdd.yaml](../../configs/training_paradigms/distillation/sdd.yaml) |
+| `aicsd` | Mansurian et al. | TNNLS 2024 | [AmirMansurian/AICSD](https://github.com/AmirMansurian/AICSD) | Adaptive inter-class similarity | [aicsd.yaml](../../configs/training_paradigms/distillation/aicsd.yaml) |
+| `logit_std_kd` | Sun et al. | CVPR 2024 | [sunshangquan/logit-standardization-KD](https://github.com/sunshangquan/logit-standardization-KD) | Logit standardization | [logit_std_kd.yaml](../../configs/training_paradigms/distillation/logit_std_kd.yaml) |
+| `ttm_kd` | Zheng & Yang | ICLR 2024 | [zkxufo/TTM](https://github.com/zkxufo/TTM) | Transformed teacher matching | [ttm_kd.yaml](../../configs/training_paradigms/distillation/ttm_kd.yaml) |
+| `ctkd` | Li et al. | AAAI 2023 | [zhengli97/CTKD](https://github.com/zhengli97/CTKD) | Curriculum temperature | [ctkd.yaml](../../configs/training_paradigms/distillation/ctkd.yaml) |
+| `mlkd` | Jin et al. | CVPR 2023 | [Jin-Ying/Multi-Level-Logit-Distillation](https://github.com/Jin-Ying/Multi-Level-Logit-Distillation) | Multi-level logit distillation | [mlkd.yaml](../../configs/training_paradigms/distillation/mlkd.yaml) |
 
 ### Medical-Specific KD (4)
 
-| Method | Description |
-|--------|-------------|
-| `anatomy_kd` | Organ topology distillation |
-| `boundary_kd` | Boundary-aware KD |
-| `multi_organ_kd` | Class-balanced multi-organ KD |
-| `cross_modality_kd` | Cross-modality KD (CT/MRI) |
+| Method | Description | YAML |
+|--------|-------------|------|
+| `anatomy_kd` | Organ topology distillation | [anatomy_kd.yaml](../../configs/training_paradigms/distillation/anatomy_kd.yaml) |
+| `boundary_kd` | Boundary-aware KD | [boundary_kd.yaml](../../configs/training_paradigms/distillation/boundary_kd.yaml) |
+| `multi_organ_kd` | Class-balanced multi-organ KD | [multi_organ_kd.yaml](../../configs/training_paradigms/distillation/multi_organ_kd.yaml) |
+| `cross_modality_kd` | Cross-modality KD (CT/MRI) | [cross_modality_kd.yaml](../../configs/training_paradigms/distillation/cross_modality_kd.yaml) |
 
 ## YAML Config
 

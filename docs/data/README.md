@@ -82,63 +82,63 @@ Extracted from `configs/intro_to_datasets/`.
 
 ### Abdominal & Cardiac
 
-| Dataset | Modality | Classes | Size | Split | Link |
+| Dataset | Modality | Classes | Size | Split | YAML |
 |---------|----------|---------|------|-------|------|
-| Synapse | CT | 9 (8 organs+BG) | 30 cases | 18 train / 12 test | [TransUNet](https://github.com/Beckschen/TransUNet) |
-| ACDC | MRI | 4 (RV/MYO/LV+BG) | 100 cases | 70/10/20 | [ACDC](https://github.com/Beckschen/TransUNet)|
+| Synapse | CT | 9 (8 organs+BG) | 30 cases | 18 train / 12 test | [synapse.yaml](../../configs/intro_to_datasets/synapse.yaml) |
+| ACDC | MRI | 4 (RV/MYO/LV+BG) | 100 cases | 70/10/20 | [acdc.yaml](../../configs/intro_to_datasets/acdc.yaml) |
 
 ### Retinal
 
-| Dataset | Task | Size | Classes | Split |
-|---------|------|------|---------|-------|
-| DRIVE | Vessel seg | 40 images | 2 | 20/20 official |
-| STARE | Vessel seg | 20 images | 2 | LOO or cross-dataset |
-| CHASE_DB1 | Vessel seg | 28 images | 2 | 20 train / 8 test |
-| HRF | Vessel seg (high-res) | 45 images | 2 | 5-fold CV |
-| ARIA | Vessel seg (multi-disease) | 143 images | 2 | 5-fold CV |
-| RITE | Artery/vein seg | 40 images | 3 | 20/20 (same as DRIVE) |
-| REFUGE | OD/OC seg | 1200 images | 3 | 400/400/400 |
-| Drishti-GS | OD/OC seg | 101 images | 3 | 50/51 |
+| Dataset | Task | Size | Classes | Split | YAML |
+|---------|------|------|---------|-------|------|
+| DRIVE | Vessel seg | 40 images | 2 | 20/20 official | [drive.yaml](../../configs/intro_to_datasets/drive.yaml) |
+| STARE | Vessel seg | 20 images | 2 | LOO or cross-dataset | [stare.yaml](../../configs/intro_to_datasets/stare.yaml) |
+| CHASE_DB1 | Vessel seg | 28 images | 2 | 20 train / 8 test | [chase_db1.yaml](../../configs/intro_to_datasets/chase_db1.yaml) |
+| HRF | Vessel seg (high-res) | 45 images | 2 | 5-fold CV | [hrf.yaml](../../configs/intro_to_datasets/hrf.yaml) |
+| ARIA | Vessel seg (multi-disease) | 143 images | 2 | 5-fold CV | [aria.yaml](../../configs/intro_to_datasets/aria.yaml) |
+| RITE | Artery/vein seg | 40 images | 3 | 20/20 (same as DRIVE) | [rite.yaml](../../configs/intro_to_datasets/rite.yaml) |
+| REFUGE | OD/OC seg | 1200 images | 3 | 400/400/400 | [refuge.yaml](../../configs/intro_to_datasets/refuge.yaml) |
+| Drishti-GS | OD/OC seg | 101 images | 3 | 50/51 | [drishti_gs.yaml](../../configs/intro_to_datasets/drishti_gs.yaml) |
 
 ### Skin Lesion
 
-| Dataset | Size | Classes | Split |
-|---------|------|---------|-------|
-| ISIC 2016 | 1279 images | 2 | 900/379 |
-| ISIC 2017 | 2750 images | 2 | 2000/150/600 |
-| ISIC 2018 | 3694 images | 2 | 2594/100/1000 |
-| PH2 | 200 images | 2 | 5-fold CV or external test |
+| Dataset | Size | Classes | Split | YAML |
+|---------|------|---------|-------|------|
+| ISIC 2016 | 1279 images | 2 | 900/379 | [isic2016.yaml](../../configs/intro_to_datasets/isic2016.yaml) |
+| ISIC 2017 | 2750 images | 2 | 2000/150/600 | [isic2017.yaml](../../configs/intro_to_datasets/isic2017.yaml) |
+| ISIC 2018 | 3694 images | 2 | 2594/100/1000 | [isic2018.yaml](../../configs/intro_to_datasets/isic2018.yaml) |
+| PH2 | 200 images | 2 | 5-fold CV or external test | [ph2.yaml](../../configs/intro_to_datasets/ph2.yaml) |
 
 ### GI Polyp
 
-| Dataset | Size | Resolution | Split |
-|---------|------|-----------|-------|
-| Kvasir-SEG | 1000 images | Variable | 5-fold CV |
-| CVC-ClinicDB | 612 images | 384x288 | 5-fold CV |
-| CVC-ColonDB | 380 images | 574x500 | Cross-dataset test |
+| Dataset | Size | Resolution | Split | YAML |
+|---------|------|-----------|-------|------|
+| Kvasir-SEG | 1000 images | Variable | 5-fold CV | [kvasir_seg.yaml](../../configs/intro_to_datasets/kvasir_seg.yaml) |
+| CVC-ClinicDB | 612 images | 384x288 | 5-fold CV | [cvc_clinicdb.yaml](../../configs/intro_to_datasets/cvc_clinicdb.yaml) |
+| CVC-ColonDB | 380 images | 574x500 | Cross-dataset test | [cvc_colondb.yaml](../../configs/intro_to_datasets/cvc_colondb.yaml) |
 
 ### Pathology
 
-| Dataset | Tissue | Size | Classes | Split |
-|---------|--------|------|---------|-------|
-| GlaS | Colon gland | 165 images | 2 | 85 train / 80 test |
-| MoNuSeg | Multi-organ nuclei | 44 images | 2 | 30/14 |
-| PanNuke | Pan-cancer nuclei | ~7900 patches | 6 | 3-fold official |
+| Dataset | Tissue | Size | Classes | Split | YAML |
+|---------|--------|------|---------|-------|------|
+| GlaS | Colon gland | 165 images | 2 | 85 train / 80 test | [glas.yaml](../../configs/intro_to_datasets/glas.yaml) |
+| MoNuSeg | Multi-organ nuclei | 44 images | 2 | 30/14 | [monuseg.yaml](../../configs/intro_to_datasets/monuseg.yaml) |
+| PanNuke | Pan-cancer nuclei | ~7900 patches | 6 | 3-fold official | [pannuke.yaml](../../configs/intro_to_datasets/pannuke.yaml) |
 
 ### Chest
 
-| Dataset | Modality | Size | Task |
-|---------|----------|------|------|
-| Montgomery+Shenzhen | CXR | 800 images | Lung seg |
-| COVID CT Seg | CT | 100 slices | Infection seg (GGO+consolidation) |
-| QaTa-COV19 | CXR + text | 10501 images | COVID infection seg |
-| MosMedData+ | CT + text | 3674 slices | COVID infection seg |
+| Dataset | Modality | Size | Task | YAML |
+|---------|----------|------|------|------|
+| Montgomery+Shenzhen | CXR | 800 images | Lung seg | [montgomery_shenzhen_cxr.yaml](../../configs/intro_to_datasets/montgomery_shenzhen_cxr.yaml) |
+| COVID CT Seg | CT | 100 slices | Infection seg (GGO+consolidation) | [covid_ct_seg.yaml](../../configs/intro_to_datasets/covid_ct_seg.yaml) |
+| QaTa-COV19 | CXR + text | 10501 images | COVID infection seg | [qata_covid19.yaml](../../configs/intro_to_datasets/qata_covid19.yaml) |
+| MosMedData+ | CT + text | 3674 slices | COVID infection seg | [mosmed_plus.yaml](../../configs/intro_to_datasets/mosmed_plus.yaml) |
 
 ### Ultrasound
 
-| Dataset | Organ | Size | Classes |
-|---------|-------|------|---------|
-| BUSI | Breast | 647 images | 2 (lesion) |
+| Dataset | Organ | Size | Classes | YAML |
+|---------|-------|------|---------|------|
+| BUSI | Breast | 647 images | 2 (lesion) | [busi.yaml](../../configs/intro_to_datasets/busi.yaml) |
 
 ---
 

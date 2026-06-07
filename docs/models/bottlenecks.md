@@ -6,75 +6,75 @@ This project provides 17 bottleneck modules, placed between the deepest encoder 
 
 ## No-op (1)
 
-| Name | Description |
-|---|---|
-| `none` | No bottleneck (pass-through) |
+| Name | Description | YAML |
+|---|---|---|
+| `none` | No bottleneck (pass-through) | [resnet50_none](../../configs/architectures/bottleneck_study/general/resnet50_none.yaml) |
 
 ## Basic (1)
 
-| Name | Description |
-|---|---|
-| `basic` | Basic convolutional bottleneck |
+| Name | Description | YAML |
+|---|---|---|
+| `basic` | Basic convolutional bottleneck | [resnet50_basic](../../configs/architectures/bottleneck_study/general/resnet50_basic.yaml) |
 
 ## Dilated Convolution (2)
 
-| Name | Description |
-|---|---|
-| `aspp` | Atrous Spatial Pyramid Pooling |
-| `dense_aspp` | Dense ASPP |
+| Name | Description | YAML |
+|---|---|---|
+| `aspp` | Atrous Spatial Pyramid Pooling | [resnet50_aspp](../../configs/architectures/bottleneck_study/general/resnet50_aspp.yaml) |
+| `dense_aspp` | Dense ASPP | [resnet50_dense_aspp](../../configs/architectures/bottleneck_study/general/resnet50_dense_aspp.yaml) |
 
 ## Pooling (1)
 
-| Name | Description |
-|---|---|
-| `ppm` | Pyramid Pooling Module |
+| Name | Description | YAML |
+|---|---|---|
+| `ppm` | Pyramid Pooling Module | [resnet50_ppm](../../configs/architectures/bottleneck_study/general/resnet50_ppm.yaml) |
 
 ## Channel Attention (3)
 
-| Name | Description |
-|---|---|
-| `se` | Squeeze-and-Excitation |
-| `eca` | Efficient Channel Attention |
-| `cbam` | CBAM Channel + Spatial Attention |
+| Name | Description | YAML |
+|---|---|---|
+| `se` | Squeeze-and-Excitation | [resnet50_se](../../configs/architectures/bottleneck_study/general/resnet50_se.yaml) |
+| `eca` | Efficient Channel Attention | [resnet50_eca](../../configs/architectures/bottleneck_study/general/resnet50_eca.yaml) |
+| `cbam` | CBAM Channel + Spatial Attention | [resnet50_cbam](../../configs/architectures/bottleneck_study/general/resnet50_cbam.yaml) |
 
 ## Spatial Attention (2)
 
-| Name | Description |
-|---|---|
-| `coord_attn` | Coordinate Attention |
-| `spatial_channel` | Spatial-Channel joint attention |
+| Name | Description | YAML |
+|---|---|---|
+| `coord_attn` | Coordinate Attention | [resnet50_coord_attn](../../configs/architectures/bottleneck_study/general/resnet50_coord_attn.yaml) |
+| `spatial_channel` | Spatial-Channel joint attention | [resnet50_spatial_channel](../../configs/architectures/bottleneck_study/general/resnet50_spatial_channel.yaml) |
 
 ## Hybrid Attention (3)
 
-| Name | Description |
-|---|---|
-| `dual_attention` | Dual Attention (position + channel) |
-| `acmix` | ACmix attention-convolution mixture |
-| `gated_attn` | Gated attention |
+| Name | Description | YAML |
+|---|---|---|
+| `dual_attention` | Dual Attention (position + channel) | [resnet50_dual_attention](../../configs/architectures/bottleneck_study/general/resnet50_dual_attention.yaml) |
+| `acmix` | ACmix attention-convolution mixture | [resnet50_acmix](../../configs/architectures/bottleneck_study/general/resnet50_acmix.yaml) |
+| `gated_attn` | Gated attention | [resnet50_gated_attn](../../configs/architectures/bottleneck_study/general/resnet50_gated_attn.yaml) |
 
 ## Transformer (1)
 
-| Name | Description |
-|---|---|
-| `transformer` | Transformer bottleneck |
+| Name | Description | YAML |
+|---|---|---|
+| `transformer` | Transformer bottleneck | [resnet50_transformer](../../configs/architectures/bottleneck_study/general/resnet50_transformer.yaml) |
 
 ## Coordinate Convolution (1)
 
-| Name | Description |
-|---|---|
-| `coordconv` | CoordConv (coordinate convolution) |
+| Name | Description | YAML |
+|---|---|---|
+| `coordconv` | CoordConv (coordinate convolution) | [resnet50_coordconv](../../configs/architectures/bottleneck_study/general/resnet50_coordconv.yaml) |
 
 ## Mixture of Experts (1)
 
-| Name | Description |
-|---|---|
-| `moe` | Mixture of Experts bottleneck |
+| Name | Description | YAML |
+|---|---|---|
+| `moe` | Mixture of Experts bottleneck | [resnet50_moe](../../configs/architectures/bottleneck_study/general/resnet50_moe.yaml) |
 
 ## LLM-enhanced (1)
 
-| Name | Description |
-|---|---|
-| `llm4seg` | LLM-enhanced bottleneck for segmentation |
+| Name | Description | YAML |
+|---|---|---|
+| `llm4seg` | LLM-enhanced bottleneck for segmentation | [resnet50_llm4seg](../../configs/architectures/bottleneck_study/general/resnet50_llm4seg.yaml) |
 
 ---
 

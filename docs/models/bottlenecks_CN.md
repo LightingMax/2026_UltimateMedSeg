@@ -6,75 +6,75 @@
 
 ## 无操作 (1)
 
-| 名称 | 说明 |
-|---|---|
-| `none` | 不使用瓶颈层（直通） |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `none` | 不使用瓶颈层（直通） | [resnet50_none](../../configs/architectures/bottleneck_study/general/resnet50_none.yaml) |
 
 ## 基础 (1)
 
-| 名称 | 说明 |
-|---|---|
-| `basic` | 基础卷积瓶颈 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `basic` | 基础卷积瓶颈 | [resnet50_basic](../../configs/architectures/bottleneck_study/general/resnet50_basic.yaml) |
 
 ## 空洞卷积 (2)
 
-| 名称 | 说明 |
-|---|---|
-| `aspp` | 空洞空间金字塔池化 (ASPP, DeepLab) |
-| `dense_aspp` | 密集 ASPP |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `aspp` | 空洞空间金字塔池化 (ASPP, DeepLab) | [resnet50_aspp](../../configs/architectures/bottleneck_study/general/resnet50_aspp.yaml) |
+| `dense_aspp` | 密集 ASPP | [resnet50_dense_aspp](../../configs/architectures/bottleneck_study/general/resnet50_dense_aspp.yaml) |
 
 ## 池化 (1)
 
-| 名称 | 说明 |
-|---|---|
-| `ppm` | 金字塔池化模块 (PPM, PSPNet) |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `ppm` | 金字塔池化模块 (PPM, PSPNet) | [resnet50_ppm](../../configs/architectures/bottleneck_study/general/resnet50_ppm.yaml) |
 
 ## 通道注意力 (3)
 
-| 名称 | 说明 |
-|---|---|
-| `se` | Squeeze-and-Excitation |
-| `eca` | 高效通道注意力 |
-| `cbam` | CBAM 通道+空间注意力 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `se` | Squeeze-and-Excitation | [resnet50_se](../../configs/architectures/bottleneck_study/general/resnet50_se.yaml) |
+| `eca` | 高效通道注意力 | [resnet50_eca](../../configs/architectures/bottleneck_study/general/resnet50_eca.yaml) |
+| `cbam` | CBAM 通道+空间注意力 | [resnet50_cbam](../../configs/architectures/bottleneck_study/general/resnet50_cbam.yaml) |
 
 ## 空间注意力 (2)
 
-| 名称 | 说明 |
-|---|---|
-| `coord_attn` | 坐标注意力 |
-| `spatial_channel` | 空间-通道联合注意力 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `coord_attn` | 坐标注意力 | [resnet50_coord_attn](../../configs/architectures/bottleneck_study/general/resnet50_coord_attn.yaml) |
+| `spatial_channel` | 空间-通道联合注意力 | [resnet50_spatial_channel](../../configs/architectures/bottleneck_study/general/resnet50_spatial_channel.yaml) |
 
 ## 混合注意力 (3)
 
-| 名称 | 说明 |
-|---|---|
-| `dual_attention` | 双注意力 (DANet)：位置 + 通道 |
-| `acmix` | ACmix 注意力卷积混合 |
-| `gated_attn` | 门控注意力 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `dual_attention` | 双注意力 (DANet)：位置 + 通道 | [resnet50_dual_attention](../../configs/architectures/bottleneck_study/general/resnet50_dual_attention.yaml) |
+| `acmix` | ACmix 注意力卷积混合 | [resnet50_acmix](../../configs/architectures/bottleneck_study/general/resnet50_acmix.yaml) |
+| `gated_attn` | 门控注意力 | [resnet50_gated_attn](../../configs/architectures/bottleneck_study/general/resnet50_gated_attn.yaml) |
 
 ## Transformer (1)
 
-| 名称 | 说明 |
-|---|---|
-| `transformer` | Transformer 瓶颈 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `transformer` | Transformer 瓶颈 | [resnet50_transformer](../../configs/architectures/bottleneck_study/general/resnet50_transformer.yaml) |
 
 ## 坐标卷积 (1)
 
-| 名称 | 说明 |
-|---|---|
-| `coordconv` | CoordConv 坐标卷积 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `coordconv` | CoordConv 坐标卷积 | [resnet50_coordconv](../../configs/architectures/bottleneck_study/general/resnet50_coordconv.yaml) |
 
 ## 专家混合 (1)
 
-| 名称 | 说明 |
-|---|---|
-| `moe` | MoE 专家混合瓶颈 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `moe` | MoE 专家混合瓶颈 | [resnet50_moe](../../configs/architectures/bottleneck_study/general/resnet50_moe.yaml) |
 
 ## LLM 增强 (1)
 
-| 名称 | 说明 |
-|---|---|
-| `llm4seg` | LLM4Seg 大语言模型增强瓶颈 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `llm4seg` | LLM4Seg 大语言模型增强瓶颈 | [resnet50_llm4seg](../../configs/architectures/bottleneck_study/general/resnet50_llm4seg.yaml) |
 
 ---
 

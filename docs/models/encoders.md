@@ -2,7 +2,7 @@
 
 [中文文档](encoders_CN.md)
 
-This project provides 172 registered encoders in two usage modes.
+This project provides 169 registered encoders in two usage modes.
 
 ## Two Encoder Modes
 
@@ -29,88 +29,85 @@ Foundation model encoders use the **DPT head** (Dense Prediction Transformer) to
 
 ### General
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `dinov2` | DINOv2: Learning Robust Visual Features without Supervision | 2024 | `facebook/dinov2-*` |
-| `dino` | DINO: Self-Distillation with No Labels | ICCV 2021 | `facebook/dino-*` |
-| `clip_vit` | CLIP: Learning Transferable Visual Models | ICML 2021 | `openai/clip-*` |
-| `sam_vit` | Segment Anything (ViT encoder) | ICCV 2023 | `facebook/sam-*` |
-| `dinov3` | DINOv3 | 2025 | `facebook/dinov3-*` |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `dinov2` | DINOv2: Learning Robust Visual Features without Supervision | 2024 | `facebook/dinov2-*` | [emcad](../../configs/architectures/combinations/general/dinov2_emcad.yaml), [cascade_full](../../configs/architectures/combinations/general/dinov2_cascade_full.yaml), [cfm](../../configs/architectures/combinations/general/dinov2_cfm.yaml) |
+| `dino` | DINO: Self-Distillation with No Labels | ICCV 2021 | `facebook/dino-*` | [cascade_full](../../configs/architectures/combinations/general/dino_cascade_full.yaml), [emcad](../../configs/architectures/combinations/general/dino_emcad.yaml) |
+| `clip_vit` | CLIP: Learning Transferable Visual Models | ICML 2021 | `openai/clip-*` | [cascade_full](../../configs/architectures/combinations/general/clip_vit_cascade_full.yaml), [emcad](../../configs/architectures/combinations/general/clip_vit_emcad.yaml) |
+| `sam_vit` | Segment Anything (ViT encoder) | ICCV 2023 | `facebook/sam-*` | [cascade_full](../../configs/architectures/combinations/general/sam_vit_cascade_full.yaml), [cfm](../../configs/architectures/combinations/general/sam_vit_cfm.yaml), [emcad](../../configs/architectures/combinations/general/sam_vit_emcad.yaml) |
+| `dinov3` | DINOv3 | 2025 | `facebook/dinov3-*` | [cascade_full](../../configs/architectures/combinations/general/dinov3_cascade_full.yaml), [cfm](../../configs/architectures/combinations/general/dinov3_cfm.yaml), [emcad](../../configs/architectures/combinations/general/dinov3_emcad.yaml) |
 
 ### Pathology
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `phikon` | Scaling Self-Supervised Learning for Histopathology (Phikon) | 2024 | `owkin/phikon` |
-| `uni` | Towards a General-Purpose Foundation Model for Computational Pathology | Nature Med 2024 | `MahmoodLab/UNI` (gated) |
-| `plip` | PLIP: A Visual-Language Foundation Model for Pathology | Nature Med 2023 | `vinid/plip` |
-| `musk` | MUSK: Multi-task Self-supervised Pathology | 2024 | - |
-| `phikon_v2` | Phikon-v2 | 2024 | `owkin/phikon-v2` |
-| `path_foundation` | PathFoundation | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `phikon` | Scaling Self-Supervised Learning for Histopathology (Phikon) | 2024 | `owkin/phikon` | [basic](../../configs/architectures/combinations/general/phikon_basic.yaml) |
+| `uni` | Towards a General-Purpose Foundation Model for Computational Pathology | Nature Med 2024 | `MahmoodLab/UNI` (gated) | [basic](../../configs/architectures/combinations/general/uni_basic.yaml) |
+| `plip` | PLIP: A Visual-Language Foundation Model for Pathology | Nature Med 2023 | `vinid/plip` | [basic](../../configs/architectures/combinations/general/plip_basic.yaml) |
+| `musk` | MUSK: Multi-task Self-supervised Pathology | 2024 | - | [basic](../../configs/architectures/combinations/general/musk_basic.yaml) |
+| `phikon_v2` | Phikon-v2 | 2024 | `owkin/phikon-v2` | [cascade_full](../../configs/architectures/combinations/general/phikon_v2_cascade_full.yaml) |
 
 ### Radiology
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `raddino` | RAD-DINO: Scalable Medical Image Encoders Beyond Text Supervision | 2024 | `microsoft/rad-dino` |
-| `cxr_foundation` | CXR-Foundation | 2024 | - |
-| `omnirad` | OmniRad | 2024 | - |
-| `medsiglip` | MedSigLIP | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `raddino` | RAD-DINO: Scalable Medical Image Encoders Beyond Text Supervision | 2024 | `microsoft/rad-dino` | [cascade_full](../../configs/architectures/combinations/general/raddino_cascade_full.yaml) |
+| `omnirad` | OmniRad | 2024 | - | [cascade_full](../../configs/architectures/combinations/general/omnirad_cascade_full.yaml) |
+| `medsiglip` | MedSigLIP | 2024 | - | [basic](../../configs/architectures/combinations/general/medsiglip_basic.yaml) |
 
 ### Ophthalmology
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `retfound` | RETFound | Nature 2023 | - |
-| `retfound_dinov2` | RETFound-DINOv2 | 2024 | - |
-| `flair` | FLAIR: Fine-grained Language-informed Retinal Analysis | 2024 | - |
-| `ophmae` | OphMAE | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `retfound` | RETFound | Nature 2023 | - | [basic](../../configs/architectures/combinations/general/retfound_basic.yaml) |
+| `retfound_dinov2` | RETFound-DINOv2 | 2024 | - | [cascade_full](../../configs/architectures/combinations/general/retfound_dinov2_cascade_full.yaml) |
+| `flair` | FLAIR: Fine-grained Language-informed Retinal Analysis | 2024 | - | [basic](../../configs/architectures/combinations/general/flair_basic.yaml) |
+| `ophmae` | OphMAE | 2024 | - | [cascade_full](../../configs/architectures/combinations/general/ophmae_cascade_full.yaml) |
 
 ### Dermatology
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `derm_foundation` | DermFoundation | 2024 | - |
-| `panderm` | PanDerm | 2024 | - |
-| `dermclip` | DermCLIP | 2024 | - |
-| `monet_derm` | Monet-Derm | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `panderm` | PanDerm | 2024 | - | [cascade_full](../../configs/architectures/combinations/general/panderm_cascade_full.yaml) |
+| `dermclip` | DermCLIP | 2024 | - | [basic](../../configs/architectures/combinations/general/dermclip_basic.yaml) |
+| `monet_derm` | Monet-Derm | 2024 | - | [basic](../../configs/architectures/combinations/general/monet_derm_basic.yaml) |
 
 ### Endoscopy
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `endo_vit` | EndoViT | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `endo_vit` | EndoViT | 2024 | - | [basic](../../configs/architectures/combinations/general/endo_vit_basic.yaml) |
 
 ### Multimodal Medical
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `biomedclip` | BiomedCLIP | NeurIPS 2023 | `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224` |
-| `medclip` | MedCLIP | EMNLP 2022 | - |
-| `keep` | KEEP | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `biomedclip` | BiomedCLIP | NeurIPS 2023 | `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224` | [cascade_full](../../configs/architectures/combinations/general/biomedclip_cascade_full.yaml), [emcad](../../configs/architectures/combinations/general/biomedclip_emcad.yaml) |
+| `medclip` | MedCLIP | EMNLP 2022 | - | [basic](../../configs/architectures/combinations/general/medclip_basic.yaml) |
+| `keep` | KEEP | 2024 | - | [basic](../../configs/architectures/combinations/general/keep_basic.yaml) |
 
 ### Ultrasound
 
-| Name | Paper | Year | HF Repo |
-|---|---|---|---|
-| `usfmae` | USF-MAE | 2024 | - |
-| `ultradino` | UltraDINO | 2024 | - |
-| `ultrafedfm` | UltraFedFM | 2024 | - |
+| Name | Paper | Year | HF Repo | YAML |
+|---|---|---|---|---|
+| `usfmae` | USF-MAE | 2024 | - | [basic](../../configs/architectures/combinations/general/usfmae_basic.yaml) |
+| `ultradino` | UltraDINO | 2024 | - | [cascade_full](../../configs/architectures/combinations/general/ultradino_cascade_full.yaml) |
+| `ultrafedfm` | UltraFedFM | 2024 | - | [cascade_full](../../configs/architectures/combinations/general/ultrafedfm_cascade_full.yaml) |
 
 ### MLLM Vision Encoders
 
 Extract vision encoders from Multimodal LLMs for segmentation tasks.
 
-| Name | Paper | Year |
-|---|---|---|
-| `qwen3_vl_vision` | Qwen3-VL | 2025 |
-| `qwen25_vl_vision` | Qwen2.5-VL | 2025 |
-| `llava_med_vision` | LLaVA-Med | NeurIPS 2023 |
-| `medgemma_vision` | MedGemma | 2025 |
-| `healthgpt_vision` | HealthGPT | 2025 |
-| `huatuogpt_vision` | HuatuoGPT-Vision | 2024 |
-| `hulumed_vision` | HuluMed-Vision | 2024 |
-| `lingshu_vision` | LingShu-Vision | 2024 |
+| Name | Paper | Year | YAML |
+|---|---|---|---|
+| `qwen3_vl_vision` | Qwen3-VL | 2025 | [basic](../../configs/architectures/combinations/general/qwen3_vl_vision_basic.yaml) |
+| `qwen25_vl_vision` | Qwen2.5-VL | 2025 | [basic](../../configs/architectures/combinations/general/qwen25_vl_vision_basic.yaml) |
+| `llava_med_vision` | LLaVA-Med | NeurIPS 2023 | [basic](../../configs/architectures/combinations/general/llava_med_vision_basic.yaml) |
+| `medgemma_vision` | MedGemma | 2025 | [basic](../../configs/architectures/combinations/general/medgemma_vision_basic.yaml) |
+| `healthgpt_vision` | HealthGPT | 2025 | [basic](../../configs/architectures/combinations/general/healthgpt_vision_basic.yaml) |
+| `huatuogpt_vision` | HuatuoGPT-Vision | 2024 | [basic](../../configs/architectures/combinations/general/huatuogpt_vision_basic.yaml) |
+| `hulumed_vision` | HuluMed-Vision | 2024 | [basic](../../configs/architectures/combinations/general/hulumed_vision_basic.yaml) |
+| `lingshu_vision` | LingShu-Vision | 2024 | [basic](../../configs/architectures/combinations/general/lingshu_vision_basic.yaml) |
 
 ---
 
@@ -118,26 +115,26 @@ Extract vision encoders from Multimodal LLMs for segmentation tasks.
 
 The following are pre-registered and tested timm encoders (partial list):
 
-| Family | Encoder Names |
-|---|---|
-| ResNet | `timm_resnet18`, `timm_resnet34`, `timm_resnet50`, `timm_resnet101`, `timm_resnet152` |
-| ResNeXt | `timm_resnext50_32x4d`, `timm_resnext101_32x8d` |
-| Wide ResNet | `timm_wide_resnet50_2`, `timm_wide_resnet101_2` |
-| EfficientNet | `timm_efficientnet_b0` ~ `b5`, `timm_efficientnetv2_s`, `timm_efficientnetv2_m` |
-| ConvNeXt | `timm_convnext_tiny/small/base/large`, `timm_convnextv2_tiny/base` |
-| DenseNet | `timm_densenet121/161/169/201` |
-| VGG | `timm_vgg16`, `timm_vgg16_bn`, `timm_vgg19`, `timm_vgg19_bn` |
-| Swin Transformer | `timm_swin_tiny/small/base_patch4_window7_224`, `timm_swinv2_tiny_window8_256` |
-| PVTv2 | `timm_pvt_v2_b0` ~ `b4` |
-| SegFormer MiT | `timm_mit_b0` ~ `b5` |
-| MaxViT | `timm_maxvit_tiny/small_tf_224` |
-| ViT (CLIP) | `timm_vit_clip_base/large/huge` |
-| ViT (DINOv2) | `timm_vit_dinov2_base/large/giant` |
-| ViT (DINOv3) | `timm_vit_dinov3_small/base/large/huge_plus/7b` |
-| ViT (MAE) | `timm_vit_mae_base/large` |
-| ViT (SAM) | `timm_vit_sam_base/large/huge` |
-| MobileNet | `timm_mobilenetv2_100`, `timm_mobilenetv3_large/small_100` |
-| Others | `timm_inception_v3`, `timm_ghostnet_100`, `timm_mobilevit_s`, `timm_poolformer_s12/s24`, `timm_fastvit_t8`, `timm_coatnet_0_224` |
+| Family | encoder Names | YAML Example |
+|---|---|---|
+| ResNet | `timm_resnet18`, `timm_resnet34`, `timm_resnet50`, `timm_resnet101`, `timm_resnet152` | [resnet50+unet](../../configs/architectures/combinations/general/unet_resnet50.yaml) |
+| ResNeXt | `timm_resnext50_32x4d`, `timm_resnext101_32x8d` | - |
+| Wide ResNet | `timm_wide_resnet50_2`, `timm_wide_resnet101_2` | - |
+| EfficientNet | `timm_efficientnet_b0` ~ `b5`, `timm_efficientnetv2_s`, `timm_efficientnetv2_m` | [efficientnetv2](../../configs/architectures/combinations/general/efficientnetv2_cascade_full.yaml) |
+| ConvNeXt | `timm_convnext_tiny/small/base/large`, `timm_convnextv2_tiny/base` | [convnext](../../configs/architectures/combinations/general/convnext_cascade_full.yaml) |
+| DenseNet | `timm_densenet121/161/169/201` | [densenet121](../../configs/architectures/combinations/general/unet_densenet121.yaml) |
+| VGG | `timm_vgg16`, `timm_vgg16_bn`, `timm_vgg19`, `timm_vgg19_bn` | - |
+| Swin Transformer | `timm_swin_tiny/small/base_patch4_window7_224`, `timm_swinv2_tiny_window8_256` | [swin_tiny](../../configs/architectures/combinations/general/unet_swin_tiny.yaml) |
+| PVTv2 | `timm_pvt_v2_b0` ~ `b4` | [pvtv2_emcad](../../configs/architectures/combinations/general/pvtv2_emcad.yaml) |
+| SegFormer MiT | `timm_mit_b0` ~ `b5` | - |
+| MaxViT | `timm_maxvit_tiny/small_tf_224` | [maxvit](../../configs/architectures/combinations/general/maxvit_cascade_full.yaml) |
+| ViT (CLIP) | `timm_vit_clip_base/large/huge` | [vit_clip_base](../../configs/architectures/combinations/general/unet_vit_clip_base.yaml) |
+| ViT (DINOv2) | `timm_vit_dinov2_base/large/giant` | [vit_dinov2_base](../../configs/architectures/combinations/general/unet_vit_dinov2_base.yaml) |
+| ViT (DINOv3) | `timm_vit_dinov3_small/base/large/huge_plus/7b` | [vit_dinov3_base](../../configs/architectures/combinations/general/unet_vit_dinov3_base.yaml) |
+| ViT (MAE) | `timm_vit_mae_base/large` | [vit_mae_base](../../configs/architectures/combinations/general/unet_vit_mae_base.yaml) |
+| ViT (SAM) | `timm_vit_sam_base/large/huge` | [vit_sam_base](../../configs/architectures/combinations/general/unet_vit_sam_base.yaml) |
+| MobileNet | `timm_mobilenetv2_100`, `timm_mobilenetv3_large/small_100` | [mobilenetv3](../../configs/architectures/combinations/general/unet_mobilenetv3.yaml) |
+| Others | `timm_inception_v3`, `timm_ghostnet_100`, `timm_mobilevit_s`, `timm_poolformer_s12/s24`, `timm_fastvit_t8`, `timm_coatnet_0_224` | [fastvit](../../configs/architectures/combinations/general/unet_fastvit_t8.yaml) |
 
 ---
 

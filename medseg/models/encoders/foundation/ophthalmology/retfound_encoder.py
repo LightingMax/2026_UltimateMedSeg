@@ -6,8 +6,8 @@ Reference:
 
 RETFound is a MAE-style self-supervised ViT-Large/16 (``embed_dim=1024``,
 ``patch_size=16``) pre-trained on ~1.6 million retinal images.  The
-official weights are hosted at ``open-eye/RETFound_MAE`` on HuggingFace
-Hub (a transformers ``ViTModel`` checkpoint).
+official weights are hosted at ``YukunZhou/RETFound_mae_natureCFP`` on HuggingFace
+Hub (**gated** — requires access request approval).
 
 ``pretrained=True`` auto-downloads from HF Hub.
 ``pretrained=False`` raises ``RuntimeError``.
@@ -19,7 +19,7 @@ family.
 
 Registered as ``"retfound"`` in ``ENCODER_REGISTRY``.
 """
-# Source: https://huggingface.co/open-eye/RETFound_MAE
+# Source: https://huggingface.co/YukunZhou/RETFound_mae_natureCFP  (gated)
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, load_hf_vit
 
 
-_PRIMARY_HF_NAME = "open-eye/RETFound_MAE"
+_PRIMARY_HF_NAME = "YukunZhou/RETFound_mae_natureCFP"
 PRIMARY_BACKBONE_NAME = _PRIMARY_HF_NAME
 _EMBED_DIM = 1024
 _PATCH_SIZE = 16
@@ -95,8 +95,9 @@ class RETFoundEncoder(BaseFoundationEncoder):
             raise RuntimeError(
                 "RETFoundEncoder does not support pretrained=False. "
                 "This encoder requires pretrained weights from "
-                "'open-eye/RETFound_MAE'. Pass pretrained=True to "
-                "auto-download, or provide a local checkpoint via pretrained_path."
+                "'YukunZhou/RETFound_mae_natureCFP' (gated — request access on HF Hub). "
+                "Pass pretrained=True to auto-download, or provide a local "
+                "checkpoint via pretrained_path."
             )
         self._backbone_name = PRIMARY_BACKBONE_NAME
 

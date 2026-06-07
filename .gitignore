@@ -29,3 +29,8 @@ Thumbs.db
 output/
 *.log
 smoke_results.txt
+
+# ACM template & paper
+_ACM_MM__ul_m/
+_ACM_MM__ul_m.zip
+*.tex

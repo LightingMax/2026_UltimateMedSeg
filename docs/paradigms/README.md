@@ -8,23 +8,23 @@ The framework registers **88** losses via `LOSS_REGISTRY`, grouped by usage:
 
 ### Supervised Losses (15)
 
-| Name | Description |
-|------|-------------|
-| `ce` | Cross-Entropy |
-| `dice` | Dice Loss |
-| `focal` | Focal Loss (Lin et al.) |
-| `tversky` | Tversky Loss |
-| `lovasz` | Lovasz-Softmax |
-| `boundary` | Boundary Loss (distance map) |
-| `hausdorff` | Hausdorff Distance Loss |
-| `nsd` | Normalized Surface Distance |
-| `edge` | Edge Loss |
-| `el_loss` | Exponential Logarithmic Loss |
-| `contrastive` | Supervised Contrastive Loss |
-| `wasserstein_dice` | Wasserstein Dice |
-| `kl_divergence` | KL Divergence |
-| `compound` | Compound (weighted combination) |
-| `deep_supervision` | Deep Supervision wrapper |
+| Name | Description | Source |
+|------|-------------|--------|
+| `ce` | Cross-Entropy | [ce_loss.py](../../medseg/losses/ce_loss.py) |
+| `dice` | Dice Loss | [dice_loss.py](../../medseg/losses/dice_loss.py) |
+| `focal` | Focal Loss (Lin et al.) | [focal_loss.py](../../medseg/losses/focal_loss.py) |
+| `tversky` | Tversky Loss | [tversky_loss.py](../../medseg/losses/tversky_loss.py) |
+| `lovasz` | Lovasz-Softmax | [lovasz_loss.py](../../medseg/losses/lovasz_loss.py) |
+| `boundary` | Boundary Loss (distance map) | [boundary_loss.py](../../medseg/losses/boundary_loss.py) |
+| `hausdorff` | Hausdorff Distance Loss | [hausdorff_loss.py](../../medseg/losses/hausdorff_loss.py) |
+| `nsd` | Normalized Surface Distance | [nsd_loss.py](../../medseg/losses/nsd_loss.py) |
+| `edge` | Edge Loss | [edge_loss.py](../../medseg/losses/edge_loss.py) |
+| `el_loss` | Exponential Logarithmic Loss | [el_loss.py](../../medseg/losses/el_loss.py) |
+| `contrastive` | Supervised Contrastive Loss | [contrastive_loss.py](../../medseg/losses/contrastive_loss.py) |
+| `wasserstein_dice` | Wasserstein Dice | [wasserstein_dice_loss.py](../../medseg/losses/wasserstein_dice_loss.py) |
+| `kl_divergence` | KL Divergence | [kl_loss.py](../../medseg/losses/kl_loss.py) |
+| `compound` | Compound (weighted combination) | [compound_loss.py](../../medseg/losses/compound_loss.py) |
+| `deep_supervision` | Deep Supervision wrapper | [deep_supervision_loss.py](../../medseg/losses/deep_supervision_loss.py) |
 
 ### Semi-Supervised Losses (21)
 

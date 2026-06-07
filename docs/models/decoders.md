@@ -8,102 +8,102 @@ This project provides 40 decoder modules, grouped by category as follows.
 
 Basic upsampling decoders.
 
-| Name | Description |
-|---|---|
-| `unet` | Standard UNet decoder with conv + upsample |
-| `bilinear` | Bilinear interpolation upsampling |
-| `deconv` | Transposed convolution upsampling |
-| `dw_sep` | Depthwise separable convolution decoder |
+| Name | Description | YAML |
+|---|---|---|
+| `unet` | Standard UNet decoder with conv + upsample | [unet_basic](../../configs/architectures/combinations/general/unet_basic.yaml) |
+| `bilinear` | Bilinear interpolation upsampling | [bilinear](../../configs/architectures/combinations/general/bilinear_basic.yaml) |
+| `deconv` | Transposed convolution upsampling | [deconv](../../configs/architectures/combinations/general/deconv_resnet34.yaml) |
+| `dw_sep` | Depthwise separable convolution decoder | [dw_sep](../../configs/architectures/combinations/general/dwsep_resnet34.yaml) |
 
 ## Dense (2)
 
 Dense connection decoders.
 
-| Name | Description |
-|---|---|
-| `unetpp` | UNet++ dense nested decoder |
-| `unet3plus` | UNet 3+ full-scale skip connection decoder |
+| Name | Description | YAML |
+|---|---|---|
+| `unetpp` | UNet++ dense nested decoder | [unetpp](../../configs/architectures/combinations/general/unetpp_emcad.yaml) |
+| `unet3plus` | UNet 3+ full-scale skip connection decoder | [unet3plus](../../configs/architectures/combinations/general/unet3plus_basic.yaml) |
 
 ## Cascade (10)
 
 Cascade decoders that progressively refine segmentation.
 
-| Name | Description |
-|---|---|
-| `cascade` | CASCADE decoder |
-| `cascade_full` | CASCADE full decoder |
-| `cascade_emcad` | CASCADE + EMCAD hybrid |
-| `cfm` | Cascaded Feature Merging |
-| `emcad` | Efficient Multi-scale Cascaded Attention Decoder |
-| `edldnet` | EDLDNet decoder |
-| `gcascade` | G-CASCADE with add fusion |
-| `gcascade_cat` | G-CASCADE with concat fusion |
-| `merit_add` | MERIT decoder (add fusion) |
-| `merit_cat` | MERIT decoder (concat fusion) |
+| Name | Description | YAML |
+|---|---|---|
+| `cascade` | CASCADE decoder | [cascade_resnet34](../../configs/architectures/combinations/general/cascade_resnet34.yaml) |
+| `cascade_full` | CASCADE full decoder | [transunet_cascade_full](../../configs/architectures/combinations/general/transunet_cascade_full.yaml) |
+| `cascade_emcad` | CASCADE + EMCAD hybrid | [mednext_cascade_emcad](../../configs/architectures/combinations/general/mednext_cascade_emcad.yaml) |
+| `cfm` | Cascaded Feature Merging | [mednext_cfm](../../configs/architectures/combinations/general/mednext_cfm.yaml) |
+| `emcad` | Efficient Multi-scale Cascaded Attention Decoder | [mednext_emcad](../../configs/architectures/combinations/general/mednext_emcad.yaml) |
+| `edldnet` | EDLDNet decoder | [pvtv2_edldnet](../../configs/architectures/combinations/general/pvtv2_edldnet.yaml) |
+| `gcascade` | G-CASCADE with add fusion | [pvtv2_gcascade](../../configs/architectures/combinations/general/pvtv2_gcascade.yaml) |
+| `gcascade_cat` | G-CASCADE with concat fusion | [gcascade_cat](../../configs/architectures/combinations/general/gcascade_cat_basic.yaml) |
+| `merit_add` | MERIT decoder (add fusion) | [merit_add](../../configs/architectures/combinations/general/merit_add_basic.yaml) |
+| `merit_cat` | MERIT decoder (concat fusion) | [merit_cat](../../configs/architectures/combinations/general/merit_cat_basic.yaml) |
 
 ## Pyramid (1)
 
 Pyramid aggregation decoder.
 
-| Name | Description |
-|---|---|
-| `upernet` | UPerNet Unified Perceptual Parsing |
+| Name | Description | YAML |
+|---|---|---|
+| `upernet` | UPerNet Unified Perceptual Parsing | [upernet](../../configs/architectures/combinations/general/upernet_basic.yaml) |
 
 ## MLP (2)
 
 MLP-based decoders.
 
-| Name | Description |
-|---|---|
-| `mlp` | Generic MLP decoder |
-| `segformer` | SegFormer-style MLP decoder |
+| Name | Description | YAML |
+|---|---|---|
+| `mlp` | Generic MLP decoder | [mlp_resnet34](../../configs/architectures/combinations/general/mlp_resnet34.yaml) |
+| `segformer` | SegFormer-style MLP decoder | [swinunet_segformer](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 
 ## Specific (12)
 
 Architecture-specific decoders.
 
-| Name | Associated Network |
-|---|---|
-| `cfanet` | CFA-Net |
-| `dcsaunet` | DCSAU-Net |
-| `rwkv_unet` | RWKV-UNet |
-| `kiunet` | KiU-Net |
-| `transunet` | TransUNet (CUP) |
-| `fatnet` | FAT-Net |
-| `h2former` | H2Former |
-| `hiformer` | HiFormer |
-| `missformer` | MISSFormer |
-| `scaleformer` | ScaleFormer |
-| `malunet` | MALUNet |
-| `ege_unet` | EGE-UNet |
+| Name | Associated Network | YAML |
+|---|---|---|
+| `cfanet` | CFA-Net | [cfanet](../../configs/architectures/combinations/general/cfanet_basic.yaml) |
+| `dcsaunet` | DCSAU-Net | [dcsaunet](../../configs/architectures/combinations/general/dcsaunet_basic.yaml) |
+| `rwkv_unet` | RWKV-UNet | [rwkv_unet](../../configs/architectures/combinations/general/rwkv_unet.yaml) |
+| `kiunet` | KiU-Net | [kiunet](../../configs/architectures/combinations/general/kiunet_basic.yaml) |
+| `transunet` | TransUNet (CUP) | [transunet](../../configs/architectures/combinations/general/transunet_cascade_full.yaml) |
+| `fatnet` | FAT-Net | [fatnet](../../configs/architectures/combinations/general/fatnet_basic.yaml) |
+| `h2former` | H2Former | [h2former](../../configs/architectures/combinations/general/h2former_basic.yaml) |
+| `hiformer` | HiFormer | [hiformer](../../configs/architectures/combinations/general/hiformer_cascade.yaml) |
+| `missformer` | MISSFormer | [missformer](../../configs/architectures/combinations/general/missformer_basic.yaml) |
+| `scaleformer` | ScaleFormer | [scaleformer](../../configs/architectures/combinations/general/scaleformer_cascade_full.yaml) |
+| `malunet` | MALUNet | [malunet](../../configs/architectures/combinations/general/malunet_basic.yaml) |
+| `ege_unet` | EGE-UNet | [ege_unet](../../configs/architectures/combinations/general/ege_unet_basic.yaml) |
 
 ## Transformer (5)
 
 Transformer-based decoders.
 
-| Name | Description |
-|---|---|
-| `daeformer` | DAEFormer decoder |
-| `mtunet` | MT-UNet decoder |
-| `nnformer` | nnFormer decoder |
-| `swinunet` | Swin-UNet decoder |
-| `uctransnet` | UCTransNet decoder |
+| Name | Description | YAML |
+|---|---|---|
+| `daeformer` | DAEFormer decoder | [daeformer](../../configs/architectures/combinations/general/daeformer_emcad.yaml) |
+| `mtunet` | MT-UNet decoder | [mtunet](../../configs/architectures/combinations/general/mtunet_basic.yaml) |
+| `nnformer` | nnFormer decoder | [mednext_nnformer](../../configs/architectures/combinations/general/mednext_nnformer.yaml) |
+| `swinunet` | Swin-UNet decoder | [swinunet](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
+| `uctransnet` | UCTransNet decoder | [uctransnet](../../configs/architectures/combinations/general/uctransnet.yaml) |
 
 ## Attention (3)
 
 Attention-based decoders.
 
-| Name | Description |
-|---|---|
-| `attention` | Attention gate decoder |
-| `ham` | Hybrid Attention Module |
-| `lawin` | Large Window Attention decoder |
+| Name | Description | YAML |
+|---|---|---|
+| `attention` | Attention gate decoder | [attention_unet](../../configs/architectures/combinations/general/attention_unet_basic.yaml) |
+| `ham` | Hybrid Attention Module | [ham_resnet34](../../configs/architectures/combinations/general/ham_resnet34.yaml) |
+| `lawin` | Large Window Attention decoder | [lawin_resnet50](../../configs/architectures/combinations/general/lawin_resnet50.yaml) |
 
 ## Mamba (1)
 
-| Name | Description |
-|---|---|
-| `vmunet` | VM-UNet Mamba decoder |
+| Name | Description | YAML |
+|---|---|---|
+| `vmunet` | VM-UNet Mamba decoder | [vmunet](../../configs/architectures/combinations/general/vm_unet_basic.yaml) |
 
 ---
 

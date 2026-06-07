@@ -13,7 +13,7 @@
   </p>
 </div>
 
-> **128** networks · **172** encoders · **40** decoders · **88** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **878** YAML configs · switch anything with one line of YAML
+> **128** networks · **169** encoders · **40** decoders · **88** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **872** YAML configs · switch anything with one line of YAML
 
 ---
 
@@ -159,19 +159,19 @@ print(f"Trainable params: {trainable / 1e6:.2f}M")
 segmentation_tool/
 ├── medseg/                                      # Core framework
 │   ├── models/                                  # Model components
-│   │   ├── encoders/                            #   172 encoders
+│   │   ├── encoders/                            #   169 encoders
 │   │   │   ├── cnn/              (12 modules)   #     CNN: basic, ResNet, ConvNeXt, EfficientNet, MedNeXt, MEW, R2U, AttUNet, ...
 │   │   │   ├── transformer/      (18 modules)   #     Transformer: TransUNet, SwinUNet, MISSFormer, DAEFormer, HiFormer, PVTv2, MaxViT, ...
 │   │   │   ├── mamba/            (10 modules)   #     Mamba/SSM: VMUNet, UMamba, LKM, LoG-VMamba, UltraLight-VM, VMKLA, ...
 │   │   │   ├── rwkv/             (4 modules)    #     RWKV: RWKV-UNet, U-RWKV, MD-RWKV, RIR-Zigzag
 │   │   │   ├── linear_attn/      (5 modules)    #     Linear attention: RetNet, Linformer, Performer, TTT, xLSTM
 │   │   │   ├── kan_mlp/          (4 modules)    #     KAN/MLP: UKAN, Rolling-UNet, UNeXt, Wav-KAN
-│   │   │   ├── foundation/       (38 modules)   #     Foundation models (DPT head)
+│   │   │   ├── foundation/       (35 modules)   #     Foundation models (DPT head)
 │   │   │   │   ├── general/      (5)            #       DINOv2, DINOv3, DINO, CLIP-ViT, SAM-ViT
-│   │   │   │   ├── pathology/    (6)            #       Phikon, UNI, PLIP, MUSK, PathFoundation, Phikon-v2
-│   │   │   │   ├── radiology/    (4)            #       Rad-DINO, CXR-Foundation, OmniRad, MedSigLIP
+│   │   │   │   ├── pathology/    (5)            #       Phikon, UNI, PLIP, MUSK, Phikon-v2
+│   │   │   │   ├── radiology/    (3)            #       Rad-DINO, OmniRad, MedSigLIP
 │   │   │   │   ├── ophthalmology/(4)            #       RETFound-DINOv2, FLAIR, OphMAE, RETFound
-│   │   │   │   ├── dermatology/  (4)            #       DermFoundation, PanDerm, DermCLIP, MonetDerm
+│   │   │   │   ├── dermatology/  (3)            #       PanDerm, DermCLIP, MonetDerm
 │   │   │   │   ├── multimodal_med/(3)           #       BiomedCLIP, MedCLIP, KEEP
 │   │   │   │   ├── mllm_vision/  (8)            #       Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, ...
 │   │   │   │   ├── endoscopy/    (1)            #       EndoViT
@@ -242,14 +242,14 @@ segmentation_tool/
 │   └── logo.png                                 #   Project logo
 ├── examples/                                    # Usage examples
 │   └── grounding_dino_example.py                #   GroundingDINO detection example
-├── configs/                      (878 yamls)    # YAML configs
-│   ├── architectures/            (751 yamls)    #   Network architecture configs
+├── configs/                      (872 yamls)    # YAML configs
+│   ├── architectures/            (745 yamls)    #   Network architecture configs
 │   │   ├── networks/             (281 yamls)    #     Complete networks (128 arch across general/acdc/synapse)
 │   │   ├── combinations/         (166 yamls)    #     Encoder+decoder free combinations
 │   │   ├── decoder_study/        (121 yamls)    #     Decoder ablation (3 enc × 40 dec)
 │   │   ├── skip_study/           (75 yamls)     #     Skip ablation (3 enc × 25 skip)
 │   │   ├── bottleneck_study/     (51 yamls)     #     Bottleneck ablation (3 enc × 17 bn)
-│   │   └── foundation/           (57 yamls)     #     Foundation models (9 modalities × 38 encoders)
+│   │   └── foundation/           (51 yamls)     #     Foundation models (9 modalities × 35 encoders)
 │   ├── training_paradigms/       (99 yamls)     #   Training paradigm configs
 │   │   ├── semi_supervision/     (21 yamls)     #     Semi-supervised (21 methods)
 │   │   ├── domain_adaptation/    (18 yamls)     #     Domain adaptation (18 methods)
@@ -317,17 +317,17 @@ segmentation_tool/
 
 > Full list: [docs/models/networks.md](docs/models/networks.md)
 
-### Encoders — 172
+### Encoders — 169
 
-**Highlight: 38 foundation model encoders covering 9 medical modalities**
+**Highlight: 35 foundation model encoders covering 9 medical modalities**
 
 | Modality | Count | Models |
 |---|---|---|
 | General | 5 | DINOv2, DINOv3, DINO, CLIP-ViT, SAM-ViT |
-| Pathology | 6 | Phikon, Phikon-v2, UNI, PLIP, MUSK, PathFoundation |
-| Radiology | 4 | Rad-DINO, CXR-Foundation, OmniRad, MedSigLIP |
+| Pathology | 5 | Phikon, Phikon-v2, UNI, PLIP, MUSK |
+| Radiology | 3 | Rad-DINO, OmniRad, MedSigLIP |
 | Ophthalmology | 4 | RETFound-DINOv2, RETFound, FLAIR, OphMAE |
-| Dermatology | 4 | DermFoundation, DermCLIP, MoNet, PanDerm |
+| Dermatology | 3 | DermCLIP, MoNet, PanDerm |
 | Multimodal Medical | 3 | BiomedCLIP, MedCLIP, KEEP |
 | MLLM Vision | 8 | Qwen2.5-VL, Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, HealthGPT, HuLuMed, LingShu |
 | Ultrasound | 3 | UltraDINO, UltraFedFM, US-FMAE |

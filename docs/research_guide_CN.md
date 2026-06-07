@@ -165,9 +165,9 @@ bash scripts/experiments/run_skip_study.sh
 
 | 通用编码器 | 专用编码器 | 数据集 |
 |---|---|---|
-| `dinov2` (base) | `panderm` / `derm_foundation` | ISIC 2017/2018, PH2 |
+| `dinov2` (base) | `panderm` | ISIC 2017/2018, PH2 |
 | `dinov2` (base) | `phikon` / `uni` / `plip` | GlaS, PanNuke, MoNuSeg |
-| `dinov2` (base) | `raddino` / `cxr_foundation` | Montgomery+Shenzhen CXR |
+| `dinov2` (base) | `raddino` | Montgomery+Shenzhen CXR |
 | `dinov2` (base) | `retfound_dinov2` / `flair` | DRIVE, CHASE_DB1, REFUGE |
 | `clip_vit` (base) | `biomedclip` / `medclip` | 跨模态对比 |
 

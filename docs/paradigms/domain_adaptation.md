@@ -6,26 +6,26 @@
 
 ## Methods
 
-| Method | Paper | Published | GitHub | Description |
-|--------|-------|-------|--------|-------------|
-| `source_only` | Baseline | - | [valeoai/ADVENT](https://github.com/valeoai/ADVENT) | Lower-bound: CE+Dice on source only |
-| `advent` | Vu et al. | CVPR 2019 | [valeoai/ADVENT](https://github.com/valeoai/ADVENT) | Adversarial entropy minimization |
-| `dann` | Ganin et al. | JMLR 2016 | [fungtion/DANN](https://github.com/fungtion/DANN) | Domain-adversarial neural net |
-| `tent` | Wang et al. | ICLR 2021 | [DequanWang/tent](https://github.com/DequanWang/tent) | Test-time entropy minimization |
-| `dpl` | Chen et al. | MICCAI 2021 | [cchen-cc/SFDA-DPL](https://github.com/cchen-cc/SFDA-DPL) | Dual pseudo label |
-| `cbmt` | ADA4MIA benchmark | - | [whq-xxh/ADA4MIA](https://github.com/whq-xxh/ADA4MIA) | Class-balanced mean teacher |
-| `fda` | Yang & Soatto | CVPR 2020 | [YanchaoYang/FDA](https://github.com/YanchaoYang/FDA) | Fourier domain adaptation |
-| `crst` | Zou et al. | ICCV 2019 | [yzou2/CRST](https://github.com/yzou2/CRST) | Class-balanced self-training |
-| `pixmatch` | Melas-Kyriazi & Manrai | CVPR 2021 | [lukemelas/pixmatch](https://github.com/lukemelas/pixmatch) | Pixel-level contrastive matching |
-| `mic` | Hoyer et al. | CVPR 2023 | [lhoyer/MIC](https://github.com/lhoyer/MIC) | Masked image consistency |
-| `daformer_fd` | Hoyer et al. | CVPR 2022 | [lhoyer/DAFormer](https://github.com/lhoyer/DAFormer) | Feature distance + rare class sampling |
-| `hrda` | Hoyer et al. | ECCV 2022 | [lhoyer/HRDA](https://github.com/lhoyer/HRDA) | Multi-resolution scale attention |
-| `pipa` | Chen et al. | ACM MM 2023 | [chen742/PiPa](https://github.com/chen742/PiPa) | Pixel + patch InfoNCE |
-| `ddb` | Du et al. | CVPR 2023 | [xinyuelll/DDB](https://github.com/xinyuelll/DDB) | Dual-domain decoupled bridging |
-| `sepico` | Xie et al. | TPAMI 2023 | [BIT-DA/SePiCo](https://github.com/BIT-DA/SePiCo) | Semantic pixel contrast + KL |
-| `diga` | Shen et al. | CVPR 2023 | [BIT-DA/DiGA](https://github.com/BIT-DA/DiGA) | Distillation-guided adaptation |
-| `micdrop` | Hoyer et al. | ECCV 2024 | [lhoyer/MICDrop](https://github.com/lhoyer/MICDrop) | MIC + complementary feature dropout |
-| `semivl_da` | Karazija et al. | ECCV 2024 | [google-research/semivl](https://github.com/google-research/semivl) | Vision-language guided self-training |
+| Method | Paper | Published | GitHub | Description | YAML |
+|--------|-------|-------|--------|-------------|------|
+| `source_only` | Baseline | - | [valeoai/ADVENT](https://github.com/valeoai/ADVENT) | Lower-bound: CE+Dice on source only | [source_only.yaml](../../configs/training_paradigms/domain_adaptation/source_only.yaml) |
+| `advent` | Vu et al. | CVPR 2019 | [valeoai/ADVENT](https://github.com/valeoai/ADVENT) | Adversarial entropy minimization | [advent.yaml](../../configs/training_paradigms/domain_adaptation/advent.yaml) |
+| `dann` | Ganin et al. | JMLR 2016 | [fungtion/DANN](https://github.com/fungtion/DANN) | Domain-adversarial neural net | [dann.yaml](../../configs/training_paradigms/domain_adaptation/dann.yaml) |
+| `tent` | Wang et al. | ICLR 2021 | [DequanWang/tent](https://github.com/DequanWang/tent) | Test-time entropy minimization | [tent.yaml](../../configs/training_paradigms/domain_adaptation/tent.yaml) |
+| `dpl` | Chen et al. | MICCAI 2021 | [cchen-cc/SFDA-DPL](https://github.com/cchen-cc/SFDA-DPL) | Dual pseudo label | [dpl.yaml](../../configs/training_paradigms/domain_adaptation/dpl.yaml) |
+| `cbmt` | ADA4MIA benchmark | - | [whq-xxh/ADA4MIA](https://github.com/whq-xxh/ADA4MIA) | Class-balanced mean teacher | [cbmt.yaml](../../configs/training_paradigms/domain_adaptation/cbmt.yaml) |
+| `fda` | Yang & Soatto | CVPR 2020 | [YanchaoYang/FDA](https://github.com/YanchaoYang/FDA) | Fourier domain adaptation | [fda.yaml](../../configs/training_paradigms/domain_adaptation/fda.yaml) |
+| `crst` | Zou et al. | ICCV 2019 | [yzou2/CRST](https://github.com/yzou2/CRST) | Class-balanced self-training | [crst.yaml](../../configs/training_paradigms/domain_adaptation/crst.yaml) |
+| `pixmatch` | Melas-Kyriazi & Manrai | CVPR 2021 | [lukemelas/pixmatch](https://github.com/lukemelas/pixmatch) | Pixel-level contrastive matching | [pixmatch.yaml](../../configs/training_paradigms/domain_adaptation/pixmatch.yaml) |
+| `mic` | Hoyer et al. | CVPR 2023 | [lhoyer/MIC](https://github.com/lhoyer/MIC) | Masked image consistency | [mic.yaml](../../configs/training_paradigms/domain_adaptation/mic.yaml) |
+| `daformer_fd` | Hoyer et al. | CVPR 2022 | [lhoyer/DAFormer](https://github.com/lhoyer/DAFormer) | Feature distance + rare class sampling | [daformer_fd.yaml](../../configs/training_paradigms/domain_adaptation/daformer_fd.yaml) |
+| `hrda` | Hoyer et al. | ECCV 2022 | [lhoyer/HRDA](https://github.com/lhoyer/HRDA) | Multi-resolution scale attention | [hrda.yaml](../../configs/training_paradigms/domain_adaptation/hrda.yaml) |
+| `pipa` | Chen et al. | ACM MM 2023 | [chen742/PiPa](https://github.com/chen742/PiPa) | Pixel + patch InfoNCE | [pipa.yaml](../../configs/training_paradigms/domain_adaptation/pipa.yaml) |
+| `ddb` | Du et al. | CVPR 2023 | [xinyuelll/DDB](https://github.com/xinyuelll/DDB) | Dual-domain decoupled bridging | [ddb.yaml](../../configs/training_paradigms/domain_adaptation/ddb.yaml) |
+| `sepico` | Xie et al. | TPAMI 2023 | [BIT-DA/SePiCo](https://github.com/BIT-DA/SePiCo) | Semantic pixel contrast + KL | [sepico.yaml](../../configs/training_paradigms/domain_adaptation/sepico.yaml) |
+| `diga` | Shen et al. | CVPR 2023 | [BIT-DA/DiGA](https://github.com/BIT-DA/DiGA) | Distillation-guided adaptation | [diga.yaml](../../configs/training_paradigms/domain_adaptation/diga.yaml) |
+| `micdrop` | Hoyer et al. | ECCV 2024 | [lhoyer/MICDrop](https://github.com/lhoyer/MICDrop) | MIC + complementary feature dropout | [micdrop.yaml](../../configs/training_paradigms/domain_adaptation/micdrop.yaml) |
+| `semivl_da` | Karazija et al. | ECCV 2024 | [google-research/semivl](https://github.com/google-research/semivl) | Vision-language guided self-training | [semivl.yaml](../../configs/training_paradigms/domain_adaptation/semivl.yaml) |
 
 ## YAML Config
 

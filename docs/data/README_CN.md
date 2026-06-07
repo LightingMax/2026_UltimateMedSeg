@@ -82,63 +82,63 @@ data:
 
 ### 腹部与心脏
 
-| 数据集 | 模态 | 类别数 | 规模 | 划分 | 链接 |
+| 数据集 | 模态 | 类别数 | 规模 | 划分 | YAML |
 |--------|------|--------|------|------|------|
-| Synapse | CT | 9（8 器官+背景） | 30 例 | 18 训练 / 12 测试 | [TransUNet](https://github.com/Beckschen/TransUNet) |
-| ACDC | MRI | 4（RV/MYO/LV+背景） | 100 例 | 70/10/20 | [ACDC](https://github.com/Beckschen/TransUNet)|
+| Synapse | CT | 9（8 器官+背景） | 30 例 | 18 训练 / 12 测试 | [synapse.yaml](../../configs/intro_to_datasets/synapse.yaml) |
+| ACDC | MRI | 4（RV/MYO/LV+背景） | 100 例 | 70/10/20 | [acdc.yaml](../../configs/intro_to_datasets/acdc.yaml) |
 
 ### 视网膜
 
-| 数据集 | 任务 | 规模 | 类别数 | 划分 |
-|--------|------|------|--------|------|
-| DRIVE | 血管分割 | 40 张 | 2 | 20/20 官方 |
-| STARE | 血管分割 | 20 张 | 2 | LOO 或跨数据集 |
-| CHASE_DB1 | 血管分割 | 28 张 | 2 | 20 训练 / 8 测试 |
-| HRF | 血管分割（高分辨率） | 45 张 | 2 | 5 折 CV |
-| ARIA | 血管分割（多疾病） | 143 张 | 2 | 5 折 CV |
-| RITE | 动脉/静脉分割 | 40 张 | 3 | 20/20（同 DRIVE） |
-| REFUGE | 视盘/视杯分割 | 1200 张 | 3 | 400/400/400 |
-| Drishti-GS | 视盘/视杯分割 | 101 张 | 3 | 50/51 |
+| 数据集 | 任务 | 规模 | 类别数 | 划分 | YAML |
+|--------|------|------|--------|------|------|
+| DRIVE | 血管分割 | 40 张 | 2 | 20/20 官方 | [drive.yaml](../../configs/intro_to_datasets/drive.yaml) |
+| STARE | 血管分割 | 20 张 | 2 | LOO 或跨数据集 | [stare.yaml](../../configs/intro_to_datasets/stare.yaml) |
+| CHASE_DB1 | 血管分割 | 28 张 | 2 | 20 训练 / 8 测试 | [chase_db1.yaml](../../configs/intro_to_datasets/chase_db1.yaml) |
+| HRF | 血管分割（高分辨率） | 45 张 | 2 | 5 折 CV | [hrf.yaml](../../configs/intro_to_datasets/hrf.yaml) |
+| ARIA | 血管分割（多疾病） | 143 张 | 2 | 5 折 CV | [aria.yaml](../../configs/intro_to_datasets/aria.yaml) |
+| RITE | 动脉/静脉分割 | 40 张 | 3 | 20/20（同 DRIVE） | [rite.yaml](../../configs/intro_to_datasets/rite.yaml) |
+| REFUGE | 视盘/视杯分割 | 1200 张 | 3 | 400/400/400 | [refuge.yaml](../../configs/intro_to_datasets/refuge.yaml) |
+| Drishti-GS | 视盘/视杯分割 | 101 张 | 3 | 50/51 | [drishti_gs.yaml](../../configs/intro_to_datasets/drishti_gs.yaml) |
 
 ### 皮肤病灶
 
-| 数据集 | 规模 | 类别数 | 划分 |
-|--------|------|--------|------|
-| ISIC 2016 | 1279 张 | 2 | 900/379 |
-| ISIC 2017 | 2750 张 | 2 | 2000/150/600 |
-| ISIC 2018 | 3694 张 | 2 | 2594/100/1000 |
-| PH2 | 200 张 | 2 | 5 折 CV 或外部测试 |
+| 数据集 | 规模 | 类别数 | 划分 | YAML |
+|--------|------|--------|------|------|
+| ISIC 2016 | 1279 张 | 2 | 900/379 | [isic2016.yaml](../../configs/intro_to_datasets/isic2016.yaml) |
+| ISIC 2017 | 2750 张 | 2 | 2000/150/600 | [isic2017.yaml](../../configs/intro_to_datasets/isic2017.yaml) |
+| ISIC 2018 | 3694 张 | 2 | 2594/100/1000 | [isic2018.yaml](../../configs/intro_to_datasets/isic2018.yaml) |
+| PH2 | 200 张 | 2 | 5 折 CV 或外部测试 | [ph2.yaml](../../configs/intro_to_datasets/ph2.yaml) |
 
 ### 胃肠息肉
 
-| 数据集 | 规模 | 分辨率 | 划分 |
-|--------|------|--------|------|
-| Kvasir-SEG | 1000 张 | 可变 | 5 折 CV |
-| CVC-ClinicDB | 612 张 | 384x288 | 5 折 CV |
-| CVC-ColonDB | 380 张 | 574x500 | 跨数据集测试 |
+| 数据集 | 规模 | 分辨率 | 划分 | YAML |
+|--------|------|--------|------|------|
+| Kvasir-SEG | 1000 张 | 可变 | 5 折 CV | [kvasir_seg.yaml](../../configs/intro_to_datasets/kvasir_seg.yaml) |
+| CVC-ClinicDB | 612 张 | 384x288 | 5 折 CV | [cvc_clinicdb.yaml](../../configs/intro_to_datasets/cvc_clinicdb.yaml) |
+| CVC-ColonDB | 380 张 | 574x500 | 跨数据集测试 | [cvc_colondb.yaml](../../configs/intro_to_datasets/cvc_colondb.yaml) |
 
 ### 病理
 
-| 数据集 | 组织 | 规模 | 类别数 | 划分 |
-|--------|------|------|--------|------|
-| GlaS | 结肠腺体 | 165 张 | 2 | 85 训练 / 80 测试 |
-| MoNuSeg | 多器官细胞核 | 44 张 | 2 | 30/14 |
-| PanNuke | 泛癌细胞核 | ~7900 patches | 6 | 3 折官方 |
+| 数据集 | 组织 | 规模 | 类别数 | 划分 | YAML |
+|--------|------|------|--------|------|------|
+| GlaS | 结肠腺体 | 165 张 | 2 | 85 训练 / 80 测试 | [glas.yaml](../../configs/intro_to_datasets/glas.yaml) |
+| MoNuSeg | 多器官细胞核 | 44 张 | 2 | 30/14 | [monuseg.yaml](../../configs/intro_to_datasets/monuseg.yaml) |
+| PanNuke | 泛癌细胞核 | ~7900 patches | 6 | 3 折官方 | [pannuke.yaml](../../configs/intro_to_datasets/pannuke.yaml) |
 
 ### 胸部
 
-| 数据集 | 模态 | 规模 | 任务 |
-|--------|------|------|------|
-| Montgomery+Shenzhen | CXR | 800 张 | 肺部分割 |
-| COVID CT Seg | CT | 100 slices | 感染分割（GGO+实变） |
-| QaTa-COV19 | CXR + 文本 | 10501 张 | 新冠感染分割 |
-| MosMedData+ | CT + 文本 | 3674 slices | 新冠感染分割 |
+| 数据集 | 模态 | 规模 | 任务 | YAML |
+|--------|------|------|------|------|
+| Montgomery+Shenzhen | CXR | 800 张 | 肺部分割 | [montgomery_shenzhen_cxr.yaml](../../configs/intro_to_datasets/montgomery_shenzhen_cxr.yaml) |
+| COVID CT Seg | CT | 100 slices | 感染分割（GGO+实变） | [covid_ct_seg.yaml](../../configs/intro_to_datasets/covid_ct_seg.yaml) |
+| QaTa-COV19 | CXR + 文本 | 10501 张 | 新冠感染分割 | [qata_covid19.yaml](../../configs/intro_to_datasets/qata_covid19.yaml) |
+| MosMedData+ | CT + 文本 | 3674 slices | 新冠感染分割 | [mosmed_plus.yaml](../../configs/intro_to_datasets/mosmed_plus.yaml) |
 
 ### 超声
 
-| 数据集 | 器官 | 规模 | 类别数 |
-|--------|------|------|--------|
-| BUSI | 乳腺 | 647 张 | 2（病灶） |
+| 数据集 | 器官 | 规模 | 类别数 | YAML |
+|--------|------|------|--------|------|
+| BUSI | 乳腺 | 647 张 | 2（病灶） | [busi.yaml](../../configs/intro_to_datasets/busi.yaml) |
 
 ---
 

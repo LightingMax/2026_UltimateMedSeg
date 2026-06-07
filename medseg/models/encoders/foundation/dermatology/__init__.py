@@ -2,7 +2,7 @@
 
 import sys as _sys
 import warnings as _warnings
-for _stem in ('dermclip_encoder', 'monet_derm_encoder', 'derm_foundation_encoder', 'panderm_encoder'):
+for _stem in ('dermclip_encoder', 'monet_derm_encoder', 'panderm_encoder'):
     try:
         _mod = __import__('medseg.models.encoders.foundation.dermatology.' + _stem, fromlist=[_stem])
         _sys.modules['medseg.models.encoders.foundation.' + _stem] = _mod

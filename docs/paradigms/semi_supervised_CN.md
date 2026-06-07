@@ -6,33 +6,33 @@
 
 ## 方法列表
 
-| 方法 | 论文 | 发表 | GitHub | 说明 |
-|------|------|------|--------|------|
-| `mean_teacher` | Tarvainen & Valpola | NeurIPS 2017 | [CuriousAI/mean-teacher](https://github.com/CuriousAI/mean-teacher) | EMA 教师一致性 |
-| `cps` | Chen et al. | CVPR 2021 | [charlesCXK/TorchSemiSeg](https://github.com/charlesCXK/TorchSemiSeg) | 交叉伪监督 |
-| `cct` | Ouali et al. | BMVC 2020 | [yassouali/CCT](https://github.com/yassouali/CCT) | 交叉一致性 |
-| `unimatch` | Yang et al. | CVPR 2023 | [LiheYoung/UniMatch](https://github.com/LiheYoung/UniMatch) | 统一双流匹配 |
-| `fixmatch` | Sohn et al. | NeurIPS 2020 | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | 伪标签 + 强增强 |
-| `urpc` | Luo et al. | MIA 2022 | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | 不确定性修正伪标签 |
-| `deep_co_training` | Qiao et al. | ECCV 2018 | [AlanChou/Deep-Co-Training](https://github.com/AlanChou/Deep-Co-Training-for-Semi-Supervised-Image-Recognition) | 双网络协同训练 |
-| `flexmatch` | Zhang et al. | NeurIPS 2021 | [TorchSSL/TorchSSL](https://github.com/TorchSSL/TorchSSL) | 课程伪标签 |
-| `softmatch` | Chen et al. | ICLR 2023 | [microsoft/Semi-supervised-learning](https://github.com/microsoft/Semi-supervised-learning) | 软阈值 |
-| `freematch` | Wang et al. | ICLR 2023 | [microsoft/Semi-supervised-learning](https://github.com/microsoft/Semi-supervised-learning) | 自适应阈值 |
-| `ua_mt` | Yu et al. | MICCAI 2019 | [yulequan/UA-MT](https://github.com/yulequan/UA-MT) | 不确定性感知均值教师 |
-| `ssl4mis_u` | SSL4MIS 不确定性 | - | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | MC-Dropout 不确定性 |
-| `pi_model` | Laine & Aila | ICLR 2017 | [smlaine2/tempens](https://github.com/smlaine2/tempens) | 随机扰动 |
-| `temporal_ensembling` | Laine & Aila | ICLR 2017 | [smlaine2/tempens](https://github.com/smlaine2/tempens) | 逐样本 EMA 目标 |
-| `pseudo_label` | Lee | ICML-W 2013 | [iBelieveCJM/pseudo_label](https://github.com/iBelieveCJM/pseudo_label-pytorch) | 硬伪标签 |
-| `ict` | Verma et al. | IJCAI 2019 | [vikasverma1077/ICT](https://github.com/vikasverma1077/ICT) | 插值一致性 |
-| `r_drop` | Wu et al. | NeurIPS 2021 | [dropreg/R-Drop](https://github.com/dropreg/R-Drop) | 正则化 dropout |
-| `cross_teaching` | Luo et al. | MIDL 2022 | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | CNN-Transformer 交叉教学 |
-| `augseg` | Zhao et al. | CVPR 2023 | [ZhenZHAO/AugSeg](https://github.com/ZhenZHAO/AugSeg) | 增强策略研究 |
-| `corrmatch` | Sun et al. | CVPR 2024 | [BBBBchan/CorrMatch](https://github.com/BBBBchan/CorrMatch) | 相关性匹配 |
-| `allspark` | Wang et al. | CVPR 2024 | [xmed-lab/AllSpark](https://github.com/xmed-lab/AllSpark) | 重生有标签 token |
-| `ddfp` | Wang et al. | CVPR 2024 | [Cuzyoung/DDFP](https://github.com/Cuzyoung/DDFP) | 扩散去噪伪标签 |
-| `diffrect` | Liu et al. | MICCAI 2024 | [CUHK-AIM-Group/DiffRect](https://github.com/CUHK-AIM-Group/DiffRect) | 潜在扩散伪标签修正 |
-| `ad_mt` | Zhao et al. | ECCV 2024 | [ZhenZHAO/AD-MT](https://github.com/ZhenZHAO/AD-MT) | 交替多样化教学 |
-| `pmt` | Gao et al. | ECCV 2024 | [Axi404/PMT](https://github.com/Axi404/PMT) | 渐进均值教师 |
+| 方法 | 论文 | 发表 | GitHub | 说明 | YAML |
+|------|------|------|--------|------|------|
+| `mean_teacher` | Tarvainen & Valpola | NeurIPS 2017 | [CuriousAI/mean-teacher](https://github.com/CuriousAI/mean-teacher) | EMA 教师一致性 | [mean_teacher.yaml](../../configs/training_paradigms/semi_supervision/mean_teacher.yaml) |
+| `cps` | Chen et al. | CVPR 2021 | [charlesCXK/TorchSemiSeg](https://github.com/charlesCXK/TorchSemiSeg) | 交叉伪监督 | [cps.yaml](../../configs/training_paradigms/semi_supervision/cps.yaml) |
+| `cct` | Ouali et al. | BMVC 2020 | [yassouali/CCT](https://github.com/yassouali/CCT) | 交叉一致性 | [cct.yaml](../../configs/training_paradigms/semi_supervision/cct.yaml) |
+| `unimatch` | Yang et al. | CVPR 2023 | [LiheYoung/UniMatch](https://github.com/LiheYoung/UniMatch) | 统一双流匹配 | [unimatch.yaml](../../configs/training_paradigms/semi_supervision/unimatch.yaml) |
+| `fixmatch` | Sohn et al. | NeurIPS 2020 | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | 伪标签 + 强增强 | [fixmatch.yaml](../../configs/training_paradigms/semi_supervision/fixmatch.yaml) |
+| `urpc` | Luo et al. | MIA 2022 | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | 不确定性修正伪标签 | [urpc.yaml](../../configs/training_paradigms/semi_supervision/urpc.yaml) |
+| `deep_co_training` | Qiao et al. | ECCV 2018 | [AlanChou/Deep-Co-Training](https://github.com/AlanChou/Deep-Co-Training-for-Semi-Supervised-Image-Recognition) | 双网络协同训练 | [deep_co_training.yaml](../../configs/training_paradigms/semi_supervision/deep_co_training.yaml) |
+| `flexmatch` | Zhang et al. | NeurIPS 2021 | [TorchSSL/TorchSSL](https://github.com/TorchSSL/TorchSSL) | 课程伪标签 | [flexmatch.yaml](../../configs/training_paradigms/semi_supervision/flexmatch.yaml) |
+| `softmatch` | Chen et al. | ICLR 2023 | [microsoft/Semi-supervised-learning](https://github.com/microsoft/Semi-supervised-learning) | 软阈值 | [softmatch.yaml](../../configs/training_paradigms/semi_supervision/softmatch.yaml) |
+| `freematch` | Wang et al. | ICLR 2023 | [microsoft/Semi-supervised-learning](https://github.com/microsoft/Semi-supervised-learning) | 自适应阈值 | [freematch.yaml](../../configs/training_paradigms/semi_supervision/freematch.yaml) |
+| `ua_mt` | Yu et al. | MICCAI 2019 | [yulequan/UA-MT](https://github.com/yulequan/UA-MT) | 不确定性感知均值教师 | [ua_mt.yaml](../../configs/training_paradigms/semi_supervision/ua_mt.yaml) |
+| `ssl4mis_u` | SSL4MIS 不确定性 | - | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | MC-Dropout 不确定性 | [ssl4mis_u.yaml](../../configs/training_paradigms/semi_supervision/ssl4mis_u.yaml) |
+| `pi_model` | Laine & Aila | ICLR 2017 | [smlaine2/tempens](https://github.com/smlaine2/tempens) | 随机扰动 | [pi_model.yaml](../../configs/training_paradigms/semi_supervision/pi_model.yaml) |
+| `temporal_ensembling` | Laine & Aila | ICLR 2017 | [smlaine2/tempens](https://github.com/smlaine2/tempens) | 逐样本 EMA 目标 | [temporal_ensembling.yaml](../../configs/training_paradigms/semi_supervision/temporal_ensembling.yaml) |
+| `pseudo_label` | Lee | ICML-W 2013 | [iBelieveCJM/pseudo_label](https://github.com/iBelieveCJM/pseudo_label-pytorch) | 硬伪标签 | [pseudo_label.yaml](../../configs/training_paradigms/semi_supervision/pseudo_label.yaml) |
+| `ict` | Verma et al. | IJCAI 2019 | [vikasverma1077/ICT](https://github.com/vikasverma1077/ICT) | 插值一致性 | [ict.yaml](../../configs/training_paradigms/semi_supervision/ict.yaml) |
+| `r_drop` | Wu et al. | NeurIPS 2021 | [dropreg/R-Drop](https://github.com/dropreg/R-Drop) | 正则化 dropout | [r_drop.yaml](../../configs/training_paradigms/semi_supervision/r_drop.yaml) |
+| `cross_teaching` | Luo et al. | MIDL 2022 | [HiLab-git/SSL4MIS](https://github.com/HiLab-git/SSL4MIS) | CNN-Transformer 交叉教学 | [cross_teaching.yaml](../../configs/training_paradigms/semi_supervision/cross_teaching.yaml) |
+| `augseg` | Zhao et al. | CVPR 2023 | [ZhenZHAO/AugSeg](https://github.com/ZhenZHAO/AugSeg) | 增强策略研究 | - |
+| `corrmatch` | Sun et al. | CVPR 2024 | [BBBBchan/CorrMatch](https://github.com/BBBBchan/CorrMatch) | 相关性匹配 | [corrmatch.yaml](../../configs/training_paradigms/semi_supervision/corrmatch.yaml) |
+| `allspark` | Wang et al. | CVPR 2024 | [xmed-lab/AllSpark](https://github.com/xmed-lab/AllSpark) | 重生有标签 token | [allspark.yaml](../../configs/training_paradigms/semi_supervision/allspark.yaml) |
+| `ddfp` | Wang et al. | CVPR 2024 | [Cuzyoung/DDFP](https://github.com/Cuzyoung/DDFP) | 扩散去噪伪标签 | - |
+| `diffrect` | Liu et al. | MICCAI 2024 | [CUHK-AIM-Group/DiffRect](https://github.com/CUHK-AIM-Group/DiffRect) | 潜在扩散伪标签修正 | [diffrect.yaml](../../configs/training_paradigms/semi_supervision/diffrect.yaml) |
+| `ad_mt` | Zhao et al. | ECCV 2024 | [ZhenZHAO/AD-MT](https://github.com/ZhenZHAO/AD-MT) | 交替多样化教学 | - |
+| `pmt` | Gao et al. | ECCV 2024 | [Axi404/PMT](https://github.com/Axi404/PMT) | 渐进均值教师 | - |
 
 ## 配置示例
 

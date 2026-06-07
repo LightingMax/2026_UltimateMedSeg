@@ -8,102 +8,102 @@
 
 基础上采样解码器。
 
-| 名称 | 说明 |
-|---|---|
-| `unet` | 标准 UNet 反卷积解码器 |
-| `bilinear` | 双线性插值上采样 |
-| `deconv` | 转置卷积上采样 |
-| `dw_sep` | 深度可分离卷积解码器 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `unet` | 标准 UNet 反卷积解码器 | [unet_basic](../../configs/architectures/combinations/general/unet_basic.yaml) |
+| `bilinear` | 双线性插值上采样 | [bilinear](../../configs/architectures/combinations/general/bilinear_basic.yaml) |
+| `deconv` | 转置卷积上采样 | [deconv](../../configs/architectures/combinations/general/deconv_resnet34.yaml) |
+| `dw_sep` | 深度可分离卷积解码器 | [dw_sep](../../configs/architectures/combinations/general/dwsep_resnet34.yaml) |
 
 ## 密集连接 (2)
 
 密集连接解码器。
 
-| 名称 | 说明 |
-|---|---|
-| `unetpp` | UNet++ 密集嵌套解码器 |
-| `unet3plus` | UNet 3+ 全尺度跳跃连接解码器 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `unetpp` | UNet++ 密集嵌套解码器 | [unetpp](../../configs/architectures/combinations/general/unetpp_emcad.yaml) |
+| `unet3plus` | UNet 3+ 全尺度跳跃连接解码器 | [unet3plus](../../configs/architectures/combinations/general/unet3plus_basic.yaml) |
 
 ## 级联 (10)
 
 级联解码器，逐步细化分割结果。
 
-| 名称 | 说明 |
-|---|---|
-| `cascade` | CASCADE 级联解码器 |
-| `cascade_full` | CASCADE 完整版解码器 |
-| `cascade_emcad` | CASCADE + EMCAD 混合 |
-| `cfm` | CFM 级联特征融合 |
-| `emcad` | EMCAD 高效多尺度级联注意力解码器 |
-| `edldnet` | EDLDNet 解码器 |
-| `gcascade` | G-CASCADE（add 融合） |
-| `gcascade_cat` | G-CASCADE（concat 融合） |
-| `merit_add` | MERIT 解码器（add 融合） |
-| `merit_cat` | MERIT 解码器（concat 融合） |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `cascade` | CASCADE 级联解码器 | [cascade_resnet34](../../configs/architectures/combinations/general/cascade_resnet34.yaml) |
+| `cascade_full` | CASCADE 完整版解码器 | [transunet_cascade_full](../../configs/architectures/combinations/general/transunet_cascade_full.yaml) |
+| `cascade_emcad` | CASCADE + EMCAD 混合 | [mednext_cascade_emcad](../../configs/architectures/combinations/general/mednext_cascade_emcad.yaml) |
+| `cfm` | CFM 级联特征融合 | [mednext_cfm](../../configs/architectures/combinations/general/mednext_cfm.yaml) |
+| `emcad` | EMCAD 高效多尺度级联注意力解码器 | [mednext_emcad](../../configs/architectures/combinations/general/mednext_emcad.yaml) |
+| `edldnet` | EDLDNet 解码器 | [pvtv2_edldnet](../../configs/architectures/combinations/general/pvtv2_edldnet.yaml) |
+| `gcascade` | G-CASCADE（add 融合） | [pvtv2_gcascade](../../configs/architectures/combinations/general/pvtv2_gcascade.yaml) |
+| `gcascade_cat` | G-CASCADE（concat 融合） | [gcascade_cat](../../configs/architectures/combinations/general/gcascade_cat_basic.yaml) |
+| `merit_add` | MERIT 解码器（add 融合） | [merit_add](../../configs/architectures/combinations/general/merit_add_basic.yaml) |
+| `merit_cat` | MERIT 解码器（concat 融合） | [merit_cat](../../configs/architectures/combinations/general/merit_cat_basic.yaml) |
 
 ## 金字塔 (1)
 
 金字塔聚合解码器。
 
-| 名称 | 说明 |
-|---|---|
-| `upernet` | UPerNet 统一感知金字塔 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `upernet` | UPerNet 统一感知金字塔 | [upernet](../../configs/architectures/combinations/general/upernet_basic.yaml) |
 
 ## MLP (2)
 
 MLP 解码器。
 
-| 名称 | 说明 |
-|---|---|
-| `mlp` | 通用 MLP 解码器 |
-| `segformer` | SegFormer 风格 MLP 解码器 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `mlp` | 通用 MLP 解码器 | [mlp_resnet34](../../configs/architectures/combinations/general/mlp_resnet34.yaml) |
+| `segformer` | SegFormer 风格 MLP 解码器 | [swinunet_segformer](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 
 ## 特定网络专属 (12)
 
 特定网络专属解码器。
 
-| 名称 | 对应网络 |
-|---|---|
-| `cfanet` | CFA-Net |
-| `dcsaunet` | DCSAU-Net |
-| `rwkv_unet` | RWKV-UNet |
-| `kiunet` | KiU-Net |
-| `transunet` | TransUNet (CUP) |
-| `fatnet` | FAT-Net |
-| `h2former` | H2Former |
-| `hiformer` | HiFormer |
-| `missformer` | MISSFormer |
-| `scaleformer` | ScaleFormer |
-| `malunet` | MALUNet |
-| `ege_unet` | EGE-UNet |
+| 名称 | 对应网络 | YAML |
+|---|---|---|
+| `cfanet` | CFA-Net | [cfanet](../../configs/architectures/combinations/general/cfanet_basic.yaml) |
+| `dcsaunet` | DCSAU-Net | [dcsaunet](../../configs/architectures/combinations/general/dcsaunet_basic.yaml) |
+| `rwkv_unet` | RWKV-UNet | [rwkv_unet](../../configs/architectures/combinations/general/rwkv_unet.yaml) |
+| `kiunet` | KiU-Net | [kiunet](../../configs/architectures/combinations/general/kiunet_basic.yaml) |
+| `transunet` | TransUNet (CUP) | [transunet](../../configs/architectures/combinations/general/transunet_cascade_full.yaml) |
+| `fatnet` | FAT-Net | [fatnet](../../configs/architectures/combinations/general/fatnet_basic.yaml) |
+| `h2former` | H2Former | [h2former](../../configs/architectures/combinations/general/h2former_basic.yaml) |
+| `hiformer` | HiFormer | [hiformer](../../configs/architectures/combinations/general/hiformer_cascade.yaml) |
+| `missformer` | MISSFormer | [missformer](../../configs/architectures/combinations/general/missformer_basic.yaml) |
+| `scaleformer` | ScaleFormer | [scaleformer](../../configs/architectures/combinations/general/scaleformer_cascade_full.yaml) |
+| `malunet` | MALUNet | [malunet](../../configs/architectures/combinations/general/malunet_basic.yaml) |
+| `ege_unet` | EGE-UNet | [ege_unet](../../configs/architectures/combinations/general/ege_unet_basic.yaml) |
 
 ## Transformer (5)
 
 Transformer 解码器。
 
-| 名称 | 说明 |
-|---|---|
-| `daeformer` | DAEFormer 解码器 |
-| `mtunet` | MT-UNet 解码器 |
-| `nnformer` | nnFormer 解码器 |
-| `swinunet` | Swin-UNet 解码器 |
-| `uctransnet` | UCTransNet 解码器 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `daeformer` | DAEFormer 解码器 | [daeformer](../../configs/architectures/combinations/general/daeformer_emcad.yaml) |
+| `mtunet` | MT-UNet 解码器 | [mtunet](../../configs/architectures/combinations/general/mtunet_basic.yaml) |
+| `nnformer` | nnFormer 解码器 | [mednext_nnformer](../../configs/architectures/combinations/general/mednext_nnformer.yaml) |
+| `swinunet` | Swin-UNet 解码器 | [swinunet](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
+| `uctransnet` | UCTransNet 解码器 | [uctransnet](../../configs/architectures/combinations/general/uctransnet.yaml) |
 
 ## 注意力 (3)
 
 注意力机制解码器。
 
-| 名称 | 说明 |
-|---|---|
-| `attention` | 注意力门控解码器 |
-| `ham` | HAM 混合注意力 |
-| `lawin` | Lawin 大窗口注意力 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `attention` | 注意力门控解码器 | [attention_unet](../../configs/architectures/combinations/general/attention_unet_basic.yaml) |
+| `ham` | HAM 混合注意力 | [ham_resnet34](../../configs/architectures/combinations/general/ham_resnet34.yaml) |
+| `lawin` | Lawin 大窗口注意力 | [lawin_resnet50](../../configs/architectures/combinations/general/lawin_resnet50.yaml) |
 
 ## Mamba (1)
 
-| 名称 | 说明 |
-|---|---|
-| `vmunet` | VM-UNet Mamba 解码器 |
+| 名称 | 说明 | YAML |
+|---|---|---|
+| `vmunet` | VM-UNet Mamba 解码器 | [vmunet](../../configs/architectures/combinations/general/vm_unet_basic.yaml) |
 
 ---
 

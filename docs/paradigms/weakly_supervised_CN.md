@@ -8,41 +8,41 @@
 
 ### 核心方法 (16)
 
-| 方法 | 论文 | 发表 | 说明 |
-|------|------|------|------|
-| `box_supervised` | BoxSup family | - | 框监督：框生成掩码 + 前景/背景 CE |
-| `cam` | Zhou et al. / Selvaraju et al. | CVPR 2016 / ICCV 2017 | 类激活映射 (Grad-CAM) |
-| `mil` | 多实例学习 | - | 图像级多实例学习 |
-| `em_pseudo_label` | EM 优化 | - | EM 伪标签优化 |
-| `point` | Bearman et al. | ECCV 2016 | 点监督 |
-| `gated_crf` | Obukhov et al. | NeurIPS 2019 | 可微 CRF |
-| `affinity` | AffinityNet 风格 | - | 像素亲和传播 |
-| `tree_energy` | 树能量 | - | 树结构能量最小化 |
-| `seam` | Wang et al. | CVPR 2020 | 自监督等变注意力 |
-| `puzzle_cam` | Jo & Yu | ICIP 2021 | 拼图匹配 CAM |
-| `advcam` | Lee et al. | CVPR 2021 | 对抗互补擦除 |
-| `mctformer` | Xu et al. | CVPR 2022 | 多类 token transformer |
-| `sam_guided_weak` | SAM 引导 | - | SAM 伪标签优化 |
-| `iseg` | 交互式分割 | - | 基于点击的交互式监督 |
-| `click_supervision` | 基于点击 | - | 点击点监督 |
-| `scribble_sup` | 涂鸦监督 | - | 涂鸦标注监督 |
+| 方法 | 论文 | 发表 | 说明 | YAML |
+|------|------|------|------|------|
+| `box_supervised` | BoxSup family | - | 框监督：框生成掩码 + 前景/背景 CE | [box_supervised.yaml](../../configs/training_paradigms/weak_supervision/box_supervised.yaml) |
+| `cam` | Zhou et al. / Selvaraju et al. | CVPR 2016 / ICCV 2017 | 类激活映射 (Grad-CAM) | [cam.yaml](../../configs/training_paradigms/weak_supervision/cam.yaml) |
+| `mil` | 多实例学习 | - | 图像级多实例学习 | - |
+| `em_pseudo_label` | EM 优化 | - | EM 伪标签优化 | - |
+| `point` | Bearman et al. | ECCV 2016 | 点监督 | [point.yaml](../../configs/training_paradigms/weak_supervision/point.yaml) |
+| `gated_crf` | Obukhov et al. | NeurIPS 2019 | 可微 CRF | [gated_crf.yaml](../../configs/training_paradigms/weak_supervision/gated_crf.yaml) |
+| `affinity` | AffinityNet 风格 | - | 像素亲和传播 | [affinity.yaml](../../configs/training_paradigms/weak_supervision/affinity.yaml) |
+| `tree_energy` | 树能量 | - | 树结构能量最小化 | [tree_energy.yaml](../../configs/training_paradigms/weak_supervision/tree_energy.yaml) |
+| `seam` | Wang et al. | CVPR 2020 | 自监督等变注意力 | - |
+| `puzzle_cam` | Jo & Yu | ICIP 2021 | 拼图匹配 CAM | - |
+| `advcam` | Lee et al. | CVPR 2021 | 对抗互补擦除 | - |
+| `mctformer` | Xu et al. | CVPR 2022 | 多类 token transformer | - |
+| `sam_guided_weak` | SAM 引导 | - | SAM 伪标签优化 | - |
+| `iseg` | 交互式分割 | - | 基于点击的交互式监督 | - |
+| `click_supervision` | 基于点击 | - | 点击点监督 | - |
+| `scribble_sup` | 涂鸦监督 | - | 涂鸦标注监督 | [scribble_sup.yaml](../../configs/training_paradigms/weak_supervision/scribble_sup.yaml) |
 
 ### 扩展方法 (12)
 
-| 方法 | 论文 | 发表 | GitHub | 说明 |
-|------|------|------|--------|------|
-| `eps` | EPS | - | - | 显式伪标签监督 |
-| `boxinst` | BoxInst | - | - | 框级实例分割 |
-| `recam` | ReCAM | - | - | 重加权 CAM |
-| `toco` | ToCo | - | - | Token 对比 |
-| `lpcam` | LPCAM | - | - | 低通滤波 CAM |
-| `mars` | MARS | - | - | 掩码感知精炼 |
-| `bacon` | BACoN | - | - | 背景感知对比网络 |
-| `wpgseg` | WPGSeg | - | - | 弱监督渐进引导 |
-| `dupl` | DuPL | - | - | 双伪标签 |
-| `more` | MoRe | - | - | 动量精炼 |
-| `psdpm` | PSDPM | - | - | 先验伪标签去噪 |
-| `semples` | SemPLeS | - | - | 语义伪标签选择 |
+| 方法 | 论文 | 发表 | GitHub | 说明 | YAML |
+|------|------|------|--------|------|------|
+| `eps` | EPS | - | - | 显式伪标签监督 | [eps.yaml](../../configs/training_paradigms/weak_supervision/eps.yaml) |
+| `boxinst` | BoxInst | - | - | 框级实例分割 | [boxinst.yaml](../../configs/training_paradigms/weak_supervision/boxinst.yaml) |
+| `recam` | ReCAM | - | - | 重加权 CAM | [recam.yaml](../../configs/training_paradigms/weak_supervision/recam.yaml) |
+| `toco` | ToCo | - | - | Token 对比 | [toco.yaml](../../configs/training_paradigms/weak_supervision/toco.yaml) |
+| `lpcam` | LPCAM | - | - | 低通滤波 CAM | [lpcam.yaml](../../configs/training_paradigms/weak_supervision/lpcam.yaml) |
+| `mars` | MARS | - | - | 掩码感知精炼 | [mars.yaml](../../configs/training_paradigms/weak_supervision/mars.yaml) |
+| `bacon` | BACoN | - | - | 背景感知对比网络 | [bacon.yaml](../../configs/training_paradigms/weak_supervision/bacon.yaml) |
+| `wpgseg` | WPGSeg | - | - | 弱监督渐进引导 | [wpgseg.yaml](../../configs/training_paradigms/weak_supervision/wpgseg.yaml) |
+| `dupl` | DuPL | - | - | 双伪标签 | [dupl.yaml](../../configs/training_paradigms/weak_supervision/dupl.yaml) |
+| `more` | MoRe | - | - | 动量精炼 | [more.yaml](../../configs/training_paradigms/weak_supervision/more.yaml) |
+| `psdpm` | PSDPM | - | - | 先验伪标签去噪 | [psdpm.yaml](../../configs/training_paradigms/weak_supervision/psdpm.yaml) |
+| `semples` | SemPLeS | - | - | 语义伪标签选择 | [semples.yaml](../../configs/training_paradigms/weak_supervision/semples.yaml) |
 
 ## 标注格式
 

@@ -10,20 +10,20 @@ Two text-guided paradigms: trainable models (end-to-end) and inference pipelines
 
 All 2D end-to-end text-vision segmentation models in `medseg/models/text_unet/`.
 
-| Key | Model | Paper | Published | GitHub |
-|-----|-------|-------|-------|--------|
-| `tganet` | TGANet | Tomar et al. | MICCAI 2022 | [nikhilroxtomar/TGANet](https://github.com/nikhilroxtomar/TGANet) |
-| `lvit` | LViT | Li et al. | TMI 2023 | [HUANGLIZI/LViT](https://github.com/HUANGLIZI/LViT) |
-| `languide` | LanGuideMedSeg | Zhong et al. | MICCAI 2023 | [Junelin2333/LanGuideMedSeg-MICCAI2023](https://github.com/Junelin2333/LanGuideMedSeg-MICCAI2023) |
-| `clip_universal` | CLIP-Driven Universal Model | Liu et al. | ICCV 2023 | [ljwztc/CLIP-Driven-Universal-Model](https://github.com/ljwztc/CLIP-Driven-Universal-Model) |
-| `cris` | CRIS | Wang et al. | CVPR 2022 | [DerrickWang005/CRIS.pytorch](https://github.com/DerrickWang005/CRIS.pytorch) |
-| `biomedparse` | BiomedParse | Zhao et al. | Nature Methods 2024 | [microsoft/BiomedParse](https://github.com/microsoft/BiomedParse) |
-| `tpro` | TPRO | Zhang et al. | MICCAI 2023 | [shijun18/TPRO](https://github.com/shijun18/TPRO) |
-| `salip` | SaLIP | Aleem et al. | BMVC 2024 | [aleemsidra/SaLIP](https://github.com/aleemsidra/SaLIP) |
-| `causal_clipseg` | CausalCLIPSeg | Chen et al. | MICCAI 2024 | [WUTCM-Lab/CausalCLIPSeg](https://github.com/WUTCM-Lab/CausalCLIPSeg) |
-| `medclip_sam` | MedCLIP-SAM | Koleilat et al. | MICCAI 2024 | [HealthX-Lab/MedCLIP-SAM](https://github.com/HealthX-Lab/MedCLIP-SAM) |
-| `tp_drseg` | TPDRSeg | - | - | - |
-| `cxrclipseg` | CXRCLIPSeg | - | - | - |
+| Key | Model | Paper | Published | GitHub | YAML |
+|-----|-------|-------|-------|--------|------|
+| `tganet` | TGANet | Tomar et al. | MICCAI 2022 | [nikhilroxtomar/TGANet](https://github.com/nikhilroxtomar/TGANet) | - |
+| `lvit` | LViT | Li et al. | TMI 2023 | [HUANGLIZI/LViT](https://github.com/HUANGLIZI/LViT) | [mosmed_plus_lvit.yaml](../../configs/training_paradigms/text_guided/mosmed_plus_lvit.yaml), [qata_covid19_lvit.yaml](../../configs/training_paradigms/text_guided/qata_covid19_lvit.yaml) |
+| `languide` | LanGuideMedSeg | Zhong et al. | MICCAI 2023 | [Junelin2333/LanGuideMedSeg-MICCAI2023](https://github.com/Junelin2333/LanGuideMedSeg-MICCAI2023) | [mosmed_plus_languide.yaml](../../configs/training_paradigms/text_guided/mosmed_plus_languide.yaml), [qata_covid19_languide.yaml](../../configs/training_paradigms/text_guided/qata_covid19_languide.yaml) |
+| `clip_universal` | CLIP-Driven Universal Model | Liu et al. | ICCV 2023 | [ljwztc/CLIP-Driven-Universal-Model](https://github.com/ljwztc/CLIP-Driven-Universal-Model) | - |
+| `cris` | CRIS | Wang et al. | CVPR 2022 | [DerrickWang005/CRIS.pytorch](https://github.com/DerrickWang005/CRIS.pytorch) | - |
+| `biomedparse` | BiomedParse | Zhao et al. | Nature Methods 2024 | [microsoft/BiomedParse](https://github.com/microsoft/BiomedParse) | - |
+| `tpro` | TPRO | Zhang et al. | MICCAI 2023 | [shijun18/TPRO](https://github.com/shijun18/TPRO) | - |
+| `salip` | SaLIP | Aleem et al. | BMVC 2024 | [aleemsidra/SaLIP](https://github.com/aleemsidra/SaLIP) | - |
+| `causal_clipseg` | CausalCLIPSeg | Chen et al. | MICCAI 2024 | [WUTCM-Lab/CausalCLIPSeg](https://github.com/WUTCM-Lab/CausalCLIPSeg) | [synapse_clip.yaml](../../configs/training_paradigms/text_guided/synapse_clip.yaml) |
+| `medclip_sam` | MedCLIP-SAM | Koleilat et al. | MICCAI 2024 | [HealthX-Lab/MedCLIP-SAM](https://github.com/HealthX-Lab/MedCLIP-SAM) | - |
+| `tp_drseg` | TPDRSeg | - | - | - | - |
+| `cxrclipseg` | CXRCLIPSeg | - | - | - | - |
 
 ### Text Input Format
 

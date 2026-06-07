@@ -8,41 +8,41 @@
 
 ### Core Methods (16)
 
-| Method | Paper | Published | Description |
-|--------|-------|-------|-------------|
-| `box_supervised` | BoxSup family | - | Box-only mask + FG/BG CE |
-| `cam` | Zhou et al. / Selvaraju et al. | CVPR 2016 / ICCV 2017 | Class Activation Mapping (Grad-CAM) |
-| `mil` | Multi-instance learning | - | Image-level label MIL |
-| `em_pseudo_label` | EM refinement | - | EM pseudo mask refinement |
-| `point` | Bearman et al. | ECCV 2016 | Point supervision |
-| `gated_crf` | Obukhov et al. | NeurIPS 2019 | Differentiable CRF |
-| `affinity` | AffinityNet style | - | Pixel affinity propagation |
-| `tree_energy` | Tree energy | - | Tree-structured energy minimization |
-| `seam` | Wang et al. | CVPR 2020 | Self-supervised equivariant attention |
-| `puzzle_cam` | Jo & Yu | ICIP 2021 | Puzzle piece matching CAM |
-| `advcam` | Lee et al. | CVPR 2021 | Adversarial complementary erasing |
-| `mctformer` | Xu et al. | CVPR 2022 | Multi-class token transformer |
-| `sam_guided_weak` | SAM-guided | - | SAM pseudo-mask refinement |
-| `iseg` | Interactive seg | - | Interactive click-based supervision |
-| `click_supervision` | Click-based | - | Click point supervision |
-| `scribble_sup` | Scribble supervision | - | Scribble annotation supervision |
+| Method | Paper | Published | Description | YAML |
+|--------|-------|-------|-------------|------|
+| `box_supervised` | BoxSup family | - | Box-only mask + FG/BG CE | [box_supervised.yaml](../../configs/training_paradigms/weak_supervision/box_supervised.yaml) |
+| `cam` | Zhou et al. / Selvaraju et al. | CVPR 2016 / ICCV 2017 | Class Activation Mapping (Grad-CAM) | [cam.yaml](../../configs/training_paradigms/weak_supervision/cam.yaml) |
+| `mil` | Multi-instance learning | - | Image-level label MIL | - |
+| `em_pseudo_label` | EM refinement | - | EM pseudo mask refinement | - |
+| `point` | Bearman et al. | ECCV 2016 | Point supervision | [point.yaml](../../configs/training_paradigms/weak_supervision/point.yaml) |
+| `gated_crf` | Obukhov et al. | NeurIPS 2019 | Differentiable CRF | [gated_crf.yaml](../../configs/training_paradigms/weak_supervision/gated_crf.yaml) |
+| `affinity` | AffinityNet style | - | Pixel affinity propagation | [affinity.yaml](../../configs/training_paradigms/weak_supervision/affinity.yaml) |
+| `tree_energy` | Tree energy | - | Tree-structured energy minimization | [tree_energy.yaml](../../configs/training_paradigms/weak_supervision/tree_energy.yaml) |
+| `seam` | Wang et al. | CVPR 2020 | Self-supervised equivariant attention | - |
+| `puzzle_cam` | Jo & Yu | ICIP 2021 | Puzzle piece matching CAM | - |
+| `advcam` | Lee et al. | CVPR 2021 | Adversarial complementary erasing | - |
+| `mctformer` | Xu et al. | CVPR 2022 | Multi-class token transformer | - |
+| `sam_guided_weak` | SAM-guided | - | SAM pseudo-mask refinement | - |
+| `iseg` | Interactive seg | - | Interactive click-based supervision | - |
+| `click_supervision` | Click-based | - | Click point supervision | - |
+| `scribble_sup` | Scribble supervision | - | Scribble annotation supervision | [scribble_sup.yaml](../../configs/training_paradigms/weak_supervision/scribble_sup.yaml) |
 
 ### Extended Methods (12)
 
-| Method | Paper | Published | GitHub | Description |
-|--------|-------|-------|--------|-------------|
-| `eps` | EPS | - | - | Explicit pseudo-label supervision |
-| `boxinst` | BoxInst | - | - | Box-level instance segmentation |
-| `recam` | ReCAM | - | - | Re-weighted CAM |
-| `toco` | ToCo | - | - | Token contrast |
-| `lpcam` | LPCAM | - | - | Low-pass filtered CAM |
-| `mars` | MARS | - | - | Mask-aware refinement |
-| `bacon` | BACoN | - | - | Background-aware contrastive network |
-| `wpgseg` | WPGSeg | - | - | Weakly-supervised progressive guided |
-| `dupl` | DuPL | - | - | Dual pseudo label |
-| `more` | MoRe | - | - | Momentum refinement |
-| `psdpm` | PSDPM | - | - | Pseudo-label denoising with prior |
-| `semples` | SemPLeS | - | - | Semantic pseudo label selection |
+| Method | Paper | Published | GitHub | Description | YAML |
+|--------|-------|-------|--------|-------------|------|
+| `eps` | EPS | - | - | Explicit pseudo-label supervision | [eps.yaml](../../configs/training_paradigms/weak_supervision/eps.yaml) |
+| `boxinst` | BoxInst | - | - | Box-level instance segmentation | [boxinst.yaml](../../configs/training_paradigms/weak_supervision/boxinst.yaml) |
+| `recam` | ReCAM | - | - | Re-weighted CAM | [recam.yaml](../../configs/training_paradigms/weak_supervision/recam.yaml) |
+| `toco` | ToCo | - | - | Token contrast | [toco.yaml](../../configs/training_paradigms/weak_supervision/toco.yaml) |
+| `lpcam` | LPCAM | - | - | Low-pass filtered CAM | [lpcam.yaml](../../configs/training_paradigms/weak_supervision/lpcam.yaml) |
+| `mars` | MARS | - | - | Mask-aware refinement | [mars.yaml](../../configs/training_paradigms/weak_supervision/mars.yaml) |
+| `bacon` | BACoN | - | - | Background-aware contrastive network | [bacon.yaml](../../configs/training_paradigms/weak_supervision/bacon.yaml) |
+| `wpgseg` | WPGSeg | - | - | Weakly-supervised progressive guided | [wpgseg.yaml](../../configs/training_paradigms/weak_supervision/wpgseg.yaml) |
+| `dupl` | DuPL | - | - | Dual pseudo label | [dupl.yaml](../../configs/training_paradigms/weak_supervision/dupl.yaml) |
+| `more` | MoRe | - | - | Momentum refinement | [more.yaml](../../configs/training_paradigms/weak_supervision/more.yaml) |
+| `psdpm` | PSDPM | - | - | Pseudo-label denoising with prior | [psdpm.yaml](../../configs/training_paradigms/weak_supervision/psdpm.yaml) |
+| `semples` | SemPLeS | - | - | Semantic pseudo label selection | [semples.yaml](../../configs/training_paradigms/weak_supervision/semples.yaml) |
 
 ## Annotation Formats
 
