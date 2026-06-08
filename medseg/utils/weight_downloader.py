@@ -214,7 +214,7 @@ register(WeightSource(
     manual_instructions=(
         "Swin-T variant of GroundingDINO (open-set object detector). "
         "Used as the prompt source for MedSAM/SAM2 in detector→segmenter "
-        "pipelines (configs/text_guided/synapse_grounding_dino_*.yaml)."
+        "pipelines (configs/training_paradigms/text_guided/synapse_grounding_dino_*.yaml)."
     ),
     size_mb=694,
 ))
