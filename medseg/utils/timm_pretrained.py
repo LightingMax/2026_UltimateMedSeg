@@ -10,6 +10,9 @@ Optional backends (explicit opt-in only):
   is installed (same hub ids as HF, e.g. ``timm/resnet50.a1_in1k``).
 - Local cache under ``$MEDSEG_WEIGHT_CACHE`` or ``~/.cache/medseg/weights/timm/``
   — used automatically when weights are already on disk (any download method).
+
+HF mirror (opt-in): ``MEDSEG_HF_MIRROR=1`` or ``HF_ENDPOINT=https://hf-mirror.com``.
+See :mod:`medseg.utils.hf_hub`.
 """
 
 from __future__ import annotations
@@ -99,23 +102,19 @@ def ensure_timm_pretrained_via_hf(
     if not hub_id:
         raise ValueError(f"timm model '{model_name}' has no hf_hub_id in default_cfg")
 
-    try:
-        from huggingface_hub import hf_hub_download
-    except ImportError as exc:
-        raise ImportError(
-            "huggingface_hub is required to download timm weights. "
-            "Install with: pip install huggingface_hub"
-        ) from exc
+    from medseg.utils.hf_hub import configure_hf_hub, hf_hub_download_file
+
+    configure_hf_hub()
 
     cache_dir = timm_cache_dir(hub_id)
     cache_dir.mkdir(parents=True, exist_ok=True)
     logger.info("Downloading timm weights for %s from Hugging Face (%s) ...", model_name, hub_id)
     for filename in _WEIGHT_NAMES:
         try:
-            path = hf_hub_download(
-                repo_id=hub_id,
-                filename=filename,
-                local_dir=str(cache_dir),
+            path = hf_hub_download_file(
+                hub_id,
+                filename,
+                local_dir=cache_dir,
             )
             if Path(path).is_file():
                 return Path(path)
