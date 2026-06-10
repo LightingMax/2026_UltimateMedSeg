@@ -42,7 +42,7 @@
 ### Basic Installation
 
 ```bash
-git clone [<repo_url>](https://github.com/juntaoJianggavin/UltimateMedSeg.git)
+git clone https://github.com/juntaoJianggavin/UltimateMedSeg.git
 cd segmentation_tool
 
 # Install dependencies
