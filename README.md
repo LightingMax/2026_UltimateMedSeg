@@ -33,7 +33,7 @@
 ---
 
 ## 📦 Installation
-
+<a id="installation"></a>
 ### Requirements
 
 - Python >= 3.8
@@ -94,7 +94,7 @@ timm encoder weights are downloaded automatically, no manual management needed.
 ---
 
 ## 🚀 Quick Start
-
+<a id="quick-start"></a>
 ### 1. Standard Supervised Training
 
 ```bash
@@ -154,7 +154,7 @@ print(f"Trainable params: {trainable / 1e6:.2f}M")
 ---
 
 ## 📚 Tutorial
-
+<a id="tutorial"></a>
 A step-by-step tutorial series covering deep learning medical image segmentation from fundamentals to advanced topics:
 
 | Chapter | Title | Key Topics |
@@ -169,7 +169,7 @@ A step-by-step tutorial series covering deep learning medical image segmentation
 ---
 
 ## 🏗️ Project Structure
-
+<a id="project-structure"></a>
 ```
 segmentation_tool/
 ├── medseg/                                      # Core framework
@@ -314,7 +314,7 @@ segmentation_tool/
 ---
 
 ## 🧩 Model Components
-
+<a id="model-components"></a>
 > Detailed docs: [docs/models/](docs/models/README.md)
 
 ### Complete Networks — 128
@@ -383,7 +383,7 @@ encoder:
 ---
 
 ## 🎓 Training Paradigms
-
+<a id="training-paradigms"></a>
 > Detailed docs: [docs/paradigms/](docs/paradigms/README.md)
 
 ### Infrastructure
@@ -488,7 +488,7 @@ Box · CAM · Point · Scribble · MIL · EM · GatedCRF · TreeEnergy · SEAM �
 ---
 
 ## ⚡ Deployment & Efficiency
-
+<a id="deployment--efficiency"></a>
 > Detailed docs: [docs/deployment/README.md](docs/deployment/README.md)
 
 ```bash
@@ -514,7 +514,7 @@ print(f"Trainable: {trainable/1e6:.2f}M / Total: {total/1e6:.2f}M")
 ---
 
 ## 📊 Datasets
-
+<a id="datasets"></a>
 > Detailed docs: [docs/data/README.md](docs/data/README.md)
 > Dataset example configs: [configs/intro_to_datasets/](configs/intro_to_datasets/)
 
@@ -564,7 +564,7 @@ data:
 ---
 
 ## 🔧 Config System
-
+<a id="config-system"></a>
 ### Two Model Config Modes
 
 ```yaml
@@ -656,7 +656,7 @@ training:
 ---
 
 ## 🔌 Custom Extensions
-
+<a id="custom-extensions"></a>
 ### Add New Encoder
 
 ```python
@@ -725,7 +725,7 @@ After registration and import in `__init__.py`, use via `name: my_encoder` in YA
 ---
 
 ## 📜 Citation & License
-
+<a id="citation--license"></a>
 ```bibtex
 @software{ultimatemedseg_2026,
   title  = {UltimateMedSeg: A Modern Modular 2D Medical Image Segmentation Toolbox},
