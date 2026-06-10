@@ -31,9 +31,8 @@
 - [Custom Extensions](#custom-extensions)
 - [Citation & License](#citation--license)
 ---
-
-## 📦 Installation
 <a id="installation"></a>
+## 📦 Installation
 ### Requirements
 
 - Python >= 3.8
@@ -92,9 +91,8 @@ python -m medseg.utils.weight_downloader check
 timm encoder weights are downloaded automatically, no manual management needed.
 
 ---
-
-## 🚀 Quick Start
 <a id="quick-start"></a>
+## 🚀 Quick Start
 ### 1. Standard Supervised Training
 
 ```bash
@@ -152,9 +150,8 @@ print(f"Trainable params: {trainable / 1e6:.2f}M")
 ```
 
 ---
-
-## 📚 Tutorial
 <a id="tutorial"></a>
+## 📚 Tutorial
 A step-by-step tutorial series covering deep learning medical image segmentation from fundamentals to advanced topics:
 
 | Chapter | Title | Key Topics |
@@ -167,9 +164,8 @@ A step-by-step tutorial series covering deep learning medical image segmentation
 [Full tutorial index](docs/tutorial/README.md)
 
 ---
-
-## 🏗️ Project Structure
 <a id="project-structure"></a>
+## 🏗️ Project Structure
 ```
 segmentation_tool/
 ├── medseg/                                      # Core framework
@@ -312,9 +308,8 @@ segmentation_tool/
 ```
 
 ---
-
-## 🧩 Model Components
 <a id="model-components"></a>
+## 🧩 Model Components
 > Detailed docs: [docs/models/](docs/models/README.md)
 
 ### Complete Networks — 128
@@ -381,9 +376,8 @@ encoder:
 ### Bottlenecks — [docs/models/bottlenecks.md](docs/models/bottlenecks.md)
 
 ---
-
-## 🎓 Training Paradigms
 <a id="training-paradigms"></a>
+## 🎓 Training Paradigms
 > Detailed docs: [docs/paradigms/](docs/paradigms/README.md)
 
 ### Infrastructure
@@ -486,9 +480,8 @@ Box · CAM · Point · Scribble · MIL · EM · GatedCRF · TreeEnergy · SEAM �
 > Details: [docs/paradigms/text_guided.md](docs/paradigms/text_guided.md)
 
 ---
-
-## ⚡ Deployment & Efficiency
 <a id="deployment--efficiency"></a>
+## ⚡ Deployment & Efficiency
 > Detailed docs: [docs/deployment/README.md](docs/deployment/README.md)
 
 ```bash
@@ -512,9 +505,8 @@ print(f"Trainable: {trainable/1e6:.2f}M / Total: {total/1e6:.2f}M")
 > Note: Frozen foundation encoder params are NOT counted as trainable.
 
 ---
-
-## 📊 Datasets
 <a id="datasets"></a>
+## 📊 Datasets
 > Detailed docs: [docs/data/README.md](docs/data/README.md)
 > Dataset example configs: [configs/intro_to_datasets/](configs/intro_to_datasets/)
 
@@ -562,9 +554,8 @@ data:
 **CT**: MosMedData+
 
 ---
-
-## 🔧 Config System
 <a id="config-system"></a>
+## 🔧 Config System
 ### Two Model Config Modes
 
 ```yaml
@@ -654,9 +645,8 @@ training:
 ```
 
 ---
-
-## 🔌 Custom Extensions
 <a id="custom-extensions"></a>
+## 🔌 Custom Extensions
 ### Add New Encoder
 
 ```python
@@ -723,9 +713,8 @@ After registration and import in `medseg/datasets/__init__.py`, use via `name: m
 After registration and import in `__init__.py`, use via `name: my_encoder` in YAML.
 
 ---
-
-## 📜 Citation & License
 <a id="citation--license"></a>
+## 📜 Citation & License
 ```bibtex
 @software{ultimatemedseg_2026,
   title  = {UltimateMedSeg: A Modern Modular 2D Medical Image Segmentation Toolbox},
