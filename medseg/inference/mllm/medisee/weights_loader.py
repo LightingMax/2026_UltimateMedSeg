@@ -51,43 +51,23 @@ def _default_cache_root() -> str:
 
 
 def _try_hf_snapshot(repo_id: str, cache_dir: Optional[str] = None) -> str:
-    """调用 huggingface_hub.snapshot_download, 返回本地目录."""
-    try:
-        from huggingface_hub import snapshot_download
-    except ImportError as e:  # pragma: no cover
-        raise ImportError(
-            "huggingface_hub is required for MediSee weight auto-download. "
-            "Install it via `pip install huggingface_hub`."
-        ) from e
+    """Download a repo snapshot via medseg HF helpers (official first, mirror fallback)."""
+    from medseg.utils.hf_hub import hf_snapshot_download
 
-    kwargs = dict(repo_id=repo_id)
+    kwargs = {"repo_id": repo_id}
     if cache_dir is not None:
         kwargs["cache_dir"] = cache_dir
-    # 允许通过环境变量传 token（私有 repo / 限速场景）
-    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
-    if token:
-        kwargs["token"] = token
-    local_dir = snapshot_download(**kwargs)
-    return local_dir
+    return hf_snapshot_download(**kwargs)
 
 
 def _try_hf_file(repo_id: str, filename: str, cache_dir: Optional[str] = None) -> str:
-    """调用 huggingface_hub.hf_hub_download 下载单个文件, 返回本地绝对路径."""
-    try:
-        from huggingface_hub import hf_hub_download
-    except ImportError as e:  # pragma: no cover
-        raise ImportError(
-            "huggingface_hub is required for MediSee weight auto-download. "
-            "Install it via `pip install huggingface_hub`."
-        ) from e
+    """Download a single file via medseg HF helpers (official first, mirror fallback)."""
+    from medseg.utils.hf_hub import hf_hub_download_file
 
-    kwargs = dict(repo_id=repo_id, filename=filename)
+    kwargs = {"repo_id": repo_id, "filename": filename}
     if cache_dir is not None:
         kwargs["cache_dir"] = cache_dir
-    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
-    if token:
-        kwargs["token"] = token
-    return hf_hub_download(**kwargs)
+    return hf_hub_download_file(**kwargs)
 
 
 @dataclass
