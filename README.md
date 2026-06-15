@@ -924,7 +924,7 @@ For questions, collaborations, or bug reports, feel free to reach out:
 <td align="center">
 <strong>QQ Group</strong><br/>
 <img src="figs/6346c6cacffdd87a03bc3c1323d42b40.jpg" alt="QQ Group QR Code" width="200"/><br/>
-扫码加入 QQ 交流群
+Scan to join QQ Group
 </td>
 <td align="center">
 <strong>Slack Channel</strong><br/>
