@@ -43,6 +43,7 @@
 - [Config System](#config-system)
 - [Custom Extensions](#custom-extensions)
 - [Citation & License](#citation--license)
+- [Contact](#contact)
 ---
 <a id="installation"></a>
 ## 📦 Installation
@@ -906,3 +907,30 @@ Clinical deployment must comply with local regulations.
 ### Acknowledgements
 
 Thanks to PyTorch, timm, MONAI, SSL4MIS, SAM, GroundingDINO, DINOv2/v3, CLIP, transformers, and all open-source projects that made this possible.
+
+---
+<a id="contact"></a>
+## 📬 Contact
+
+For questions, collaborations, or bug reports, feel free to reach out:
+
+- **Email**: [juntaojiang@zju.edu.cn](mailto:juntaojiang@zju.edu.cn)
+
+### Community
+
+<div align="center">
+<table>
+<tr>
+<td align="center">
+<strong>QQ Group</strong><br/>
+<img src="figs/6346c6cacffdd87a03bc3c1323d42b40.jpg" alt="QQ Group QR Code" width="200"/><br/>
+扫码加入 QQ 交流群
+</td>
+<td align="center">
+<strong>Slack Channel</strong><br/>
+<img src="figs/SLACK.png" alt="Slack QR Code" width="200"/><br/>
+Join our Slack workspace
+</td>
+</tr>
+</table>
+</div>
