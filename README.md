@@ -922,12 +922,12 @@ For questions, collaborations, or bug reports, feel free to reach out:
 <table>
 <tr>
 <td align="center">
-<strong>QQ Group</strong><br/>
+<img src="https://img.shields.io/badge/QQ_Group-扫码加入-12B7F5?logo=tencent-qq" alt="QQ Group"/><br/>
 <img src="figs/6346c6cacffdd87a03bc3c1323d42b40.jpg" alt="QQ Group QR Code" width="200"/><br/>
 Scan to join QQ Group
 </td>
 <td align="center">
-<strong>Slack Channel</strong><br/>
+<img src="https://img.shields.io/badge/Slack-Join_Workspace-4A154B?logo=slack" alt="Slack"/><br/>
 <img src="figs/SLACK.png" alt="Slack QR Code" width="200"/><br/>
 Join our Slack workspace
 </td>
