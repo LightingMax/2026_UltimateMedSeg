@@ -1,4 +1,5 @@
 """MTUNet decoder – extracted from networks/transformer/mtunet_model.py.
+    MTUNet 解码器。
 
 Mixed Transformer UNet decoder (ICASSP 2022).
 Hybrid: transformer-domain _DecoderBlock stages + CNN-domain _UDecoder stem.
@@ -57,7 +58,8 @@ class _DoubleConv(nn.Module):
 
 
 class _MEAttention(nn.Module):
-    """Memory-Efficient (linear) attention."""
+    """Memory-Efficient ( linear ) 注意力。
+        Memory-Efficient (linear) attention."""
 
     def __init__(self, dim, configs):
         super().__init__()
@@ -80,7 +82,8 @@ class _MEAttention(nn.Module):
 
 
 class _Attention(nn.Module):
-    """Multi-head self-attention with optional axial mode."""
+    """Multi-head 自注意力 with 可选 axial mode。
+        Multi-head self-attention with optional axial mode."""
 
     def __init__(self, dim, configs, axial=False):
         super().__init__()
@@ -199,7 +202,8 @@ class _GaussianTrans(nn.Module):
 
 
 class _CSAttention(nn.Module):
-    """Combined local (window) + global (axial + Gaussian) attention."""
+    """Combined 局部的 ( 窗口 ) + 全局的 ( axial + Gaussian ) 注意力。
+        Combined local (window) + global (axial + Gaussian) attention."""
 
     def __init__(self, dim, configs):
         super().__init__()
@@ -231,7 +235,8 @@ class _CSAttention(nn.Module):
 
 
 class _EAmodule(nn.Module):
-    """Encoder/Attention module (CSAttention + MEAttention)."""
+    """编码器 / 注意力 模块 ( CSAttention + MEAttention )。
+        Encoder/Attention module (CSAttention + MEAttention)."""
 
     def __init__(self, dim, configs):
         super().__init__()
@@ -274,7 +279,7 @@ class _UDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Transformer Decoder Block
+# Transformer 解码器 / Transformer Decoder Block
 # ---------------------------------------------------------------------------
 class _DecoderBlock(nn.Module):
     def __init__(self, dim, flag, configs):
@@ -313,7 +318,7 @@ class _DecoderBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Public decoder wrapper
+# Public 解码器 / Public decoder wrapper
 # ---------------------------------------------------------------------------
 _DEFAULT_CFGS = {
     "win_size": 4,
@@ -327,6 +332,7 @@ _DEFAULT_CFGS = {
 @DECODER_REGISTRY.register("mtunet")
 class MTUNetDecoder(nn.Module):
     """MTUNet hybrid decoder (transformer blocks + CNN U-decoder stem).
+        MTUNet hybrid 解码器。
 
     has_internal_skip = True  (consumes both transformer and CNN skips internally)
     out_channels = 64
@@ -340,16 +346,16 @@ class MTUNetDecoder(nn.Module):
                  skip_connection=None, configs=None, **kwargs):
         super().__init__()
         cfgs = dict(configs) if configs else dict(_DEFAULT_CFGS)
-        # Transformer-domain decoder blocks
+        # Transformer-domain 解码器 / Transformer-domain decoder blocks
         self.decoder_blocks = nn.ModuleList()
         for i in range(len(cfgs["decoder"]) - 1):
             self.decoder_blocks.append(
                 _DecoderBlock(cfgs["decoder"][i], False, cfgs))
         self.decoder_blocks.append(
             _DecoderBlock(cfgs["decoder"][-1], True, cfgs))
-        # CNN-domain decoder stem
+        # CNN-domain 解码器 / CNN-domain decoder stem
         self.decoder_stem = _UDecoder()
-        # Bottleneck projection for non-transformer encoders (4D input)
+        # 瓶颈层 projection for non-transformer encoders ( 4D 输入 ) / Bottleneck projection for non-transformer encoders (4D input)
         self._bottleneck_proj = None
         if bottleneck_channels is not None and bottleneck_channels != cfgs.get("bottleneck", 1024):
             self._bottleneck_proj = nn.Conv2d(bottleneck_channels, cfgs["bottleneck"], 1)
@@ -372,11 +378,11 @@ class MTUNetDecoder(nn.Module):
         t_skips = skip_features[3:]  # transformer encoder skips
         cnn_feats = skip_features[:3]  # CNN U-encoder features
 
-        # Handle 4D input from CNN encoder (reshape to sequence then back)
+        # Handle 4D input from CNN 编码器 / Handle 4D input from CNN encoder (reshape to sequence then back)
         if x.ndim == 4:
             if self._bottleneck_proj is not None:
                 x = self._bottleneck_proj(x)
-            # Run transformer decoder blocks with projected 4D -> sequence
+            # Run transformer 解码器 / Run transformer decoder blocks with projected 4D -> sequence
             B, C, H, W = x.shape
             x = x.flatten(2).transpose(1, 2)  # [B, H*W, C]
             for i, dec in enumerate(self.decoder_blocks):
@@ -398,8 +404,8 @@ class MTUNetDecoder(nn.Module):
                 B, N, C = x.shape
                 x = x.view(B, int(np.sqrt(N)), int(np.sqrt(N)), C).permute(0, 3, 1, 2)
 
-        # Downsample transformer decoder output to match CNN stem spatial dims
-        # decoder[-1] outputs 512ch@28x28, stem expects 512ch@14x14
+        # Downsample transformer 解码器 / Downsample transformer decoder output to match CNN stem spatial dims
+        # 解码 [ - 1 ] outputs 512ch @ 28x28, 主干 expects 512ch @ 14x14 / decoder[-1] outputs 512ch@28x28, stem expects 512ch@14x14
         x = F.avg_pool2d(x, 2)
         x = self.decoder_stem(x, cnn_feats)
         return x

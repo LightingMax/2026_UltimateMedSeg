@@ -1,4 +1,5 @@
 """FATNet decoder module.
+    FATNet 解码器。
 
 Extracted from networks/transformer/fatnet_model.py for modular reuse.
 Faithful to the original DecoderBottleneckLayer: 1x1 reduce -> BN -> ReLU ->
@@ -13,7 +14,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class DecoderBottleneckLayer(nn.Module):
-    """Single decoder step: reduce channels, upsample, project."""
+    """Single 解码器。
+        Single decoder step: reduce channels, upsample, project."""
 
     def __init__(self, in_channels, n_filters, use_transpose=True):
         super().__init__()
@@ -48,6 +50,7 @@ class DecoderBottleneckLayer(nn.Module):
 @DECODER_REGISTRY.register("fatnet")
 class FATNetDecoder(nn.Module):
     """FATNet cascade decoder with DecoderBottleneckLayers.
+        FATNet cascade 解码器。
 
     Standard interface: ``forward(bottleneck_feat, skip_features)``
 

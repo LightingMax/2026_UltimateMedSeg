@@ -8,9 +8,9 @@ This project provides a highly modular medical image segmentation model zoo, sup
 
 | Module | Count |
 |---|---|
-| Complete Networks | 128 |
-| Encoders | 169 |
-| Decoders | 40 |
+| Complete Networks | 146 |
+| Encoders | 178 |
+| Decoders | 45 |
 | Skip Connections | 25 |
 | Bottlenecks | 17 |
 
@@ -28,9 +28,9 @@ Input Image ──> [Encoder] ──> [Bottleneck] ──> [Decoder] ──> Seg
 
 | Document | Content |
 |---|---|
-| [networks.md](networks.md) | 128 complete network architectures |
-| [encoders.md](encoders.md) | 169 encoders (incl. foundation models) |
-| [decoders.md](decoders.md) | 40 decoders |
+| [networks.md](networks.md) | 146 complete network architectures |
+| [encoders.md](encoders.md) | 178 encoders (incl. foundation models) |
+| [decoders.md](decoders.md) | 45 decoders |
 | [skip_connections.md](skip_connections.md) | 25 skip connections |
 | [bottlenecks.md](bottlenecks.md) | 17 bottlenecks |
 
@@ -45,8 +45,10 @@ model:
   num_classes: 9
   img_size: 224
   architecture: transunet
+  transfer_learning_path: null  # optional: full-model checkpoint for transfer learning
   encoder:
     in_channels: 3
+    pretrained_path: null        # optional: manual backbone weight override
   arch_params: {}
 
 data:
@@ -86,9 +88,11 @@ Configure encoder, decoder, skip_connection, and bottleneck separately for free 
 model:
   num_classes: 9
   img_size: 224
+  transfer_learning_path: null  # optional: full-model checkpoint for transfer learning
   encoder:
     name: timm_resnet50
     pretrained: true
+    pretrained_path: null        # optional: manual backbone weight override
     in_channels: 3
     params: {}
   decoder:

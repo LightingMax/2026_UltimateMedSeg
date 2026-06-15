@@ -1,6 +1,9 @@
 # UNet++ (Zhou et al., 2018)
+# UNet++ 分割网络
 # UNet++ (Zhou et al., 2018)
+# UNet++ 分割网络
 # Standalone architecture: unetpp
+# 独立架构: unetpp
 
 model:
   num_classes: 2

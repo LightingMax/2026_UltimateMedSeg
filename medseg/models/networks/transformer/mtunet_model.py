@@ -1,4 +1,5 @@
 """MTUNet – self-contained port from github.com/Dootmaan/MT-UNet.
+    MTUNet – self-contained 移植 from github. com / Dootmaan / MT-UNet。
 
 Mixed Transformer UNet for Medical Image Segmentation (ICASSP 2022).
 
@@ -15,7 +16,7 @@ import numpy as np
 
 
 # ---------------------------------------------------------------------------
-# Default configs (from original repo)
+# 默认值 configs ( from original repo ) / Default configs (from original repo)
 # ---------------------------------------------------------------------------
 _CFGS = {
     "win_size": 4,
@@ -27,7 +28,7 @@ _CFGS = {
 
 
 # ---------------------------------------------------------------------------
-# Basic building blocks
+# 基本 building blocks / Basic building blocks
 # ---------------------------------------------------------------------------
 class _ConvBNReLU(nn.Module):
     def __init__(self, c_in, c_out, kernel_size, stride=1, padding=1,
@@ -108,10 +109,11 @@ class _UDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Attention modules
+# 注意力 modules / Attention modules
 # ---------------------------------------------------------------------------
 class _MEAttention(nn.Module):
-    """Memory-Efficient (linear) attention."""
+    """Memory-Efficient ( linear ) 注意力。
+        Memory-Efficient (linear) attention."""
 
     def __init__(self, dim, configs):
         super().__init__()
@@ -134,7 +136,8 @@ class _MEAttention(nn.Module):
 
 
 class _Attention(nn.Module):
-    """Multi-head self-attention with optional axial mode."""
+    """Multi-head 自注意力 with 可选 axial mode。
+        Multi-head self-attention with optional axial mode."""
 
     def __init__(self, dim, configs, axial=False):
         super().__init__()
@@ -159,11 +162,11 @@ class _Attention(nn.Module):
             q = self.query_layer(x)
             k = self.key_layer(x)
             v = self.value_layer(x)
-            # Row attention
+            # Row 注意力 / Row attention
             q_x = q.view(b * h, w, -1)
             k_x = k.view(b * h, w, -1).transpose(-1, -2)
             attn_x = torch.matmul(q_x, k_x).view(b, -1, w, w)
-            # Col attention
+            # Col 注意力 / Col attention
             q_y = q.permute(0, 2, 1, 3).contiguous().view(b * w, h, -1)
             k_y = k.permute(0, 2, 1, 3).contiguous().view(b * w, h, -1).transpose(-1, -2)
             attn_y = torch.matmul(q_y, k_y).view(b, -1, h, h)
@@ -255,7 +258,8 @@ class _GaussianTrans(nn.Module):
 
 
 class _CSAttention(nn.Module):
-    """Combined local (window) + global (axial + Gaussian) attention."""
+    """Combined 局部的 ( 窗口 ) + 全局的 ( axial + Gaussian ) 注意力。
+        Combined local (window) + global (axial + Gaussian) attention."""
 
     def __init__(self, dim, configs):
         super().__init__()
@@ -280,7 +284,7 @@ class _CSAttention(nn.Module):
         x = self.gaussiantrans((x, atten_x, atten_y, mixed_value))
         x = x.permute(0, 3, 1, 2).contiguous()
         x = self.up(x)
-        # Crop to original spatial dims before concat (handles padding)
+        # Crop to original 空间的 dims before concat ( handles 填充 ) / Crop to original spatial dims before concat (handles padding)
         x = x[:, :, :origin_h, :origin_w].contiguous()
         h = h[:, :, :origin_h, :origin_w].contiguous()
         x = self.queeze(torch.cat((x, h), dim=1)).permute(0, 2, 3, 1).contiguous()
@@ -288,7 +292,8 @@ class _CSAttention(nn.Module):
 
 
 class _EAmodule(nn.Module):
-    """Encoder/Attention module (CSAttention + MEAttention)."""
+    """编码器 / 注意力 模块 ( CSAttention + MEAttention )。
+        Encoder/Attention module (CSAttention + MEAttention)."""
 
     def __init__(self, dim, configs):
         super().__init__()
@@ -305,17 +310,17 @@ class _EAmodule(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stem / Encoder / Decoder blocks
+# Stem / 编码器 / Stem / Encoder / Decoder blocks
 # ---------------------------------------------------------------------------
 class _Stem(nn.Module):
-    # UEncoder applies three 2x maxpools → stride 8.
+    # UEncoder 应用 three 2x maxpools → 步长 8 / UEncoder applies three 2x maxpools → stride 8.
     _STEM_STRIDE = 8
 
     def __init__(self, in_channels=3, img_size=224, embed_dim=256):
         super().__init__()
         self.model = _UEncoder(in_channels)
         self.trans_dim = _ConvBNReLU(embed_dim, embed_dim, 1, 1, 0)
-        # Derive token-grid size from img_size at init.
+        # Derive token-grid 大小 from img _ 大小 at init / Derive token-grid size from img_size at init.
         self.grid_size = max(img_size // self._STEM_STRIDE, 1)
         n_patches = self.grid_size * self.grid_size
         self.embed_dim = embed_dim
@@ -323,8 +328,8 @@ class _Stem(nn.Module):
             torch.zeros((1, n_patches, embed_dim)))
 
     def _resize_pos_embed(self, h, w):
-        # Interpolate the learned pos embedding over a 2D grid to match
-        # runtime spatial dims (h, w) of the token map.
+        # 插值 the learned pos 嵌入 over a 2D grid to match / Interpolate the learned pos embedding over a 2D grid to match
+        # runtime 空间的 dims ( h, w ) of the 标记 映射 / runtime spatial dims (h, w) of the token map.
         if h == self.grid_size and w == self.grid_size:
             return self.position_embedding
         pe = self.position_embedding  # (1, N, C)

@@ -1,4 +1,5 @@
 """Attention UNet encoder.
+    Attention UNet 编码器。
 
 Extracts the 4-stage CNN encoder from Attention UNet (Oktay et al., 2018)
 for use in bottleneck/decoder ablation studies.
@@ -25,7 +26,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 class ConvBlock(nn.Module):
-    """Two consecutive Conv3x3-BN-ReLU blocks (DoubleConv)."""
+    """两个连续 Conv3x3-BN-ReLU blocks ( DoubleConv )。
+        Two consecutive Conv3x3-BN-ReLU blocks (DoubleConv)."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -45,6 +47,7 @@ class ConvBlock(nn.Module):
 @ENCODER_REGISTRY.register("attention_unet")
 class AttentionUNetEncoder(nn.Module):
     """Standard 4-stage Attention UNet encoder.
+        Standard 4-stage Attention UNet 编码器。
 
     Stem + 4 stages of (Conv-BN-ReLU)x2 with MaxPool2x2 between stages.
 

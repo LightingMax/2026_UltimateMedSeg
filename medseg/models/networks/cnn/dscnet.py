@@ -1,4 +1,5 @@
 """DSCNet – self-contained port of Dynamic Snake Convolution Network.
+    DSCNet – self-contained 移植 of 动态的 Snake 卷积 网络。
 
 Reference:
     Qi et al., "Dynamic Snake Convolution based on Topological Geometric
@@ -42,7 +43,7 @@ import torch.nn.functional as F
 
 # ---------------------------------------------------------------------------
 # Pretrained-loader SSL fallback (required by spec; kept for completeness even
-# though this port does not load external weights).
+# though this 移植 does not 加载 external 权重 ) / though this port does not load external weights).
 # ---------------------------------------------------------------------------
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
     import ssl, warnings
@@ -61,10 +62,11 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# Dynamic Snake Convolution (DSConv)
+# 动态的 Snake 卷积 ( DSConv ) / Dynamic Snake Convolution (DSConv)
 # ---------------------------------------------------------------------------
 class _DSConv(nn.Module):
     """Dynamic Snake Convolution.
+        动态的 Snake 卷积。
 
     A 1-D kernel of length ``kernel_size`` is laid along either the x-axis
     (``morph=0``) or the y-axis (``morph=1``).  At every spatial location the
@@ -127,14 +129,14 @@ class _DSConv(nn.Module):
         k_idx = torch.arange(K, device=device, dtype=dtype) - (K - 1) / 2  # (K,)
 
         if self.morph == 0:
-            # horizontal kernel; offset displaces along y
+            # horizontal 卷积核; offset displaces along y / horizontal kernel; offset displaces along y
             sample_y = grid_y[None, None] + offset_cum                                # (B, K, H, W)
             sample_x = grid_x[None, None] + k_idx[None, :, None, None].expand_as(offset_cum)
         else:
             sample_y = grid_y[None, None] + k_idx[None, :, None, None].expand_as(offset_cum)
             sample_x = grid_x[None, None] + offset_cum
 
-        # Normalise to [-1, 1] for grid_sample.
+        # Normalise to [ - 1, 1 ] for grid _ 样本 / Normalise to [-1, 1] for grid_sample.
         denom_w = max(W - 1, 1)
         denom_h = max(H - 1, 1)
         sample_x_n = 2.0 * sample_x / denom_w - 1.0
@@ -142,7 +144,7 @@ class _DSConv(nn.Module):
         grid = torch.stack([sample_x_n, sample_y_n], dim=-1)  # (B, K, H, W, 2)
 
         if self.morph == 0:
-            # Place K kernel positions along the width axis.
+            # Place K 卷积核 positions along the width axis / Place K kernel positions along the width axis.
             grid = grid.permute(0, 2, 3, 1, 4).reshape(B, H, W * K, 2)
         else:
             grid = grid.permute(0, 2, 1, 3, 4).reshape(B, H * K, W, 2)
@@ -157,7 +159,7 @@ class _DSConv(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder/Decoder block: standard 3x3 conv path fused with two DSConv paths
+# 编码器 / 解码 块: 标准 3x3 conv path fused with two DSConv paths / Encoder/Decoder block: standard 3x3 conv path fused with two DSConv paths
 # (along x and y).  use_dsc=False falls back to a plain double-conv.
 # ---------------------------------------------------------------------------
 class _DSCBlock(nn.Module):
@@ -191,10 +193,11 @@ class _DSCBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# DSCNet: 5-level UNet with snake-conv-augmented blocks at the deeper stages.
+# DSCNet: 5-level UNet with snake-conv-augmented blocks at the deeper 阶段 / DSCNet: 5-level UNet with snake-conv-augmented blocks at the deeper stages.
 # ---------------------------------------------------------------------------
 class DSCNet(nn.Module):
-    """Dynamic Snake Convolution Network (ICCV 2023)."""
+    """动态的 Snake 卷积 网络 ( ICCV 2023 )。
+        Dynamic Snake Convolution Network (ICCV 2023)."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, kernel_size=9, **kwargs):
         super().__init__()
@@ -202,8 +205,8 @@ class DSCNet(nn.Module):
         self.kernel_size = int(kernel_size)
         chs = [32, 64, 128, 256, 512]
 
-        # Top two levels: plain double-conv (DSConv at full resolution would
-        # materialise an HxKW sampled tensor that is wasteful for 512x512
+        # Top two levels: plain double-conv ( DSConv at full 分辨率 would / Top two levels: plain double-conv (DSConv at full resolution would
+        # materialise an HxKW sampled 张量 that is wasteful for 512x512 / materialise an HxKW sampled tensor that is wasteful for 512x512
         # inputs).  Deeper levels carry the snake-convolution paths.
         self.enc1 = _DSCBlock(in_channels, chs[0], kernel_size, use_dsc=False)
         self.enc2 = _DSCBlock(chs[0],     chs[1], kernel_size, use_dsc=False)
@@ -245,7 +248,7 @@ class DSCNet(nn.Module):
 
         out = self.head(d1)
 
-        # Crop back to the original spatial size.
+        # Crop back to the original 空间的 大小 / Crop back to the original spatial size.
         if out.shape[-2] != H_in or out.shape[-1] != W_in:
             out = out[..., :H_in, :W_in]
         if out.shape[-2:] != (H_in, W_in):

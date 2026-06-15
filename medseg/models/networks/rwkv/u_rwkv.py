@@ -1,4 +1,5 @@
 """U-RWKV: Medical Image Segmentation with RWKV Attention Mechanism.
+    U-RWKV: 医学的 图像 分割 with RWKV 注意力 Mechanism。
 
 Reimplementation based on:
   https://github.com/hbyecoding/U-RWKV  (MICCAI 2025)
@@ -23,7 +24,7 @@ from medseg.kernels.wkv import run_wkv as _run_wkv
 
 
 # ---------------------------------------------------------------------------
-# WKV computation (CUDA-accelerated when available, pure PyTorch otherwise)
+# WKV computation ( CUDA-accelerated when available, 纯 PyTorch otherwise ) / WKV computation (CUDA-accelerated when available, pure PyTorch otherwise)
 # ---------------------------------------------------------------------------
 
 def wkv_pytorch(B, T, C, w, u, k, v):
@@ -39,11 +40,12 @@ def wkv_pytorch(B, T, C, w, u, k, v):
 
 
 # ---------------------------------------------------------------------------
-# Q-Shift: spatial token shifting for multi-direction information flow
+# Q-Shift: 空间的 标记 shifting for multi-direction information flow / Q-Shift: spatial token shifting for multi-direction information flow
 # ---------------------------------------------------------------------------
 
 def q_shift(x, shift_pixel=1, gamma=0.25):
     """Shift tokens in 4 directions for spatial mixing.
+        Shift 标记 in 4 directions for 空间的 mixing。
 
     x: (B, N, C) where N = H*W. Shifts C/4 channels in each direction.
     """
@@ -70,11 +72,12 @@ def q_shift(x, shift_pixel=1, gamma=0.25):
 
 
 # ---------------------------------------------------------------------------
-# RWKV Spatial Mix and Channel Mix
+# RWKV 空间的 Mix and 通道 Mix / RWKV Spatial Mix and Channel Mix
 # ---------------------------------------------------------------------------
 
 class SpatialMix(nn.Module):
     """RWKV Spatial Mixing (time mixing adapted for 2D).
+        RWKV 空间的 Mixing ( time mixing adapted for 2D )。
 
     Uses WKV attention with learnable decay and first-token bias.
     """
@@ -83,7 +86,7 @@ class SpatialMix(nn.Module):
         self.n_embd = n_embd
         self.layer_id = layer_id
 
-        # Learnable parameters
+        # Learnable 参数 / Learnable parameters
         ratio_0_to_1 = layer_id / max(n_layer - 1, 1)
         ratio_1_to_0 = 1.0 - layer_id / max(n_layer, 1)
 
@@ -153,6 +156,7 @@ class SpatialMix(nn.Module):
 
 class ChannelMix(nn.Module):
     """RWKV Channel Mixing (feed-forward with gating).
+        RWKV 通道 Mixing ( feed-forward with gating )。
 
     Uses squared ReLU activation (ReLU^2) for channel mixing.
     """
@@ -194,11 +198,12 @@ class ChannelMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# RWKV Block (Spatial Mix + Channel Mix)
+# RWKV 块 ( 空间的 Mix + 通道 Mix ) / RWKV Block (Spatial Mix + Channel Mix)
 # ---------------------------------------------------------------------------
 
 class RWKVBlock(nn.Module):
-    """RWKV block: LayerNorm → SpatialMix → LayerNorm → ChannelMix."""
+    """RWKV 块: LayerNorm → SpatialMix → LayerNorm → ChannelMix。
+        RWKV block: LayerNorm → SpatialMix → LayerNorm → ChannelMix."""
     def __init__(self, n_embd, n_layer, layer_id, shift_pixel=1):
         super().__init__()
         self.ln1 = nn.LayerNorm(n_embd)
@@ -215,11 +220,12 @@ class RWKVBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SE Module
+# SE 模块 / SE Module
 # ---------------------------------------------------------------------------
 
 class SE(nn.Module):
-    """Squeeze-and-Excitation block."""
+    """Squeeze-and-Excitation 块。
+        Squeeze-and-Excitation block."""
     def __init__(self, channels, rd_ratio=0.25):
         super().__init__()
         rd = max(int(channels * rd_ratio), 1)
@@ -237,15 +243,16 @@ class SE(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Conv Encoder Stage with RWKV
+# Conv 编码器 / Conv Encoder Stage with RWKV
 # ---------------------------------------------------------------------------
 
 class ConvRWKVStage(nn.Module):
-    """Conv block followed by RWKV blocks for one encoder stage."""
+    """Conv block followed by RWKV blocks for one 编码器。
+        Conv block followed by RWKV blocks for one encoder stage."""
     def __init__(self, in_ch, out_ch, n_rwkv_layers, total_layers,
                  layer_offset, stride=2, shift_pixel=1):
         super().__init__()
-        # Downsampling conv
+        # 下采样 conv / Downsampling conv
         if stride > 1:
             self.downsample = nn.Sequential(
                 nn.Conv2d(in_ch, out_ch, 3, stride=stride, padding=1, bias=False),
@@ -276,11 +283,12 @@ class ConvRWKVStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Fusion Decoder with SE
+# Fusion 解码器 / Fusion Decoder with SE
 # ---------------------------------------------------------------------------
 
 class FusionUpBlock(nn.Module):
-    """Decoder block: upsample + concat skip + Conv + SE."""
+    """Decoder block: upsample + concat 跳跃连接。
+        Decoder block: upsample + concat skip + Conv + SE."""
     def __init__(self, in_ch, skip_ch, out_ch, se_ratio=0.25):
         super().__init__()
         self.up = nn.Upsample(scale_factor=2, mode='bilinear',
@@ -312,6 +320,7 @@ class FusionUpBlock(nn.Module):
 
 class URWKV(nn.Module):
     """U-RWKV: UNet with RWKV attention at each encoder stage.
+        U-RWKV: UNet with RWKV attention at each 编码器。
 
     Architecture:
       - Stem: Conv → BN → ReLU
@@ -341,14 +350,14 @@ class URWKV(nn.Module):
 
         total_layers = sum(depths)
 
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0], 7, stride=2, padding=3, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
             nn.ReLU(inplace=True),
         )
 
-        # Encoder stages
+        # 编码器 阶段 / Encoder stages
         self.enc_stages = nn.ModuleList()
         layer_offset = 0
         for i in range(len(embed_dims)):
@@ -359,7 +368,7 @@ class URWKV(nn.Module):
                 layer_offset, stride=stride, shift_pixel=shift_pixel))
             layer_offset += depths[i]
 
-        # Decoder stages
+        # 解码 阶段 / Decoder stages
         self.dec_stages = nn.ModuleList()
         for i in range(len(embed_dims) - 1):
             dec_in = embed_dims[-(i + 1)]
@@ -368,7 +377,7 @@ class URWKV(nn.Module):
             self.dec_stages.append(
                 FusionUpBlock(dec_in, skip_ch, dec_out, se_ratio=se_ratio))
 
-        # Final upsample (stem did 2x downsample)
+        # Final 上采样 ( 主干 did 2x 下采样 ) / Final upsample (stem did 2x downsample)
         self.final_up = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(embed_dims[0], embed_dims[0], 3, padding=1, bias=False),
@@ -386,16 +395,16 @@ class URWKV(nn.Module):
     def forward(self, x):
         input_size = x.shape[2:]
 
-        # Stem
+        # 主干 / Stem
         x = self.stem(x)
 
-        # Encoder
+        # 编码器 / Encoder
         enc_feats = []
         for stage in self.enc_stages:
             x = stage(x)
             enc_feats.append(x)
 
-        # Decoder
+        # 解码 / Decoder
         x = enc_feats[-1]
         ds_collect = self.training and self.deep_supervision
         intermediates = []
@@ -405,7 +414,7 @@ class URWKV(nn.Module):
             if ds_collect and i < len(self.dec_stages) - 1:
                 intermediates.append(x)
 
-        # Final upsample to input resolution
+        # Final 上采样 to 输入 分辨率 / Final upsample to input resolution
         x = self.final_up(x)
         x = self.head(x)
 

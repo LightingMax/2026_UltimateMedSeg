@@ -1,4 +1,5 @@
-"""Channel Attention Bridge (CAB) skip connection."""
+"""Channel Attention Bridge (CAB) 跳跃连接。
+    Channel Attention Bridge (CAB) skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -8,7 +9,8 @@ from medseg.registry import SKIP_REGISTRY
 
 @SKIP_REGISTRY.register("cab")
 class CABSkip(nn.Module):
-    """Channel Attention Bridge: uses SE-style channel attention to weight skip features."""
+    """Channel Attention Bridge: uses SE-style channel attention to weight 跳跃连接。
+        Channel Attention Bridge: uses SE-style channel attention to weight skip features."""
     def __init__(self, reduction=16, **kwargs):
         super().__init__()
         self.reduction = reduction

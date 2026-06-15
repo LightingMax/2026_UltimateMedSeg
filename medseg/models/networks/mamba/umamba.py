@@ -1,4 +1,5 @@
 """U-Mamba 2D: UNet with Mamba State Space Model for Medical Image Segmentation.
+    U-Mamba 2D: UNet with Mamba State Space 模型 for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/bowang-lab/U-Mamba  (MICCAI 2024)
@@ -25,11 +26,12 @@ from typing import List, Tuple, Union
 
 
 # ---------------------------------------------------------------------------
-# Mamba SSM wrapper (hard dependency on mamba_ssm, matching official source)
+# Mamba SSM 封装器 ( hard dependency on mamba _ ssm, matching official 来源 ) / Mamba SSM wrapper (hard dependency on mamba_ssm, matching official source)
 # ---------------------------------------------------------------------------
 
 class MambaSSM(nn.Module):
     """Mamba SSM wrapper. Hard-depends on ``mamba_ssm`` (matches official source).
+        Mamba SSM 封装器. Hard-depends on ` ` mamba _ ssm ` ` ( matches official 来源 )。
 
     The official U-Mamba and LightM-UNet repos both require
     ``pip install mamba-ssm`` and ``pip install causal-conv1d``.
@@ -69,11 +71,12 @@ MambaSSMFallback = MambaSSM
 
 
 # ---------------------------------------------------------------------------
-# MambaLayer for 2D features (faithful to source, with channel_token mode)
+# MambaLayer for 2D 特征 ( 忠实 to 来源, with 通道 _ 标记 mode ) / MambaLayer for 2D features (faithful to source, with channel_token mode)
 # ---------------------------------------------------------------------------
 
 class MambaLayer(nn.Module):
     """Mamba layer for 2D features with optional channel_token mode.
+        Mamba 层 for 2D 特征 with 可选 通道 _ 标记 mode。
 
     Faithful to the original U-Mamba implementation:
       - forward_patch_token: spatial tokens (H*W) with channel features (default)
@@ -88,7 +91,8 @@ class MambaLayer(nn.Module):
         self.channel_token = channel_token
 
     def forward_patch_token(self, x):
-        """(B, C, H, W) -> flatten spatial -> Mamba -> reshape."""
+        """( B, C, H, W ) - > 展平 空间的 - > Mamba - > 重塑。
+            (B, C, H, W) -> flatten spatial -> Mamba -> reshape."""
         B, d_model = x.shape[:2]
         assert d_model == self.dim
         n_tokens = x.shape[2:].numel()
@@ -99,7 +103,8 @@ class MambaLayer(nn.Module):
         return x_mamba.transpose(-1, -2).reshape(B, d_model, *img_dims)
 
     def forward_channel_token(self, x):
-        """(B, C, H, W) -> channels as tokens -> Mamba -> reshape."""
+        """( B, C, H, W ) - > 通道 as 标记 - > Mamba - > 重塑。
+            (B, C, H, W) -> channels as tokens -> Mamba -> reshape."""
         B, n_tokens = x.shape[:2]  # n_tokens = C
         d_model = x.shape[2:].numel()  # d_model = H*W
         assert d_model == self.dim, f"d_model: {d_model}, self.dim: {self.dim}"
@@ -118,11 +123,12 @@ class MambaLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Building blocks (faithful to source UMambaBot_2d.py / UMambaEnc_2d.py)
+# Building blocks ( 忠实 to 来源 UMambaBot _ 2d. py / UMambaEnc _ 2d. py ) / Building blocks (faithful to source UMambaBot_2d.py / UMambaEnc_2d.py)
 # ---------------------------------------------------------------------------
 
 class UpsampleLayer(nn.Module):
-    """Upsample by interpolation + 1x1 conv (faithful to source)."""
+    """上采样 by interpolation + 1x1 conv ( 忠实 to 来源 )。
+        Upsample by interpolation + 1x1 conv (faithful to source)."""
     def __init__(self, input_channels, output_channels, pool_op_kernel_size,
                  mode='nearest'):
         super().__init__()
@@ -138,6 +144,7 @@ class UpsampleLayer(nn.Module):
 
 class BasicResBlock(nn.Module):
     """Residual block faithful to source: conv->norm->act, conv->norm, +skip->act.
+        残差 块 忠实 to 来源: conv - > norm - > act, conv - > norm, + 跳跃 - > act。
 
     Uses InstanceNorm2d + LeakyReLU (standard nnU-Net configuration).
     """
@@ -172,6 +179,7 @@ class BasicResBlock(nn.Module):
 
 class BasicBlockD(nn.Module):
     """Additional residual block (faithful to dynamic_network_architectures).
+        Additional 残差 块 ( 忠实 to 动态的 _ 网络 _ architectures )。
 
     Same-resolution residual block: conv->norm->act, conv->norm, +skip->act.
     """
@@ -195,11 +203,12 @@ class BasicBlockD(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder: stem + strided stages (faithful to source UNetResEncoder)
+# 编码器: 主干 + strided 阶段 ( 忠实 to 来源 UNetResEncoder ) / Encoder: stem + strided stages (faithful to source UNetResEncoder)
 # ---------------------------------------------------------------------------
 
 class UNetResEncoder(nn.Module):
     """UNet encoder with stem + strided stages (faithful to source).
+        UNet 编码器。
 
     Stem processes input at stride=1 with n_blocks_per_stage[0] blocks.
     Stages process with given strides. Stem output is NOT included in skips.
@@ -232,7 +241,7 @@ class UNetResEncoder(nn.Module):
         self.conv_pad_sizes = [k // 2 for k in kernel_sizes]
         self.conv_bias = conv_bias
 
-        # Stem: stride-1, uses features_per_stage[0]
+        # 主干: 步长 - 1, uses 特征 _ per _ 阶段 [ 0 ] / Stem: stride-1, uses features_per_stage[0]
         stem_ch = features_per_stage[0]
         ks0 = kernel_sizes[0]
         pad0 = ks0 // 2
@@ -243,7 +252,7 @@ class UNetResEncoder(nn.Module):
               for _ in range(n_blocks_per_stage[0] - 1)]
         )
 
-        # Stages 1..n_stages-1 (stem is stage 0, its output is NOT in skips)
+        # 阶段 1.. n _ 阶段 - 1 ( 主干 is 阶段 0, its 输出 is NOT in skips ) / Stages 1..n_stages-1 (stem is stage 0, its output is NOT in skips)
         self.stages = nn.ModuleList()
         ch = stem_ch
         for s in range(1, n_stages):
@@ -268,11 +277,12 @@ class UNetResEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder: faithful to source UNetResDecoder
+# 解码: 忠实 to 来源 UNetResDecoder / Decoder: faithful to source UNetResDecoder
 # ---------------------------------------------------------------------------
 
 class UNetResDecoder(nn.Module):
     """UNet decoder with built-in seg_layers and deep supervision (faithful to source).
+        UNet 解码器。
 
     Key source-faithful details:
       - seg_layers (1x1 conv -> num_classes) at each decoder stage
@@ -305,7 +315,7 @@ class UNetResDecoder(nn.Module):
                 input_features_below, input_features_skip,
                 pool_op_kernel_size=stride_for_upsampling, mode='nearest'))
 
-            # Last decoder stage: no skip concatenation
+            # Last 解码器 / Last decoder stage: no skip concatenation
             in_ch = (2 * input_features_skip
                      if s < n_stages_encoder - 1
                      else input_features_skip)
@@ -323,12 +333,13 @@ class UNetResDecoder(nn.Module):
         self.seg_layers = nn.ModuleList(seg_layers)
 
     def forward(self, skips):
-        """skips: list of encoder stage outputs (shallow to deep)."""
+        """skips: list of 编码器。
+            skips: list of encoder stage outputs (shallow to deep)."""
         lres_input = skips[-1]
         seg_outputs = []
         for s in range(len(self.stages)):
             x = self.upsample_layers[s](lres_input)
-            # Last decoder stage does NOT concatenate with skip (faithful to source)
+            # Last 解码器 / Last decoder stage does NOT concatenate with skip (faithful to source)
             if s < (len(self.stages) - 1):
                 x = torch.cat((x, skips[-(s + 2)]), 1)
             x = self.stages[s](x)
@@ -338,7 +349,7 @@ class UNetResDecoder(nn.Module):
                 seg_outputs.append(self.seg_layers[-1](x))
             lres_input = x
 
-        # Reverse: deepest prediction last -> shallowest prediction first
+        # Reverse: deepest 预测 last - > shallowest 预测 first / Reverse: deepest prediction last -> shallowest prediction first
         seg_outputs = seg_outputs[::-1]
 
         if not self.deep_supervision or not self.training:
@@ -348,11 +359,12 @@ class UNetResDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# ResidualMambaEncoder (faithful to source: alternating MambaLayers)
+# ResidualMambaEncoder ( 忠实 to 来源: alternating MambaLayers ) / ResidualMambaEncoder (faithful to source: alternating MambaLayers)
 # ---------------------------------------------------------------------------
 
 class ResidualMambaEncoder(nn.Module):
     """Encoder with alternating MambaLayers at each stage (faithful to source).
+        编码器 with alternating MambaLayers at each 阶段 ( 忠实 to 来源 )。
 
     Key source-faithful details:
       - Alternating pattern: bool(s%2) ^ bool(n_stages%2) guarantees last stage has Mamba
@@ -388,8 +400,8 @@ class ResidualMambaEncoder(nn.Module):
         self.conv_pad_sizes = [k // 2 for k in kernel_sizes]
         self.conv_bias = conv_bias
 
-        # Compute feature map sizes and channel_token flags for all n_stages
-        # (index 0 = stem level, 1..n_stages-1 = conv stage levels)
+        # 计算 特征图 sizes and 通道 _ 标记 flags for all n _ 阶段 / Compute feature map sizes and channel_token flags for all n_stages
+        # ( index 0 = 主干 level, 1.. n _ 阶段 - 1 = conv 阶段 levels ) / (index 0 = stem level, 1..n_stages-1 = conv stage levels)
         do_channel_token = [False] * n_stages
         feature_map_sizes = []
         feature_map_size = list(input_size)
@@ -399,7 +411,7 @@ class ResidualMambaEncoder(nn.Module):
             if int(np.prod(feature_map_size)) <= features_per_stage[s]:
                 do_channel_token[s] = True
 
-        # Stem (stage 0)
+        # 主干 ( 阶段 0 ) / Stem (stage 0)
         stem_ch = features_per_stage[0]
         ks0 = kernel_sizes[0]
         pad0 = ks0 // 2
@@ -410,8 +422,8 @@ class ResidualMambaEncoder(nn.Module):
               for _ in range(n_blocks_per_stage[0] - 1)]
         )
 
-        # Alternating Mamba layers for ALL stages (index 0=stem, 1..n_stages-1)
-        # Pattern: bool(s%2) ^ bool(n_stages%2) guarantees last stage has Mamba
+        # Alternating Mamba layers for ALL 阶段 ( index 0 = 主干, 1.. n _ 阶段 - 1 ) / Alternating Mamba layers for ALL stages (index 0=stem, 1..n_stages-1)
+        # Pattern: bool ( s % 2 ) ^ bool ( n _ 阶段 % 2 ) guarantees last 阶段 has Mamba / Pattern: bool(s%2) ^ bool(n_stages%2) guarantees last stage has Mamba
         mamba_layers = []
         for s in range(n_stages):
             if bool(s % 2) ^ bool(n_stages % 2):
@@ -428,7 +440,7 @@ class ResidualMambaEncoder(nn.Module):
                 mamba_layers.append(nn.Identity())
         self.mamba_layers = nn.ModuleList(mamba_layers)
 
-        # Conv stages 1..n_stages-1 (stem is stage 0, not included here)
+        # Conv 阶段 1.. n _ 阶段 - 1 ( 主干 is 阶段 0, not included here ) / Conv stages 1..n_stages-1 (stem is stage 0, not included here)
         stages = []
         ch = stem_ch
         for s in range(1, n_stages):
@@ -456,11 +468,12 @@ class ResidualMambaEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# UMambaBot: UNet encoder + MambaLayer at bottleneck + UNet decoder
+# UMambaBot: UNet 编码器 / UMambaBot: UNet encoder + MambaLayer at bottleneck + UNet decoder
 # ---------------------------------------------------------------------------
 
 class UMambaBot(nn.Module):
     """U-Mamba Bot: Standard UNet with MambaLayer at bottleneck.
+        U-Mamba Bot: Standard UNet with MambaLayer at 瓶颈层。
 
     Faithful to source: encoder(x) -> mamba at bottleneck -> decoder(skips).
     Deep supervision is handled by the decoder (seg_layers at each stage).
@@ -502,7 +515,7 @@ class UMambaBot(nn.Module):
             n_conv_per_stage_decoder = [n_conv_per_stage_decoder] * (n_stages - 1)
         n_conv_per_stage_decoder = list(n_conv_per_stage_decoder)
 
-        # Source convention: reduce blocks in deeper encoder/decoder stages
+        # Source convention: reduce blocks in deeper 编码器 / Source convention: reduce blocks in deeper encoder/decoder stages
         for s in range(math.ceil(n_stages / 2), n_stages):
             n_blocks_per_stage[s] = 1
         for s in range(math.ceil((n_stages - 1) / 2 + 0.5), n_stages - 1):
@@ -524,17 +537,18 @@ class UMambaBot(nn.Module):
 
     def forward(self, x):
         skips = self.encoder(x)
-        # Apply Mamba at bottleneck (faithful to source: replaces skips[-1])
+        # Apply Mamba at 瓶颈层 / Apply Mamba at bottleneck (faithful to source: replaces skips[-1])
         skips[-1] = self.mamba_layer(skips[-1])
         return self.decoder(skips)
 
 
 # ---------------------------------------------------------------------------
-# UMambaEnc: ResidualMambaEncoder + UNet decoder
+# UMambaEnc: ResidualMambaEncoder + UNet 解码器 / UMambaEnc: ResidualMambaEncoder + UNet decoder
 # ---------------------------------------------------------------------------
 
 class UMambaEnc(nn.Module):
     """U-Mamba Enc: ResidualMambaEncoder + UNet decoder.
+        U-Mamba Enc: ResidualMambaEncoder + UNet 解码器。
 
     Faithful to source: alternating MambaLayers in encoder, deep supervision in decoder.
 
@@ -580,7 +594,7 @@ class UMambaEnc(nn.Module):
             n_conv_per_stage_decoder = [n_conv_per_stage_decoder] * (n_stages - 1)
         n_conv_per_stage_decoder = list(n_conv_per_stage_decoder)
 
-        # Source convention: reduce blocks in deeper stages
+        # 来源 convention: reduce blocks in deeper 阶段 / Source convention: reduce blocks in deeper stages
         for s in range(math.ceil(n_stages / 2), n_stages):
             n_blocks_per_stage[s] = 1
         for s in range(math.ceil((n_stages - 1) / 2 + 0.5), n_stages - 1):

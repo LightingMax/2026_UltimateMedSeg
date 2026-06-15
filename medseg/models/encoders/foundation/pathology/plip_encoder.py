@@ -1,4 +1,5 @@
 """PLIP foundation-model encoder (pathology vision-language).
+    PLIP foundation-model 编码器。
 
 Reference: Huang et al., "A visual-language foundation model for pathology
 image analysis using medical Twitter", Nature Medicine, 2023.
@@ -31,7 +32,7 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, load_hf_vit
 
 
-# Architecture constants for CLIP ViT-B/32.
+# 架构 constants for CLIP ViT-B / 32 / Architecture constants for CLIP ViT-B/32.
 _PLIP_EMBED_DIM = 768
 _PLIP_PATCH_SIZE = 32
 _PLIP_NATIVE_IMG_SIZE = 224
@@ -44,6 +45,7 @@ PRIMARY_BACKBONE_NAME = _PRIMARY_HF_NAME
 @ENCODER_REGISTRY.register("plip")
 class PLIPEncoder(BaseFoundationEncoder):
     """PLIP (pathology CLIP ViT-B/32) encoder with DPT-style multi-block output.
+        PLIP (pathology CLIP ViT-B/32) 编码器。
 
     The backbone is a ViT-Base/32 (``embed_dim=768``, ``patch_size=32``).
     Its final-layer patch tokens are reshaped to ``(B, 768, h, w)`` and
@@ -75,14 +77,14 @@ class PLIPEncoder(BaseFoundationEncoder):
             inference_only=inference_only, **kwargs,
         )
 
-        # ---- channel adapter for non-RGB inputs (PLIP is RGB-only) -------
+        # - - - - 通道 适配器 for non-RGB inputs ( PLIP is RGB-only ) - - - - - - - / ---- channel adapter for non-RGB inputs (PLIP is RGB-only) -------
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3,
                                                      kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # ---- backbone — loaded via transformers CLIPVisionModel -----------
+        # - - - - 骨干网络 — loaded via transformers CLIPVisionModel - - - - - - - - - - - / ---- backbone — loaded via transformers CLIPVisionModel -----------
         ref_size = self._pad_to_multiple_size(int(img_size))
 
         if pretrained:
@@ -100,13 +102,13 @@ class PLIPEncoder(BaseFoundationEncoder):
             )
         self._backbone_name = PRIMARY_BACKBONE_NAME
 
-        # ---- backbone introspection -------------------------------------
+        # - - - - 骨干网络 introspection - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- backbone introspection -------------------------------------
         self.patch_size = int(self.backbone.patch_embed.patch_size)
         self.embed_dim = int(self.backbone.embed_dim)
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -143,7 +145,7 @@ class PLIPEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from typing import Tuple
 
@@ -105,7 +105,7 @@ class SamOnnxModel(nn.Module):
     def select_masks(
         self, masks: torch.Tensor, iou_preds: torch.Tensor, num_points: int
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        # Determine if we should return the multiclick mask or not from the number of points.
+        # Determine if we should 返回 the multiclick 掩码 or not from the 数量 points / Determine if we should return the multiclick mask or not from the number of points.
         # The reweighting is used to avoid control flow.
         score_reweight = torch.tensor(
             [[1000] + [0] * (self.model.mask_decoder.num_mask_tokens - 1)]

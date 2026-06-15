@@ -1,4 +1,5 @@
 """CASCADE Decoder – faithful port from SLDGroup/CASCADE.
+    CASCADE 解码器。
 
 Medical Image Segmentation via Cascaded Attention Decoding (WACV 2023).
 https://github.com/SLDGroup/CASCADE/blob/main/lib/decoders.py
@@ -21,7 +22,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class _ConvBlock(nn.Module):
-    """Double conv block faithful to original CASCADE."""
+    """Double conv 块 忠实 to original CASCADE。
+        Double conv block faithful to original CASCADE."""
 
     def __init__(self, ch_in, ch_out):
         super().__init__()
@@ -39,7 +41,8 @@ class _ConvBlock(nn.Module):
 
 
 class _UpConv(nn.Module):
-    """Upsample + conv faithful to original CASCADE."""
+    """上采样 + conv 忠实 to original CASCADE。
+        Upsample + conv faithful to original CASCADE."""
 
     def __init__(self, ch_in, ch_out):
         super().__init__()
@@ -55,7 +58,8 @@ class _UpConv(nn.Module):
 
 
 class _AttentionBlock(nn.Module):
-    """Attention gate faithful to original CASCADE."""
+    """注意力 gate 忠实 to original CASCADE。
+        Attention gate faithful to original CASCADE."""
 
     def __init__(self, F_g, F_l, F_int):
         super().__init__()
@@ -83,7 +87,8 @@ class _AttentionBlock(nn.Module):
 
 
 class _ChannelAttention(nn.Module):
-    """Channel attention (CBAM) faithful to original CASCADE."""
+    """通道 注意力 ( CBAM ) 忠实 to original CASCADE。
+        Channel attention (CBAM) faithful to original CASCADE."""
 
     def __init__(self, in_planes, ratio=16):
         super().__init__()
@@ -102,7 +107,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """Spatial attention (CBAM) faithful to original CASCADE."""
+    """空间的 注意力 ( CBAM ) 忠实 to original CASCADE。
+        Spatial attention (CBAM) faithful to original CASCADE."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -122,6 +128,7 @@ class _SpatialAttention(nn.Module):
 @DECODER_REGISTRY.register("cascade")
 class CASCADEDecoder(nn.Module):
     """CASCADE decoder – faithful port from SLDGroup/CASCADE.
+        CASCADE 解码器。
 
     Uses attention gates + CBAM (channel + spatial attention) at each
     decoder stage. External skip_connection parameter is IGNORED.
@@ -135,20 +142,20 @@ class CASCADEDecoder(nn.Module):
     def __init__(self, encoder_channels: List[int], bottleneck_channels: int,
                  skip_connection=None, **kwargs):
         super().__init__()
-        # encoder_channels from model_builder is already the skip channels
-        # (encoder.out_channels[:-1]).  Do NOT truncate again.
-        # Reversed: deep to shallow, matching decoder upsample order.
+        # encoder_channels from model_builder is already the 跳跃连接 / encoder_channels from model_builder is already the skip channels
+        # ( 编码器. out _ 通道 [: - 1 ] ). Do NOT truncate again / (encoder.out_channels[:-1]).  Do NOT truncate again.
+        # Reversed: deep to shallow, matching 解码器 / Reversed: deep to shallow, matching decoder upsample order.
         skip_chs = list(reversed(encoder_channels))
         channels = [bottleneck_channels] + skip_chs
-        # e.g. enc=[64,128,256] (already skip-only), bottleneck=512 → skip_chs=[256,128,64], channels=[512,256,128,64]
+        # e.g. enc=[64,128,256] (already 跳跃连接 / e.g. enc=[64,128,256] (already skip-only), bottleneck=512 → skip_chs=[256,128,64], channels=[512,256,128,64]
 
-        # 1×1 conv on bottleneck
+        # 1×1 conv on 瓶颈层 / 1×1 conv on bottleneck
         self.Conv_1x1 = nn.Conv2d(channels[0], channels[0], 1, 1, 0)
 
-        # Stage 4 (deepest): CBAM + conv block on bottleneck
+        # Stage 4 (deepest): CBAM + conv block on 瓶颈层 / Stage 4 (deepest): CBAM + conv block on bottleneck
         self.ConvBlock4 = _ConvBlock(channels[0], channels[0])
 
-        # Decoder stages (3 levels for 4 encoder stages)
+        # Decoder stages (3 levels for 4 编码器 / Decoder stages (3 levels for 4 encoder stages)
         self.ups = nn.ModuleList()
         self.ags = nn.ModuleList()
         self.conv_blocks = nn.ModuleList()
@@ -157,7 +164,7 @@ class CASCADEDecoder(nn.Module):
             in_ch = channels[i]
             out_ch = channels[i + 1]
             self.ups.append(_UpConv(in_ch, out_ch))
-            # Attention gate: F_int = min(out_ch, channels[i+2]) if available, else 32
+            # 注意力 gate: F _ int = min ( out _ ch, 通道 [ i + 2 ] ) if available, else 32 / Attention gate: F_int = min(out_ch, channels[i+2]) if available, else 32
             if i + 2 < len(channels):
                 f_int = channels[i + 2]
             else:
@@ -165,13 +172,13 @@ class CASCADEDecoder(nn.Module):
             self.ags.append(_AttentionBlock(F_g=out_ch, F_l=out_ch, F_int=f_int))
             self.conv_blocks.append(_ConvBlock(2 * out_ch, out_ch))
 
-        # Channel attention modules (one per decoder stage)
+        # Channel attention modules (one per 解码器 / Channel attention modules (one per decoder stage)
         self.cas = nn.ModuleList()
         self.cas.append(_ChannelAttention(channels[0]))  # for bottleneck
         for i in range(len(skip_chs)):
             self.cas.append(_ChannelAttention(2 * channels[i + 1]))
 
-        # Shared spatial attention
+        # Shared 空间的 注意力 / Shared spatial attention
         self.sa = _SpatialAttention()
 
         self._out_channels = skip_chs[-1] if skip_chs else bottleneck_channels
@@ -184,24 +191,24 @@ class CASCADEDecoder(nn.Module):
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))  # deep to shallow
 
-        # Stage 4: 1×1 conv → CAM → SAM → conv block on bottleneck
+        # Stage 4: 1×1 conv → CAM → SAM → conv block on 瓶颈层 / Stage 4: 1×1 conv → CAM → SAM → conv block on bottleneck
         d = self.Conv_1x1(bottleneck_feat)
         d = self.cas[0](d) * d
         d = self.sa(d) * d
         d = self.ConvBlock4(d)
 
-        # Decoder stages with attention gates + CBAM
+        # 解码 阶段 with 注意力 gates + CBAM / Decoder stages with attention gates + CBAM
         for i in range(len(self.ups)):
-            # Upsample
+            # 上采样 / Upsample
             d = self.ups[i](d)
-            # Attention gate on skip feature
+            # Attention gate on 跳跃连接 / Attention gate on skip feature
             x_skip = self.ags[i](g=d, x=skips[i])
-            # Concatenate
+            # 拼接 / Concatenate
             d = torch.cat([x_skip, d], dim=1)
-            # CBAM: channel attention → spatial attention
+            # CBAM: 通道 注意力 → 空间的 注意力 / CBAM: channel attention → spatial attention
             d = self.cas[i + 1](d) * d
             d = self.sa(d) * d
-            # Conv block
+            # Conv 块 / Conv block
             d = self.conv_blocks[i](d)
 
         return d

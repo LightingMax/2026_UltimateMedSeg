@@ -1,4 +1,5 @@
 """MedSAM – Segment Anything in Medical Images (Nature Communications 2024).
+    MedSAM – Segment Anything in 医学的 图像 ( Nature Communications 2024 )。
 
 Reference: Jun Ma et al., "Segment Anything in Medical Images",
 Nature Communications 2024. Code: https://github.com/bowang-lab/MedSAM
@@ -28,9 +29,10 @@ import torch.nn.functional as F
 from .sam_base import SAMBase, load_with_ssl_fallback
 
 
-# ── lightweight conv decoder block ───────────────────────────────────────────
+# ── lightweight conv 解码器 / ── lightweight conv decoder block ───────────────────────────────────────────
 class _UpBlock(nn.Module):
-    """ConvTranspose2d ×2 upsample + BN + GELU."""
+    """ConvTranspose2d × 2 上采样 + BN + GELU。
+        ConvTranspose2d ×2 upsample + BN + GELU."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -45,6 +47,7 @@ class _UpBlock(nn.Module):
 # ── encoder factory ──────────────────────────────────────────────────────────
 def _build_vit_encoder(img_size: int, in_channels: int, pretrained: bool = True):
     """Build a SAM-like ViT-B image encoder via timm.
+        Build a SAM-like ViT-B image 编码器。
 
     timm's ``vit_base_patch16_224`` matches the SAM image encoder structure
     (12 layers, 768 dim, patch 16). With ``dynamic_img_size=True`` it can
@@ -66,9 +69,10 @@ def _build_vit_encoder(img_size: int, in_channels: int, pretrained: bool = True)
     return load_with_ssl_fallback(_create, pretrained=pretrained)
 
 
-# ── mask decoder (lightweight conv stack) ────────────────────────────────────
+# ── mask 解码器 / ── mask decoder (lightweight conv stack) ────────────────────────────────────
 class _MedSAMMaskDecoder(nn.Module):
-    """Four 2x ConvTranspose stages: 768 -> 256 -> 128 -> 64 -> num_classes."""
+    """Four 2x ConvTranspose 阶段: 768 - > 256 - > 128 - > 64 - > num _ classes。
+        Four 2x ConvTranspose stages: 768 -> 256 -> 128 -> 64 -> num_classes."""
 
     def __init__(self, embed_dim: int, num_classes: int):
         super().__init__()
@@ -88,6 +92,7 @@ class _MedSAMMaskDecoder(nn.Module):
 # ── main model ───────────────────────────────────────────────────────────────
 class MedSAM(SAMBase):
     """MedSAM: SAM ViT-B encoder + lightweight conv decoder.
+        MedSAM: SAM ViT-B 编码器。
 
     Args:
         in_channels: number of input channels (default 3).
@@ -121,7 +126,7 @@ class MedSAM(SAMBase):
                 "falling back to ViT-B."
             )
 
-        # SAM ViT-B image encoder.
+        # SAM ViT-B image 编码器 / SAM ViT-B image encoder.
         self.image_encoder = _build_vit_encoder(
             img_size=img_size,
             in_channels=in_channels,
@@ -129,28 +134,29 @@ class MedSAM(SAMBase):
         )
         self.num_prefix_tokens = int(getattr(self.image_encoder, "num_prefix_tokens", 1))
 
-        # MedSAM is prompt-free; expose a None attribute so SAMBase.apply_freeze
+        # MedSAM is prompt-free; expose a None attribute so SAMBase. 应用 _ freeze / MedSAM is prompt-free; expose a None attribute so SAMBase.apply_freeze
         # can introspect uniformly across SAM-family models.
         self.prompt_encoder = None
 
-        # Lightweight conv mask decoder.
+        # Lightweight conv mask 解码器 / Lightweight conv mask decoder.
         self.mask_decoder = _MedSAMMaskDecoder(self.EMBED_DIM, num_classes)
 
         self.apply_freeze()
 
     # ------------------------------------------------------------------
     def _encode(self, x: torch.Tensor) -> torch.Tensor:
-        """Return patch tokens reshaped to (B, C, H/16, W/16)."""
+        """返回 图块 标记 reshaped to ( B, C, H / 16, W / 16 )。
+            Return patch tokens reshaped to (B, C, H/16, W/16)."""
         B, _, H, W = x.shape
         tokens = self.image_encoder.forward_features(x)
-        # Drop the cls/prefix token(s).
+        # Drop the cls / prefix 标记 ( s ) / Drop the cls/prefix token(s).
         if self.num_prefix_tokens > 0:
             tokens = tokens[:, self.num_prefix_tokens:, :]
         # (B, N, C) → (B, C, H/16, W/16)
         Hp, Wp = H // self.PATCH, W // self.PATCH
         expected = Hp * Wp
         if tokens.shape[1] != expected:
-            # Some timm versions return ``(B, C, H', W')`` already; handle both.
+            # Some timm versions 返回 ` ` ( B, C, H ', W ' ) ` ` already; handle both / Some timm versions return ``(B, C, H', W')`` already; handle both.
             if tokens.dim() == 4:
                 return tokens
             raise RuntimeError(
@@ -163,7 +169,7 @@ class MedSAM(SAMBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
 
-        # Pad to a multiple of PATCH (16); record original size for cropping.
+        # Pad to a multiple of 图块 ( 16 ); record original 大小 for cropping / Pad to a multiple of PATCH (16); record original size for cropping.
         pad_h = (self.PATCH - H % self.PATCH) % self.PATCH
         pad_w = (self.PATCH - W % self.PATCH) % self.PATCH
         if pad_h or pad_w:
@@ -172,8 +178,8 @@ class MedSAM(SAMBase):
         feat = self._encode(x)            # (B, 768, H'/16, W'/16)
         h = self.mask_decoder(feat)       # (B, num_classes, H', W')
 
-        # If padding changed the spatial size, bilinear-resize to the padded
-        # input then crop back to the original H×W.
+        # If 填充 changed the 空间的 大小, bilinear-resize to the padded / If padding changed the spatial size, bilinear-resize to the padded
+        # 输入 then crop back to the original H × W / input then crop back to the original H×W.
         if h.shape[-2:] != x.shape[-2:]:
             h = F.interpolate(h, size=x.shape[-2:], mode="bilinear", align_corners=False)
         if pad_h or pad_w:

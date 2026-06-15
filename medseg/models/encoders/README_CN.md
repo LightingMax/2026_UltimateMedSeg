@@ -60,10 +60,13 @@
 model:
   encoder:
     name: timm_resnet50       # 任意已注册键
-    pretrained: true
+    pretrained: true           # 自动下载骨干权重
+    pretrained_path: null      # 可选：手动指定骨干权重本地路径
     in_channels: 3
-    params: {}                # 转发给构造函数的额外参数
+    params: {}                 # 转发给构造函数的额外参数
 ```
+
+> **预训练权重**：`pretrained: true` 自动下载骨干权重（通过 timm 或 WEIGHT_REGISTRY）。设置 `pretrained_path` 可使用本地检查点。完整模型迁移学习请使用顶层 `model.transfer_learning_path`。
 
 ## 添加新编码器
 

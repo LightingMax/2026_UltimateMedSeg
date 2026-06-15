@@ -1,4 +1,5 @@
 """VM-UNet: Vision Mamba UNet for Medical Image Segmentation.
+    VM-UNet: Vision Mamba UNet for 医学的 图像 分割。
 
 Uses Visual State Space (VSS) blocks in a U-Net architecture for
 efficient 2D medical image segmentation with linear complexity.
@@ -21,7 +22,8 @@ from typing import List, Optional
 
 
 class _SS2D(nn.Module):
-    """Simplified 2D Selective Scan: 4-direction scan + merge."""
+    """Simplified 2D Selective Scan: 4-direction scan + 合并。
+        Simplified 2D Selective Scan: 4-direction scan + merge."""
 
     def __init__(self, dim, d_state=16, expand=2.0):
         super().__init__()
@@ -44,7 +46,7 @@ class _SS2D(nn.Module):
         x_branch = x_branch.transpose(1, 2).view(B, -1, H, W)
         x_branch = self.act(self.conv(x_branch))
 
-        # Simplified SSM: use gated convolution as proxy
+        # Simplified SSM: use gated 卷积 as proxy / Simplified SSM: use gated convolution as proxy
         x_flat = x_branch.flatten(2).transpose(1, 2)  # (B, HW, hidden)
         bc = self.x_proj(x_flat)
         dt = F.softplus(self.dt_proj(bc[:, :, :self.d_state]))
@@ -124,13 +126,13 @@ class VMUNet(nn.Module):
             nn.BatchNorm2d(dims[0]),
         )
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc_stages = nn.ModuleList()
         for i in range(len(depths)):
             ds = i < len(depths) - 1
             self.enc_stages.append(_VSSStage(dims[i], depths[i], d_state, ds))
 
-        # Decoder
+        # 解码 / Decoder
         self.upsamples = nn.ModuleList()
         self.dec_stages = nn.ModuleList()
         for i in range(len(dims) - 1, 0, -1):

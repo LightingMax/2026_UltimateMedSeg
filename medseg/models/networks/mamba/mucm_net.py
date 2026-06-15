@@ -1,4 +1,5 @@
 """MUCM-Net: Mamba-powered UCM-Net for Skin Lesion Segmentation.
+    MUCM-Net: Mamba-powered UCM-Net for Skin 病灶 分割。
 
 Reference:
     Yuan et al., "MUCM-Net: A Mamba Powered UCM-Net for Skin Lesion
@@ -33,7 +34,8 @@ from medseg.models.encoders.vmunet_encoder import SS2D
 # ---------------------------------------------------------------------------
 
 class _OverlapPatchEmbed(nn.Module):
-    """Overlapping patch embedding (3x3 conv stride + LayerNorm)."""
+    """Overlapping 图块 嵌入 ( 3x3 conv 步长 + LayerNorm )。
+        Overlapping patch embedding (3x3 conv stride + LayerNorm)."""
     def __init__(self, img_size=256, patch_size=3, stride=2,
                  in_chans=3, embed_dim=8):
         super().__init__()
@@ -50,7 +52,8 @@ class _OverlapPatchEmbed(nn.Module):
 
 
 class _MambaBlock(nn.Module):
-    """Single-directional Mamba block using project SS2D."""
+    """Single-directional Mamba 块 using project SS2D。
+        Single-directional Mamba block using project SS2D."""
     def __init__(self, dim, d_state=16, d_conv=3, expand=2):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
@@ -68,7 +71,8 @@ class _MambaBlock(nn.Module):
 
 
 class _ShiftedMLP(nn.Module):
-    """Lightweight shifted MLP for local context (UCM-style)."""
+    """轻量级 shifted MLP for 局部的 context ( UCM-style )。
+        Lightweight shifted MLP for local context (UCM-style)."""
     def __init__(self, dim, mlp_ratio=1):
         super().__init__()
         hidden = int(dim * mlp_ratio)
@@ -81,7 +85,8 @@ class _ShiftedMLP(nn.Module):
 
 
 class UCMBlock(nn.Module):
-    """UCM Block: Mamba + shifted MLP with residual."""
+    """UCM 块: Mamba + shifted MLP with 残差。
+        UCM Block: Mamba + shifted MLP with residual."""
     def __init__(self, dim, num_heads=1, mlp_ratio=1,
                  drop=0., attn_drop=0., drop_path=0.,
                  norm_layer=nn.LayerNorm, sr_ratio=8,
@@ -106,6 +111,7 @@ class UCMBlock(nn.Module):
 
 class MUCMNet(nn.Module):
     """MUCM-Net for skin lesion segmentation.
+        MUCM-Net for skin 病灶 分割。
 
     Default embed_dims=[8,16,24,32,48,64,3] matches the original paper.
     """
@@ -129,7 +135,7 @@ class MUCMNet(nn.Module):
         self.num_classes = num_classes
         self.img_size = img_size
 
-        # -- Encoder conv --
+        # -- 编码器 / -- Encoder conv --
         self.encoder1 = nn.Conv2d(in_channels, embed_dims[0], 3, 1, 1)
         self.ebn1 = nn.GroupNorm(4, embed_dims[0])
 
@@ -148,7 +154,7 @@ class MUCMNet(nn.Module):
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, max(sum(depths), 1))]
 
-        # -- Encoder UCM blocks --
+        # -- 编码器 / -- Encoder UCM blocks --
         self.block_0_1 = nn.ModuleList([UCMBlock(
             dim=embed_dims[1], drop_path=dpr[0], sr_ratio=sr_ratios[0])])
         self.block0 = nn.ModuleList([UCMBlock(
@@ -160,7 +166,7 @@ class MUCMNet(nn.Module):
         self.block3 = nn.ModuleList([UCMBlock(
             dim=embed_dims[5], drop_path=dpr[min(1, len(dpr)-1)], sr_ratio=sr_ratios[0])])
 
-        # -- Decoder UCM blocks --
+        # -- 解码器 / -- Decoder UCM blocks --
         self.dblock0 = nn.ModuleList([UCMBlock(
             dim=embed_dims[4], drop_path=dpr[0], sr_ratio=sr_ratios[0])])
         self.dblock1 = nn.ModuleList([UCMBlock(
@@ -172,14 +178,14 @@ class MUCMNet(nn.Module):
         self.dblock4 = nn.ModuleList([UCMBlock(
             dim=embed_dims[0], drop_path=dpr[min(1, len(dpr)-1)], sr_ratio=sr_ratios[0])])
 
-        # -- Patch embed (downsample) --
+        # - - 图块 embed ( 下采样 ) - - / -- Patch embed (downsample) --
         self.patch_embed1 = _OverlapPatchEmbed(img_size, 3, 2, embed_dims[0], embed_dims[1])
         self.patch_embed2 = _OverlapPatchEmbed(img_size // 2, 3, 2, embed_dims[1], embed_dims[2])
         self.patch_embed3 = _OverlapPatchEmbed(img_size // 4, 3, 2, embed_dims[2], embed_dims[3])
         self.patch_embed4 = _OverlapPatchEmbed(img_size // 8, 3, 2, embed_dims[3], embed_dims[4])
         self.patch_embed5 = _OverlapPatchEmbed(img_size // 16, 3, 2, embed_dims[4], embed_dims[5])
 
-        # -- Decoder 1x1 conv --
+        # -- 解码器 / -- Decoder 1x1 conv --
         self.decoder0 = nn.Conv2d(embed_dims[5], embed_dims[4], 1)
         self.decoder1 = nn.Conv2d(embed_dims[4], embed_dims[3], 1)
         self.decoder2 = nn.Conv2d(embed_dims[3], embed_dims[2], 1)
@@ -187,14 +193,14 @@ class MUCMNet(nn.Module):
         self.decoder4 = nn.Conv2d(embed_dims[1], embed_dims[0], 1)
         self.decoder5 = nn.Conv2d(embed_dims[0], embed_dims[-1], 1)
 
-        # -- Decoder BN --
+        # -- 解码器 / -- Decoder BN --
         self.dbn0 = nn.GroupNorm(4, embed_dims[4])
         self.dbn1 = nn.GroupNorm(4, embed_dims[3])
         self.dbn2 = nn.GroupNorm(4, embed_dims[2])
         self.dbn3 = nn.GroupNorm(4, embed_dims[1])
         self.dbn4 = nn.GroupNorm(4, embed_dims[0])
 
-        # -- Final head --
+        # - - Final 头部 - - / -- Final head --
         self.final = nn.Conv2d(embed_dims[-1], num_classes, 1)
         self.apply(self._init_weights)
 
@@ -223,7 +229,7 @@ class MUCMNet(nn.Module):
         B = x_in.shape[0]
         H, W = x_in.shape[2:]
 
-        # Encoder
+        # 编码器 / Encoder
         e1 = F.relu(F.group_norm(self.encoder1(x_in), 4))
         e1p, H1, W1 = self.patch_embed1(e1)
         e1p = self._run_blocks(self.block_0_1, e1p, H1, W1)
@@ -240,13 +246,13 @@ class MUCMNet(nn.Module):
         e5p, H5, W5 = self.patch_embed5(e4p.view(B, H4, W4, -1).permute(0,3,1,2))
         e5p = self._run_blocks(self.block3, e5p, H5, W5)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         d5 = e5p.view(B, H5, W5, -1).permute(0,3,1,2)  # BCHW
         d5 = self.decoder0(d5)  # reduce channels
         d5 = F.relu(F.group_norm(d5, 4))
         d5 = F.interpolate(d5, scale_factor=2, mode='bilinear', align_corners=False)
 
-        # Decoder stage 4
+        # 解码 阶段 4 / Decoder stage 4
         skip4 = e4p.view(B, H4, W4, -1).permute(0,3,1,2)
         d4 = d5 + skip4
         d4_flat = rearrange(d4, 'b c h w -> b (h w) c')
@@ -256,7 +262,7 @@ class MUCMNet(nn.Module):
         d4 = self.decoder1(d4)
         d4 = F.interpolate(d4, scale_factor=2, mode='bilinear', align_corners=False)
 
-        # Decoder stage 3
+        # 解码 阶段 3 / Decoder stage 3
         skip3 = e3p.view(B, H3, W3, -1).permute(0,3,1,2)
         d3 = d4 + skip3
         d3_flat = rearrange(d3, 'b c h w -> b (h w) c')
@@ -266,7 +272,7 @@ class MUCMNet(nn.Module):
         d3 = self.decoder2(d3)
         d3 = F.interpolate(d3, scale_factor=2, mode='bilinear', align_corners=False)
 
-        # Decoder stage 2
+        # 解码 阶段 2 / Decoder stage 2
         skip2 = e2p.view(B, H2, W2, -1).permute(0,3,1,2)
         d2 = d3 + skip2
         d2_flat = rearrange(d2, 'b c h w -> b (h w) c')
@@ -276,7 +282,7 @@ class MUCMNet(nn.Module):
         d2 = self.decoder3(d2)
         d2 = F.interpolate(d2, scale_factor=2, mode='bilinear', align_corners=False)
 
-        # Decoder stage 1
+        # 解码 阶段 1 / Decoder stage 1
         skip1 = e1p.view(B, H1, W1, -1).permute(0,3,1,2)
         d1 = d2 + skip1
         d1_flat = rearrange(d1, 'b c h w -> b (h w) c')
@@ -286,7 +292,7 @@ class MUCMNet(nn.Module):
         d1 = self.decoder4(d1)
         d1 = F.interpolate(d1, scale_factor=2, mode='bilinear', align_corners=False)
 
-        # Final decoder
+        # Final 解码器 / Final decoder
         d0 = d1 + e1
         d0_flat = rearrange(d0, 'b c h w -> b (h w) c')
         d0_flat = self._run_blocks(self.dblock4, d0_flat, H, W)

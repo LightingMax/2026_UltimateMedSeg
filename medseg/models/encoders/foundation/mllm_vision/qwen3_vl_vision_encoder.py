@@ -1,4 +1,5 @@
 """Qwen3-VL vision encoder (foundation-model encoder).
+    Qwen3-VL vision encoder (foundation-model 编码器。
 
 Qwen3-VL (Alibaba, 2025) is the successor to Qwen2.5-VL: an enhanced
 multimodal LLM whose image side is an upgraded Vision Transformer with
@@ -36,7 +37,8 @@ _PATCH_SIZE = 14
 
 @ENCODER_REGISTRY.register("qwen3_vl_vision")
 class Qwen3VLVisionEncoder(BaseFoundationEncoder):
-    """Qwen3-VL vision tower with DPT-style multi-block multi-scale output."""
+    """Qwen3-VL vision tower with DPT-style multi-block 多尺度 输出。
+        Qwen3-VL vision tower with DPT-style multi-block multi-scale output."""
 
     native_img_size: int = 448
 
@@ -67,7 +69,7 @@ class Qwen3VLVisionEncoder(BaseFoundationEncoder):
                     f"{type(e).__name__}: {e}. Provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Extract the vision tower.
+            # 提取 the vision tower / Extract the vision tower.
             _visual = getattr(_full_model, "visual", None)
             if _visual is None:
                 _model_inner = getattr(_full_model, "model", None)
@@ -115,7 +117,7 @@ class Qwen3VLVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -138,7 +140,7 @@ class Qwen3VLVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

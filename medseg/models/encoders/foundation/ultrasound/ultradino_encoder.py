@@ -1,4 +1,5 @@
 """UltraDINO fetal-ultrasound foundation-model encoder.
+    UltraDINO fetal-ultrasound foundation-model 编码器。
 
 Reference:
     Ambsdorf et al., "General Methods Make Great Domain-specific Foundation
@@ -46,12 +47,13 @@ _NUM_LAYERS = 12
 _NUM_HEADS = 12
 _INTERMEDIATE_SIZE = 3072  # 4 * embed_dim
 
-# DINOv2 / iBOT checkpoint key prefixes to strip.
+# DINOv2 / iBOT 检查点 key prefixes to strip / DINOv2 / iBOT checkpoint key prefixes to strip.
 _PREFIX_STRIP = ("module.", "backbone.", "student.", "teacher.", "model.")
 
 
 def _load_dinov2_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
     """Build a HF ViTModel skeleton (ViT-B/16) and load UltraDINO weights.
+        Build a HF ViTModel skeleton ( ViT-B / 16 ) and 加载 UltraDINO 权重。
 
     Returns a ``HuggingFaceViTWrapper``-compatible module.
     """
@@ -71,7 +73,7 @@ def _load_dinov2_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
     )
     vit = ViTModel(cfg)
 
-    # Try to load pretrained weights.
+    # Try to 加载 预训练 权重 / Try to load pretrained weights.
     state = None
     if pretrained_path:
         ckpt = torch.load(pretrained_path, map_location="cpu", weights_only=False)
@@ -116,7 +118,7 @@ def _load_dinov2_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
                     break
             cleaned[nk] = v
         state = cleaned
-        # Remove teacher / projection head keys.
+        # Remove teacher / projection 头部 keys / Remove teacher / projection head keys.
         state = {k: v for k, v in state.items()
                  if not any(skip in k for skip in ("head", "prototypes", "teacher_head"))}
 
@@ -133,6 +135,7 @@ def _load_dinov2_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
 @ENCODER_REGISTRY.register("ultradino")
 class UltraDINOEncoder(BaseFoundationEncoder):
     """UltraDINO fetal-ultrasound encoder (DINOv2 ViT-B/16, ``embed_dim=768``).
+        UltraDINO fetal-ultrasound 编码器。
 
     Parameters
     ----------
@@ -162,7 +165,7 @@ class UltraDINOEncoder(BaseFoundationEncoder):
                          freeze=freeze, unfreeze_last_n=unfreeze_last_n,
                          inference_only=inference_only, **kwargs)
 
-        # Channel adapter for non-RGB inputs.
+        # 通道 适配器 for non-RGB inputs / Channel adapter for non-RGB inputs.
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
@@ -184,7 +187,7 @@ class UltraDINOEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -207,7 +210,7 @@ class UltraDINOEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

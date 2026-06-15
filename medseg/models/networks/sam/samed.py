@@ -1,4 +1,5 @@
 """SAMed — LoRA-adapted SAM ViT-B for medical segmentation.
+    SAMed — LoRA-adapted SAM ViT-B for 医学的 分割。
 
 Reference:
     Kaidong Zhang and Dong Liu, "Customized Segment Anything Model for Medical
@@ -25,7 +26,7 @@ from __future__ import annotations
 
 import os
 
-# Bound HF Hub timeouts so an offline / blocked environment can't stall model
+# Bound HF Hub timeouts so an offline / blocked environment can't stall 模型 / Bound HF Hub timeouts so an offline / blocked environment can't stall model
 # construction. Must be set before timm imports huggingface_hub internally.
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "5")
@@ -45,7 +46,8 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 # ---------------------------------------------------------------------------
 def _interpolate_pos_embed(pos_embed: torch.Tensor, num_prefix: int,
                            new_hw: tuple) -> torch.Tensor:
-    """Bicubic-resample a 1-D positional embedding to a new (H, W) grid."""
+    """Bicubic-resample a 1-D positional 嵌入 to a new ( H, W ) grid。
+        Bicubic-resample a 1-D positional embedding to a new (H, W) grid."""
     prefix = pos_embed[:, :num_prefix]
     grid = pos_embed[:, num_prefix:]
     N = grid.shape[1]
@@ -64,10 +66,11 @@ def _interpolate_pos_embed(pos_embed: torch.Tensor, num_prefix: int,
 
 
 # ---------------------------------------------------------------------------
-# LoRA wrapper for the QKV projection.
+# LoRA 封装器 for the QKV projection / LoRA wrapper for the QKV projection.
 # ---------------------------------------------------------------------------
 class _LoRALinear(nn.Module):
     """LoRA wrapper around a (frozen) ``nn.Linear``.
+        LoRA 封装器 around a ( frozen ) ` ` nn. Linear ` `。
 
     Forward computes ``base(x) + (x @ A^T) @ B^T``, where ``A`` is
     ``(rank, in_features)`` and ``B`` is ``(out_features, rank)``. Only the
@@ -126,10 +129,10 @@ class _LoRALinear(nn.Module):
         if not self._apply_to:
             return out
 
-        # Build a sparse delta over the full out_features dimension by writing
+        # Build a 稀疏的 delta over the full out _ 特征 维度 by writing / Build a sparse delta over the full out_features dimension by writing
         # each (A, B) update into its Q/K/V slice. This avoids materialising a
-        # dense (out_features, in_features) tensor.
-        # x shape: (..., in_features)
+        # 密集的 ( out _ 特征, in _ 特征 ) 张量 / dense (out_features, in_features) tensor.
+        # x 形状: (..., in _ 特征 ) / x shape: (..., in_features)
         delta = torch.zeros_like(out)
         for name in self._apply_to:
             A = self.lora_A[name]                       # (rank, in_features)
@@ -144,10 +147,11 @@ class _LoRALinear(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Image encoder: SAM ViT-B/16 with LoRA-wrapped QKV in every block.
+# Image 编码器 / Image encoder: SAM ViT-B/16 with LoRA-wrapped QKV in every block.
 # ---------------------------------------------------------------------------
 class _SAMedImageEncoderViTB(nn.Module):
     """SAM-style ViT-B/16 image encoder with LoRA QKV adapters.
+        SAM-style ViT-B/16 image 编码器。
 
     The forward returns a spatial feature map of shape
     ``(B, 768, H/16, W/16)``.
@@ -212,10 +216,11 @@ class _SAMedImageEncoderViTB(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Mask decoder: four 2x ConvTranspose stages (BN + GELU between stages).
+# Mask 解码器 / Mask decoder: four 2x ConvTranspose stages (BN + GELU between stages).
 # ---------------------------------------------------------------------------
 class _UpBlock(nn.Module):
-    """ConvTranspose2d (stride 2, kernel 2) + BatchNorm2d + GELU."""
+    """ConvTranspose2d ( 步长 2, 卷积核 2 ) + BatchNorm2d + GELU。
+        ConvTranspose2d (stride 2, kernel 2) + BatchNorm2d + GELU."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -228,7 +233,8 @@ class _UpBlock(nn.Module):
 
 
 class _SAMedMaskDecoder(nn.Module):
-    """Four 2x ConvTranspose stages: 768 -> 256 -> 128 -> 64 -> num_classes."""
+    """Four 2x ConvTranspose 阶段: 768 - > 256 - > 128 - > 64 - > num _ classes。
+        Four 2x ConvTranspose stages: 768 -> 256 -> 128 -> 64 -> num_classes."""
 
     def __init__(self, embed_dim: int = 768, num_classes: int = 2):
         super().__init__()
@@ -246,7 +252,7 @@ class _SAMedMaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SAMed(SAMBase):
     """SAMed: SAM ViT-B/16 with LoRA adapters in every block's QKV.
@@ -295,22 +301,22 @@ class SAMed(SAMBase):
 
         self.lora_rank = int(lora_rank)
 
-        # 1) Image encoder — SAM ViT-B/16 via timm, with LoRA QKV adapters.
+        # 1) Image 编码器 / 1) Image encoder — SAM ViT-B/16 via timm, with LoRA QKV adapters.
         self.image_encoder = _SAMedImageEncoderViTB(
             in_channels=in_channels,
             pretrained=self._pretrained,
             lora_rank=self.lora_rank,
         )
 
-        # 2) Prompt encoder — not used in this prompt-free variant.
+        # 2) Prompt 编码器 / 2) Prompt encoder — not used in this prompt-free variant.
         self.prompt_encoder = None
 
-        # 3) Mask decoder — four 2x ConvTranspose stages.
+        # 3) Mask 解码器 / 3) Mask decoder — four 2x ConvTranspose stages.
         self.mask_decoder = _SAMedMaskDecoder(
             embed_dim=self.EMBED_DIM, num_classes=num_classes,
         )
 
-        # Optional local checkpoint override.
+        # 可选 局部的 检查点 覆盖 / Optional local checkpoint override.
         if pretrained_path:
             try:
                 state = torch.load(pretrained_path, map_location="cpu")
@@ -332,9 +338,9 @@ class SAMed(SAMBase):
 
         self.apply_freeze()
 
-        # SAMed contract: ViT weights are frozen, but LoRA matrices train.
-        # apply_freeze() walked the whole image_encoder, so re-enable the
-        # LoRA A/B parameters here unless inference_only was requested.
+        # SAMed contract: ViT 权重 are frozen, but LoRA matrices train / SAMed contract: ViT weights are frozen, but LoRA matrices train.
+        # 应用 _ freeze ( ) walked the whole 图像 _ 编码器, so re-enable the / apply_freeze() walked the whole image_encoder, so re-enable the
+        # LoRA A / B 参数 here unless 推理 _ only was requested / LoRA A/B parameters here unless inference_only was requested.
         if not self._freeze_cfg["inference_only"]:
             for m in self.image_encoder.modules():
                 if isinstance(m, _LoRALinear):
@@ -356,14 +362,14 @@ class SAMed(SAMBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H, W = x.shape[-2:]
 
-        # Backbone is strict patch-aligned: pad to a multiple of 16.
+        # 骨干网络 is strict patch-aligned: pad to a multiple of 16 / Backbone is strict patch-aligned: pad to a multiple of 16.
         x_pad, (pad_h, pad_w) = self._pad_to_multiple(x, self.PATCH)
 
         feat = self.image_encoder(x_pad)          # (B, 768, H'/16, W'/16)
         logits = self.mask_decoder(feat)          # (B, num_classes, H', W')
 
-        # The decoder upsamples exactly 16x, so logits should already match
-        # x_pad's spatial size; bilinear is a defensive safety net.
+        # The 解码器 / The decoder upsamples exactly 16x, so logits should already match
+        # x _ pad's 空间的 大小; bilinear is a defensive safety net / x_pad's spatial size; bilinear is a defensive safety net.
         if logits.shape[-2:] != x_pad.shape[-2:]:
             logits = F.interpolate(
                 logits, size=x_pad.shape[-2:],

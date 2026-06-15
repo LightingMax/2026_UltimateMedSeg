@@ -1,4 +1,5 @@
 """LKM-UNet encoder (LKMUNetEncoder).
+    LKM-UNet 编码器。
 
 Standalone encoder extracted from ``medseg.models.networks.mamba.lkm_unet``.
 
@@ -24,7 +25,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
-    """Try a download/load, falling back to unverified SSL, then random init."""
+    """Try a download / 加载, falling back to unverified SSL, then random init。
+        Try a download/load, falling back to unverified SSL, then random init."""
     try:
         return load_fn(*args, **kwargs)
     except Exception as e1:
@@ -84,6 +86,7 @@ class _LargeKernelMambaBlock(nn.Module):
 @ENCODER_REGISTRY.register("lkm")
 class LKMUNetEncoder(nn.Module):
     """LKM-UNet encoder: stride-4 stem + 3 strided downsamples + 4 LKM stages.
+        LKM-UNet 编码器。
 
     Returns a 4-level feature pyramid in (B, C, H, W) format at strides
     4 / 8 / 16 / 32. The deepest (stride-32) feature is LAST.
@@ -125,7 +128,7 @@ class LKMUNetEncoder(nn.Module):
         self.dims = dims
         self.out_channels: List[int] = list(dims)
 
-        # Optional 1x1 stem if caller provides non-RGB input.
+        # 可选 1x1 主干 if caller provides non-RGB 输入 / Optional 1x1 stem if caller provides non-RGB input.
         if in_channels != 3:
             self.input_stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_in = 3
@@ -133,13 +136,13 @@ class LKMUNetEncoder(nn.Module):
             self.input_stem = nn.Identity()
             stem_in = in_channels
 
-        # Stride-4 patch-embed stem.
+        # 步长 - 4 patch-embed 主干 / Stride-4 patch-embed stem.
         self.stem = nn.Sequential(
             nn.Conv2d(stem_in, dims[0], kernel_size=4, stride=4, bias=False),
             nn.BatchNorm2d(dims[0]),
         )
 
-        # Encoder stages and inter-stage 2x strided downsamples.
+        # 编码器 阶段 and inter-stage 2x strided downsamples / Encoder stages and inter-stage 2x strided downsamples.
         self.enc = nn.ModuleList()
         self.downs = nn.ModuleList()
         for i in range(len(depths)):
@@ -153,10 +156,11 @@ class LKMUNetEncoder(nn.Module):
         if pretrained:
             _load_with_ssl_fallback(self._maybe_load_pretrained, pretrained_path)
 
-    # ---- Pretrained loading ---------------------------------------------------
+    # - - - - 预训练 loading - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Pretrained loading ---------------------------------------------------
 
     def _maybe_load_pretrained(self, pretrained_path: Optional[str] = None, **_):
-        """Best-effort local checkpoint load. No-op without a path."""
+        """Best-effort 局部的 检查点 加载. No-op without a path。
+            Best-effort local checkpoint load. No-op without a path."""
         if not pretrained_path:
             warnings.warn(
                 "LKMUNetEncoder: no pretrained_path provided; using random init."

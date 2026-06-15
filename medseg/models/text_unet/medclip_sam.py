@@ -1,5 +1,5 @@
 # MedCLIP-SAM (MICCAI 2024)
-# Reference: https://github.com/HealthX-Lab/MedCLIP-SAM
+# 参考: https: / / github. com / HealthX-Lab / MedCLIP-SAM / Reference: https://github.com/HealthX-Lab/MedCLIP-SAM
 # Paper: https://arxiv.org/abs/2403.20253
 # Implemented from paper formulas; not a copy of the official repo.
 """MedCLIP-SAM: a bridge between MedCLIP and SAM for zero-shot text-driven
@@ -46,7 +46,7 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 # ---------------------------------------------------------------------------
-# optional deps
+# 可选 deps / optional deps
 # ---------------------------------------------------------------------------
 try:
     from segment_anything import sam_model_registry, SamPredictor  # type: ignore
@@ -110,6 +110,7 @@ def _clip_patch_saliency(
     device: torch.device,
 ) -> torch.Tensor:
     """Compute a (C, H, W) saliency map per text prompt for one image.
+        计算 a ( C, H, W ) saliency 映射 per text prompt for one 图像。
 
     Steps mirror Eq. (1) of the paper:
       1. Forward CLIP vision encoder with ``output_hidden_states=True``.
@@ -139,7 +140,7 @@ def _clip_patch_saliency(
         # Project to the joint embed dim
         patch_proj = patch @ clip.visual_projection.weight.t()       # (1, N, D)
         patch_proj = F.normalize(patch_proj, dim=-1)
-        # cosine sim per patch per class -> (C, N)
+        # cosine sim per 图块 per class - > ( C, N ) / cosine sim per patch per class -> (C, N)
         sim = txt_emb @ patch_proj[0].t()
         N = sim.shape[-1]
         side = int(round(math.sqrt(N)))
@@ -158,7 +159,8 @@ def _box_from_saliency(
     W: int,
     percentile: float = 0.75,
 ) -> Tuple[int, int, int, int]:
-    """Return a tight bbox from a saliency map using a percentile threshold."""
+    """返回 a tight bbox from a saliency 映射 using a percentile 阈值。
+        Return a tight bbox from a saliency map using a percentile threshold."""
     sal = F.interpolate(
         saliency[None, None], size=(H, W), mode="bilinear", align_corners=False
     )[0, 0]
@@ -181,10 +183,11 @@ def _box_from_saliency(
 
 
 # ---------------------------------------------------------------------------
-# Main module
+# Main 模块 / Main module
 # ---------------------------------------------------------------------------
 class MedCLIPSAM(nn.Module):
-    """MedCLIP-SAM zero-shot text-to-mask wrapper (CLIP saliency -> SAM box prompt)."""
+    """MedCLIP-SAM zero-shot text-to-mask 封装器 ( CLIP saliency - > SAM box prompt )。
+        MedCLIP-SAM zero-shot text-to-mask wrapper (CLIP saliency -> SAM box prompt)."""
 
     is_text_guided = True
 
@@ -224,7 +227,7 @@ class MedCLIPSAM(nn.Module):
         self._predictor = None
         self._clip = None
         self._clip_proc = None
-        # anchor buffer keeps Module.device tracking working
+        # anchor buffer keeps 模块. device tracking working / anchor buffer keeps Module.device tracking working
         self.register_buffer("_anchor", torch.zeros(1))
 
     # ------------------------------------------------------------------
@@ -239,6 +242,7 @@ class MedCLIPSAM(nn.Module):
     @torch.no_grad()
     def forward(self, image: torch.Tensor, text: Any = None) -> torch.Tensor:
         """forward(image, text=None) -> (B, num_classes, H, W) logits.
+            前向传播 ( 图像, text = None ) - > ( B, num _ classes, H, W ) logits。
 
         For each sample, for each class:
             1. Compute CLIP saliency for the class prompt.
@@ -292,7 +296,7 @@ class MedCLIPSAM(nn.Module):
                     box=box_arr,
                     multimask_output=self.multimask_output,
                 )
-                # pick highest-IoU mask if multimask_output
+                # pick highest-IoU 掩码 if multimask _ 输出 / pick highest-IoU mask if multimask_output
                 if self.multimask_output:
                     idx = int(scores.argmax())
                     m = masks[idx]
@@ -300,7 +304,7 @@ class MedCLIPSAM(nn.Module):
                     m = masks[0]
                 out[b, c] = torch.from_numpy(m.astype("float32")).to(device)
 
-        # Convert binary mask to logits-friendly range so downstream sigmoid/argmax behaves
+        # Convert 二值的 掩码 to logits-friendly range so downstream sigmoid / argmax behaves / Convert binary mask to logits-friendly range so downstream sigmoid/argmax behaves
         return out * 10.0 - 5.0
 
 

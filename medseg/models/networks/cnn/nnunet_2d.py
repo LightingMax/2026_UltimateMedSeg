@@ -1,4 +1,5 @@
 """nnU-Net 2D – self-contained port of MIC-DKFZ/nnUNet's plain-conv UNet.
+    nnU-Net 2D – self-contained 移植 of MIC-DKFZ / nnUNet's plain-conv UNet。
 
 A faithful 2D implementation of the "plain conv" UNet used by nnU-Net's
 default planner: an encoder-decoder with InstanceNorm + LeakyReLU
@@ -24,6 +25,7 @@ import torch.nn.functional as F
 # ---------------------------------------------------------------------------
 class _ConvDropoutNormNonlin(nn.Module):
     """nnU-Net's basic conv block: Conv -> Dropout -> InstanceNorm -> LeakyReLU.
+        nnU-Net's 基本 conv 块: Conv - > 随机丢弃 - > InstanceNorm - > LeakyReLU。
 
     Dropout is disabled by default (p=0.0) to match the standard 2D plan.
     """
@@ -43,7 +45,8 @@ class _ConvDropoutNormNonlin(nn.Module):
 
 
 class _StackedConvLayers(nn.Module):
-    """Two ConvDropoutNormNonlin blocks; the first carries the stage stride."""
+    """Two ConvDropoutNormNonlin blocks; the first carries the 阶段 步长。
+        Two ConvDropoutNormNonlin blocks; the first carries the stage stride."""
 
     def __init__(self, in_ch, out_ch, first_stride=1, dropout_p=0.0):
         super().__init__()
@@ -59,7 +62,7 @@ class _StackedConvLayers(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Network
+# 网络 / Network
 # ---------------------------------------------------------------------------
 class NNUNet2D(nn.Module):
     """nnU-Net 2D plain-conv UNet.
@@ -91,13 +94,13 @@ class NNUNet2D(nn.Module):
         self.img_size = img_size
         self.num_stages = num_stages
 
-        # Per-stage feature widths: doubled, capped at max_features.
+        # Per-stage 特征 widths: doubled, capped at max _ 特征 / Per-stage feature widths: doubled, capped at max_features.
         feats = [min(base_features * (2 ** i), max_features)
                  for i in range(num_stages)]
 
         # ── Encoder ────────────────────────────────────────────────────────
-        # Stage 0 keeps spatial resolution (stride=1); subsequent stages
-        # downsample via stride-2 in the first conv of the block.
+        # 阶段 0 keeps 空间的 分辨率 ( 步长 = 1 ); subsequent 阶段 / Stage 0 keeps spatial resolution (stride=1); subsequent stages
+        # 下采样 via 步长 - 2 in the first conv of the 块 / downsample via stride-2 in the first conv of the block.
         self.encoders = nn.ModuleList()
         prev_c = in_channels
         for s in range(num_stages):
@@ -109,7 +112,7 @@ class NNUNet2D(nn.Module):
 
         # ── Decoder ────────────────────────────────────────────────────────
         # One transpose-conv + stacked-conv per "up" step. There are
-        # (num_stages - 1) decoder steps mirroring the downsampling stages.
+        # (num_stages - 1) 解码器 / (num_stages - 1) decoder steps mirroring the downsampling stages.
         self.upsamples = nn.ModuleList()
         self.decoders = nn.ModuleList()
         for s in range(num_stages - 1, 0, -1):
@@ -121,12 +124,12 @@ class NNUNet2D(nn.Module):
                     in_c, out_c, kernel_size=2, stride=2, bias=True,
                 )
             )
-            # After concat with the skip we have (out_c + skip_c) channels.
+            # After concat with the 跳跃连接 / After concat with the skip we have (out_c + skip_c) channels.
             self.decoders.append(
                 _StackedConvLayers(out_c + skip_c, out_c, first_stride=1)
             )
 
-        # ── Segmentation head ──────────────────────────────────────────────
+        # ─ ─ 分割 头部 ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Segmentation head ──────────────────────────────────────────────
         self.seg_head = nn.Conv2d(feats[0], num_classes, kernel_size=1, bias=True)
 
         self._init_weights()
@@ -145,23 +148,23 @@ class NNUNet2D(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         in_hw = x.shape[-2:]
 
-        # Encoder: collect skips at every stage.
+        # 编码器: collect skips at every 阶段 / Encoder: collect skips at every stage.
         skips = []
         h = x
         for enc in self.encoders:
             h = enc(h)
             skips.append(h)
 
-        # Decoder: start from the bottleneck (deepest skip) and progressively
-        # upsample, concatenating with each shallower encoder feature.
+        # Decoder: start from the bottleneck (deepest 跳跃连接 / Decoder: start from the bottleneck (deepest skip) and progressively
+        # upsample, concatenating with each shallower 编码器 / upsample, concatenating with each shallower encoder feature.
         h = skips[-1]
-        # decoder index 0 corresponds to undoing stage (num_stages-1);
-        # the skip to concatenate is skips[num_stages-2], etc.
+        # 解码 index 0 corresponds to undoing 阶段 ( num _ 阶段 - 1 ) / decoder index 0 corresponds to undoing stage (num_stages-1);
+        # the 跳跃连接 / the skip to concatenate is skips[num_stages-2], etc.
         for i, (up, dec) in enumerate(zip(self.upsamples, self.decoders)):
             skip = skips[self.num_stages - 2 - i]
             h = up(h)
-            # Safety: align spatial dims if input dimensions weren't a
-            # clean multiple of 2**(num_stages-1) – we crop/pad up to skip.
+            # Safety: align 空间的 dims if 输入 dimensions weren't a / Safety: align spatial dims if input dimensions weren't a
+            # clean multiple of 2**(num_stages-1) – we crop/pad up to 跳跃连接 / clean multiple of 2**(num_stages-1) – we crop/pad up to skip.
             if h.shape[-2:] != skip.shape[-2:]:
                 h = F.interpolate(h, size=skip.shape[-2:],
                                   mode='bilinear', align_corners=False)

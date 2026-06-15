@@ -1,4 +1,5 @@
 """SCSE-UNet – self-contained port from ai-med/squeeze_and_excitation.
+    SCSE-UNet – self-contained 移植 from ai-med / squeeze _ and _ excitation。
 
 Concurrent Spatial and Channel Squeeze & Excitation in Fully Convolutional
 Networks (Roy et al., MICCAI 2019).
@@ -18,7 +19,8 @@ import torch.nn.functional as F
 # Building blocks
 # ---------------------------------------------------------------------------
 class _DoubleConv(nn.Module):
-    """Two consecutive Conv-BN-ReLU blocks."""
+    """两个连续 Conv-BN-ReLU blocks。
+        Two consecutive Conv-BN-ReLU blocks."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -36,7 +38,8 @@ class _DoubleConv(nn.Module):
 
 
 class _cSEBlock(nn.Module):
-    """Channel Squeeze & Excitation: GAP -> FC -> ReLU -> FC -> Sigmoid."""
+    """通道 Squeeze & Excitation: GAP - > FC - > ReLU - > FC - > Sigmoid。
+        Channel Squeeze & Excitation: GAP -> FC -> ReLU -> FC -> Sigmoid."""
 
     def __init__(self, channels, reduction=16):
         super().__init__()
@@ -54,7 +57,8 @@ class _cSEBlock(nn.Module):
 
 
 class _sSEBlock(nn.Module):
-    """Spatial Squeeze & Excitation: 1x1 conv -> Sigmoid."""
+    """空间的 Squeeze & Excitation: 1x1 conv - > Sigmoid。
+        Spatial Squeeze & Excitation: 1x1 conv -> Sigmoid."""
 
     def __init__(self, channels):
         super().__init__()
@@ -68,7 +72,8 @@ class _sSEBlock(nn.Module):
 
 
 class _scSEBlock(nn.Module):
-    """Concurrent Spatial and Channel SE: max(cSE, sSE)."""
+    """Concurrent 空间的 and 通道 SE: max ( cSE, sSE )。
+        Concurrent Spatial and Channel SE: max(cSE, sSE)."""
 
     def __init__(self, channels, reduction=16):
         super().__init__()
@@ -84,6 +89,7 @@ class _scSEBlock(nn.Module):
 # ---------------------------------------------------------------------------
 class SCSEUNet(nn.Module):
     """UNet with concurrent spatial and channel squeeze-excitation blocks.
+        UNet with concurrent 空间的 and 通道 squeeze-excitation blocks。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -93,7 +99,7 @@ class SCSEUNet(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _DoubleConv(in_channels, 64)
         self.se1 = _scSEBlock(64)
         self.enc2 = _DoubleConv(64, 128)
@@ -104,11 +110,11 @@ class SCSEUNet(nn.Module):
         self.se4 = _scSEBlock(512)
         self.pool = nn.MaxPool2d(2)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = _DoubleConv(512, 1024)
         self.se_bn = _scSEBlock(1024)
 
-        # Decoder
+        # 解码 / Decoder
         self.up4 = nn.ConvTranspose2d(1024, 512, 2, stride=2)
         self.dec4 = _DoubleConv(1024, 512)
         self.se_d4 = _scSEBlock(512)
@@ -122,20 +128,20 @@ class SCSEUNet(nn.Module):
         self.dec1 = _DoubleConv(128, 64)
         self.se_d1 = _scSEBlock(64)
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(64, num_classes, 1)
 
     def forward(self, x):
-        # Encoder with scSE
+        # 编码器 with scSE / Encoder with scSE
         e1 = self.se1(self.enc1(x))
         e2 = self.se2(self.enc2(self.pool(e1)))
         e3 = self.se3(self.enc3(self.pool(e2)))
         e4 = self.se4(self.enc4(self.pool(e3)))
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.se_bn(self.bottleneck(self.pool(e4)))
 
-        # Decoder with scSE
+        # 解码 with scSE / Decoder with scSE
         d4 = self.se_d4(self.dec4(torch.cat([self.up4(b), e4], 1)))
         d3 = self.se_d3(self.dec3(torch.cat([self.up3(d4), e3], 1)))
         d2 = self.se_d2(self.dec2(torch.cat([self.up2(d3), e2], 1)))

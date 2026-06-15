@@ -33,8 +33,8 @@ import torch.nn.functional as F
 
 
 # ---------------------------------------------------------------------------
-# Optional helper kept for fidelity with the SDK pattern (no timm download
-# is actually triggered by this network -- CMU-Net trains from scratch).
+# 可选 helper kept for fidelity with the SDK pattern ( no timm download / Optional helper kept for fidelity with the SDK pattern (no timm download
+# is actually triggered by this 网络 - - CMU-Net trains from scratch ) / is actually triggered by this network -- CMU-Net trains from scratch).
 # ---------------------------------------------------------------------------
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
     import ssl
@@ -68,7 +68,8 @@ class _Residual(nn.Module):
 
 
 class _ConvMixerBlock(nn.Module):
-    """Stack of depthwise + pointwise conv residual blocks (large kernel)."""
+    """Stack of depthwise + pointwise conv 残差 blocks ( large 卷积核 )。
+        Stack of depthwise + pointwise conv residual blocks (large kernel)."""
 
     def __init__(self, dim: int = 1024, depth: int = 7, k: int = 7):
         super().__init__()
@@ -119,7 +120,8 @@ class _ConvBlock(nn.Module):
 
 
 class _UpConv(nn.Module):
-    """2x nearest upsample + 3x3 conv + BN + ReLU."""
+    """2x nearest 上采样 + 3x3 conv + BN + ReLU。
+        2x nearest upsample + 3x3 conv + BN + ReLU."""
 
     def __init__(self, ch_in: int, ch_out: int):
         super().__init__()
@@ -135,7 +137,8 @@ class _UpConv(nn.Module):
 
 
 class _MSAG(nn.Module):
-    """Multi-Scale Attention Gate used on the skip connections."""
+    """Multi-Scale Attention Gate used on the 跳跃连接。
+        Multi-Scale Attention Gate used on the skip connections."""
 
     def __init__(self, channel: int):
         super().__init__()
@@ -177,7 +180,7 @@ class _MSAG(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Top-level network.
+# Top-level 网络 / Top-level network.
 # ---------------------------------------------------------------------------
 class CMUNet(nn.Module):
     """CMU-Net (Tang et al., ISBI 2023).
@@ -208,7 +211,7 @@ class CMUNet(nn.Module):
         self.num_classes = num_classes
         self.img_size = img_size
 
-        # Encoder
+        # 编码器 / Encoder
         self.Maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.Conv1 = _ConvBlock(in_channels, 64)
         self.Conv2 = _ConvBlock(64, 128)
@@ -217,7 +220,7 @@ class CMUNet(nn.Module):
         self.Conv5 = _ConvBlock(512, 1024)
         self.ConvMixer = _ConvMixerBlock(dim=1024, depth=l, k=k)
 
-        # Decoder
+        # 解码 / Decoder
         self.Up5 = _UpConv(1024, 512)
         self.Up_conv5 = _ConvBlock(512 * 2, 512)
         self.Up4 = _UpConv(512, 256)
@@ -228,7 +231,7 @@ class CMUNet(nn.Module):
         self.Up_conv2 = _ConvBlock(64 * 2, 64)
         self.Conv_1x1 = nn.Conv2d(64, num_classes, kernel_size=1, stride=1, padding=0)
 
-        # Multi-Scale Attention Gates on the skip connections.
+        # Multi-Scale Attention Gates on the 跳跃连接 / Multi-Scale Attention Gates on the skip connections.
         self.msag4 = _MSAG(512)
         self.msag3 = _MSAG(256)
         self.msag2 = _MSAG(128)
@@ -238,7 +241,7 @@ class CMUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b, c, h, w = x.shape
 
-        # The network has four 2x downsamples, so pad to a multiple of 16.
+        # The 网络 has four 2x downsamples, so pad to a multiple of 16 / The network has four 2x downsamples, so pad to a multiple of 16.
         stride = 16
         pad_h = (stride - h % stride) % stride
         pad_w = (stride - w % stride) % stride
@@ -283,11 +286,11 @@ class CMUNet(nn.Module):
 
         out = self.Conv_1x1(d2)
 
-        # Crop back to the original spatial size if we padded.
+        # Crop back to the original 空间的 大小 if we padded / Crop back to the original spatial size if we padded.
         if pad_h or pad_w:
             out = out[:, :, :h, :w]
 
-        # Defensive resize in case shape arithmetic ever drifts.
+        # Defensive resize in case 形状 arithmetic ever drifts / Defensive resize in case shape arithmetic ever drifts.
         if out.shape[-2:] != (h, w):
             out = F.interpolate(out, size=(h, w), mode="bilinear", align_corners=False)
 

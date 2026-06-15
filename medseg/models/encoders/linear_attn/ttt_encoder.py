@@ -1,4 +1,5 @@
 """TTT-UNet Encoder: ResBlock pyramid with a Test-Time Training (TTT) layer
+    TTT-UNet 编码器。
 at the bottleneck.
 
 Adapted from ``medseg/networks/other/ttt_unet.py`` (Zhou et al., "TTT-UNet:
@@ -26,11 +27,12 @@ from medseg.models.networks.other.ttt_unet import TTTLayer  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
-# Residual conv block (copied from ttt_unet.ResBlock with ``_`` prefix)
+# 残差 conv 块 ( copied from ttt _ unet. ResBlock with ` ` _ ` ` prefix ) / Residual conv block (copied from ttt_unet.ResBlock with ``_`` prefix)
 # ---------------------------------------------------------------------------
 
 class _ResBlock(nn.Module):
-    """Residual conv block: (Conv-IN-LeakyReLU) x2 + identity/projection."""
+    """残差 conv 块: ( Conv-IN-LeakyReLU ) x2 + identity / projection。
+        Residual conv block: (Conv-IN-LeakyReLU) x2 + identity/projection."""
 
     def __init__(self, in_ch: int, out_ch: int, stride: int = 1):
         super().__init__()
@@ -54,12 +56,13 @@ class _ResBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Standalone TTT encoder
+# Standalone TTT 编码器 / Standalone TTT encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("ttt")
 class TTTEncoder(nn.Module):
     """TTT-UNet encoder: ResBlock pyramid + ``TTTLayer`` at the bottleneck.
+        TTT-UNet 编码器。
 
     Stage-0 runs at stride 1 (stem); every subsequent stage applies stride 2
     in its first ResBlock. Channel counts default to ``[32, 64, 128, 256,
@@ -109,7 +112,7 @@ class TTTEncoder(nn.Module):
 
         self.img_size = img_size
 
-        # Optional 1x1 stem so non-RGB inputs match the canonical interface.
+        # 可选 1x1 主干 so non-RGB inputs match the canonical interface / Optional 1x1 stem so non-RGB inputs match the canonical interface.
         if in_channels != 3:
             self.stem = nn.Conv2d(in_channels, 3, 1, bias=False)
             stage_in = 3
@@ -117,7 +120,7 @@ class TTTEncoder(nn.Module):
             self.stem = nn.Identity()
             stage_in = in_channels
 
-        # Conv pyramid: stage-0 stride 1, every subsequent stage stride 2.
+        # Conv 金字塔: 阶段 - 0 步长 1, every subsequent 阶段 步长 2 / Conv pyramid: stage-0 stride 1, every subsequent stage stride 2.
         self.stages = nn.ModuleList()
         prev_ch = stage_in
         for i, f in enumerate(features):
@@ -128,7 +131,7 @@ class TTTEncoder(nn.Module):
             self.stages.append(nn.Sequential(*blocks))
             prev_ch = f
 
-        # TTT bottleneck (flatten -> TTTLinear -> reshape).
+        # TTT 瓶颈层 / TTT bottleneck (flatten -> TTTLinear -> reshape).
         self.ttt_bottleneck = TTTLayer(features[-1], d_state=ttt_d_state)
 
         self.out_channels: List[int] = list(features)
@@ -140,6 +143,6 @@ class TTTEncoder(nn.Module):
         for stage in self.stages:
             x = stage(x)
             feats.append(x)
-        # TTT on the deepest feature (faithful to ``TTTUNet.forward``).
+        # TTT on the deepest 特征 ( 忠实 to ` ` TTTUNet. 前向传播 ` ` ) / TTT on the deepest feature (faithful to ``TTTUNet.forward``).
         feats[-1] = self.ttt_bottleneck(feats[-1])
         return feats

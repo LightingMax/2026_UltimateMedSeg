@@ -1,8 +1,9 @@
 # SaLIP (BMVC 2024)
-# Reference: https://github.com/aleemsidra/SaLIP
+# 参考: https: / / github. com / aleemsidra / SaLIP / Reference: https://github.com/aleemsidra/SaLIP
 # Paper: https://arxiv.org/abs/2404.06362
 # Implemented from paper formulas; not a copy of the official repo.
 """SaLIP: SAM + Linguistic Instance Prompts for zero-shot medical segmentation.
+    SaLIP: SAM + Linguistic 实例 Prompts for zero-shot 医学的 分割。
 
 The SaLIP pipeline is *inference-only* and contains three stages:
 
@@ -43,7 +44,7 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 # ---------------------------------------------------------------------------
-# optional deps
+# 可选 deps / optional deps
 # ---------------------------------------------------------------------------
 try:
     from segment_anything import sam_model_registry, SamPredictor  # type: ignore
@@ -59,7 +60,7 @@ except Exception:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Helper: lazy import + strict checkpoint load
+# Helper: lazy import + strict 检查点 加载 / Helper: lazy import + strict checkpoint load
 # ---------------------------------------------------------------------------
 def _build_sam(sam_type: str, sam_ckpt: Optional[str], device: torch.device):
     if not _HAS_SAM:
@@ -71,7 +72,7 @@ def _build_sam(sam_type: str, sam_ckpt: Optional[str], device: torch.device):
         raise KeyError(f"Unknown SAM type '{sam_type}'. Available: {list(sam_model_registry.keys())}")
 
     if not sam_ckpt:
-        # Auto-download via the unified weight downloader; raises
+        # Auto-download via the 统一的 权重 downloader; raises / Auto-download via the unified weight downloader; raises
         # WeightDownloadError (with manual URL) on failure.
         from medseg.utils.weight_downloader import ensure_weight
         key_map = {"vit_b": "sam_vit_b", "vit_l": "sam_vit_l", "vit_h": "sam_vit_h"}
@@ -100,7 +101,7 @@ def _build_clip(hf_name: str, device: torch.device):
 
 
 # ---------------------------------------------------------------------------
-# Point-grid mask generator (lightweight stand-in for SamAutomaticMaskGenerator)
+# Point-grid 掩码 generator ( 轻量级 stand-in for SamAutomaticMaskGenerator ) / Point-grid mask generator (lightweight stand-in for SamAutomaticMaskGenerator)
 # ---------------------------------------------------------------------------
 class _GridPointGenerator(nn.Module):
     def __init__(self, points_per_side: int = 16, pred_iou_thresh: float = 0.7, min_mask_area: int = 50):
@@ -141,10 +142,11 @@ class _GridPointGenerator(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main module
+# Main 模块 / Main module
 # ---------------------------------------------------------------------------
 class SaLIP(nn.Module):
     """SaLIP — training-free SAM+CLIP referring segmentation.
+        SaLIP — training-free SAM + CLIP referring 分割。
 
     Args:
         num_classes:    number of output channels (one selected mask per class).
@@ -198,12 +200,12 @@ class SaLIP(nn.Module):
         self.crop_strategy = crop_strategy
         self.mask_gen = _GridPointGenerator(points_per_side, pred_iou_thresh, min_mask_area)
 
-        # placeholders — lazily filled on first forward
+        # placeholders — lazily filled on first 前向传播 / placeholders — lazily filled on first forward
         self._sam = None
         self._predictor = None
         self._clip = None
         self._clip_proc = None
-        # we keep one buffer so the module has a parameter / device anchor
+        # we keep one buffer so the 模块 has a 参数 / device anchor / we keep one buffer so the module has a parameter / device anchor
         self.register_buffer("_anchor", torch.zeros(1))
 
     # ------------------------------------------------------------------
@@ -306,7 +308,7 @@ class SaLIP(nn.Module):
             for c in range(self.num_classes):
                 m = masks[int(best[c].item())].astype("float32")
                 out[b, c] = torch.from_numpy(m).to(device)
-        # convert to logits-ish range so downstream sigmoid/threshold still works
+        # convert to logits-ish range so downstream sigmoid / 阈值 still works / convert to logits-ish range so downstream sigmoid/threshold still works
         return out * 10.0 - 5.0
 
 

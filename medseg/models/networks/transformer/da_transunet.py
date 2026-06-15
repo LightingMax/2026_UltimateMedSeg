@@ -1,4 +1,5 @@
 """DA-TransUNet: Dual Attention + Transformer U-Net for Medical Image Segmentation.
+    DA-TransUNet: Dual 注意力 + Transformer U-Net for 医学的 图像 分割。
 
 Combines TransUNet with spatial and channel dual attention blocks (DA-Block)
 to enhance feature representation in skip connections.
@@ -41,7 +42,8 @@ class _ConvBnReLU(nn.Module):
 
 
 class _ResBlock(nn.Module):
-    """Basic residual block with optional stride-2 downsampling."""
+    """基本 残差 块 with 可选 步长 - 2 下采样。
+        Basic residual block with optional stride-2 downsampling."""
 
     def __init__(self, in_c, out_c, stride=1, downsample=None):
         super().__init__()
@@ -61,7 +63,8 @@ class _ResBlock(nn.Module):
 
 
 class _ResStage(nn.Module):
-    """Stack of ResBlocks with optional initial downsampling."""
+    """Stack of ResBlocks with 可选 initial 下采样。
+        Stack of ResBlocks with optional initial downsampling."""
 
     def __init__(self, in_c, out_c, num_blocks, stride_first=1):
         super().__init__()
@@ -82,7 +85,7 @@ class _ResStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Dual Attention Block
+# Dual 注意力 块 / Dual Attention Block
 # ---------------------------------------------------------------------------
 
 class _ChannelAttention(nn.Module):
@@ -119,7 +122,8 @@ class _SpatialAttention(nn.Module):
 
 
 class DualAttentionBlock(nn.Module):
-    """Channel attention followed by spatial attention."""
+    """通道 注意力 followed by 空间的 注意力。
+        Channel attention followed by spatial attention."""
 
     def __init__(self, channels, reduction=16):
         super().__init__()
@@ -133,11 +137,12 @@ class DualAttentionBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Transformer Bottleneck
+# Transformer 瓶颈层 / Transformer Bottleneck
 # ---------------------------------------------------------------------------
 
 class _TransformerBottleneck(nn.Module):
-    """Lightweight transformer encoder for global context."""
+    """Lightweight transformer 编码器。
+        Lightweight transformer encoder for global context."""
 
     def __init__(self, embed_dim, num_heads=8, num_layers=4, mlp_ratio=4.0):
         super().__init__()
@@ -166,6 +171,7 @@ class _TransformerBottleneck(nn.Module):
 
 class DATransUNet(nn.Module):
     """DA-TransUNet: TransUNet with Dual Attention.
+        DA-TransUNet: TransUNet with Dual 注意力。
 
     Args:
         in_channels: Input channels (default 3).
@@ -195,7 +201,7 @@ class DATransUNet(nn.Module):
         embed_dims = embed_dims or [64, 128, 256, 512]
         depths = depths or [3, 4, 6, 3]
 
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0] // 2, 7, 2, 3, bias=False),
             nn.BatchNorm2d(embed_dims[0] // 2),
@@ -206,7 +212,7 @@ class DATransUNet(nn.Module):
         )
         self.pool = nn.MaxPool2d(3, 2, 1)
 
-        # Encoder stages
+        # 编码器 阶段 / Encoder stages
         stages = []
         in_c = embed_dims[0]
         for i, (out_c, num_blocks) in enumerate(zip(embed_dims, depths)):
@@ -215,18 +221,18 @@ class DATransUNet(nn.Module):
             in_c = out_c
         self.stages = nn.ModuleList(stages)
 
-        # Transformer bottleneck
+        # Transformer 瓶颈层 / Transformer bottleneck
         self.transformer = _TransformerBottleneck(
             embed_dims[-1], transformer_heads, transformer_layers,
         )
 
-        # Dual attention blocks for skip connections
+        # Dual attention blocks for 跳跃连接 / Dual attention blocks for skip connections
         self.da_blocks = nn.ModuleList([
             DualAttentionBlock(c) for c in embed_dims
         ])
 
-        # Decoder: progressive upsampling + concat
-        # At each step: input channels = embed_dims[-1-i]*2 (upsampled + skip)
+        # 解码: progressive 上采样 + concat / Decoder: progressive upsampling + concat
+        # At each step: input channels = embed_dims[-1-i]*2 (upsampled + 跳跃连接 / At each step: input channels = embed_dims[-1-i]*2 (upsampled + skip)
         self.dec_convs = nn.ModuleList()
         for i in range(len(embed_dims) - 1):
             c_in = embed_dims[-1 - i] * 2
@@ -236,7 +242,7 @@ class DATransUNet(nn.Module):
                 _ConvBnReLU(c_out, c_out),
             ))
 
-        # Final head
+        # Final 头部 / Final head
         self.head = nn.Sequential(
             _ConvBnReLU(embed_dims[0], embed_dims[0] // 2),
             nn.Conv2d(embed_dims[0] // 2, num_classes, 1),
@@ -245,22 +251,22 @@ class DATransUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H_in, W_in = x.shape[2:]
 
-        # Stem + pool
+        # 主干 + pool / Stem + pool
         s0 = self.stem(x)          # (B, d0, H/2, W/2)
         s0_pool = self.pool(s0)    # (B, d0, H/4, W/4)
 
-        # Encoder features (only stage outputs, not stem)
+        # 编码器 特征 ( only 阶段 outputs, not 主干 ) / Encoder features (only stage outputs, not stem)
         feats = []
         cur = s0_pool
         for i, stage in enumerate(self.stages):
             cur = stage(cur) if i > 0 else stage(s0)
             feats.append(cur)
-        # feats: [s1(d0), s2(d1), s3(d2), s4(d3)] - 4 features
+        # feats: [ s1 ( d0 ), s2 ( d1 ), s3 ( d2 ), s4 ( d3 ) ] - 4 特征 / feats: [s1(d0), s2(d1), s3(d2), s4(d3)] - 4 features
 
-        # Transformer bottleneck
+        # Transformer 瓶颈层 / Transformer bottleneck
         bot = self.transformer(feats[-1])
 
-        # Decoder with DA skip connections
+        # Decoder with DA 跳跃连接 / Decoder with DA skip connections
         x = bot
         for i, dec_conv in enumerate(self.dec_convs):
             skip_idx = len(feats) - 1 - i
@@ -269,6 +275,6 @@ class DATransUNet(nn.Module):
             x = torch.cat([x, skip], dim=1)
             x = dec_conv(x)
 
-        # Upsample to input size and predict
+        # 上采样 to 输入 大小 and 预测 / Upsample to input size and predict
         x = F.interpolate(x, size=(H_in, W_in), mode="bilinear", align_corners=False)
         return self.head(x)

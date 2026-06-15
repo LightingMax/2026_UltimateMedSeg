@@ -1,4 +1,5 @@
 """U-KAN Encoder (AAAI 2025).
+    U-KAN 编码器。
 
 Standalone encoder extracted from ``medseg.models.networks.kan_mlp.ukan.UKAN``.
 
@@ -27,11 +28,12 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 # ---------------------------------------------------------------------------
-# KANLinear (copied verbatim from the source network).
+# KANLinear ( copied verbatim from the 来源 网络 ) / KANLinear (copied verbatim from the source network).
 # ---------------------------------------------------------------------------
 
 class _KANLinear(nn.Module):
-    """KAN linear layer with B-spline learnable activation functions."""
+    """KAN linear 层 with B-spline learnable 激活 functions。
+        KAN linear layer with B-spline learnable activation functions."""
 
     def __init__(self, in_features, out_features, grid_size=5, spline_order=3,
                  scale_noise=0.1, scale_base=1.0, scale_spline=1.0,
@@ -144,7 +146,8 @@ class _DW_bn_relu(nn.Module):
 
 
 class _KANLayer(nn.Module):
-    """Tokenized KAN layer: fc1 -> dw -> fc2 -> dw -> fc3 -> dw."""
+    """Tokenized KAN 层: fc1 - > dw - > fc2 - > dw - > fc3 - > dw。
+        Tokenized KAN layer: fc1 -> dw -> fc2 -> dw -> fc3 -> dw."""
 
     def __init__(self, in_features, hidden_features=None, out_features=None,
                  act_layer=nn.GELU, drop=0., no_kan=False):
@@ -202,7 +205,8 @@ class _KANLayer(nn.Module):
 
 
 class _KANBlock(nn.Module):
-    """KAN block: LayerNorm -> KANLayer with residual + DropPath."""
+    """KAN 块: LayerNorm - > KANLayer with 残差 + DropPath。
+        KAN block: LayerNorm -> KANLayer with residual + DropPath."""
 
     def __init__(self, dim, drop=0., drop_path=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm, no_kan=False):
@@ -236,6 +240,7 @@ class _KANBlock(nn.Module):
 
 class _PatchEmbed(nn.Module):
     """Image to Patch Embedding (overlap, stride configurable).
+        图像 to 图块 嵌入 ( overlap, 步长 configurable )。
 
     Spatial output size is read at runtime from ``proj`` output, so this
     module works for any input resolution.
@@ -248,7 +253,7 @@ class _PatchEmbed(nn.Module):
         patch_size = to_2tuple(patch_size)
         self.img_size = img_size
         self.patch_size = patch_size
-        # H/W kept for reference only; runtime forward uses tensor shape.
+        # H / W kept for 参考 only; runtime 前向传播 uses 张量 形状 / H/W kept for reference only; runtime forward uses tensor shape.
         self.H = img_size[0] // patch_size[0]
         self.W = img_size[1] // patch_size[1]
         self.num_patches = self.H * self.W
@@ -298,8 +303,8 @@ class _ConvLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Pretrained-load helper (kept for parity with other encoders; UKAN ships
-# no public pretrained weights, so by default this is a no-op).
+# Pretrained-load helper ( kept for 一致性 with other encoders; UKAN ships / Pretrained-load helper (kept for parity with other encoders; UKAN ships
+# no public 预训练 权重, so by 默认值 this is a no-op ) / no public pretrained weights, so by default this is a no-op).
 # ---------------------------------------------------------------------------
 
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
@@ -320,12 +325,13 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# Top-level encoder.
+# Top-level 编码器 / Top-level encoder.
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("ukan")
 class UKANEncoder(nn.Module):
     """U-KAN encoder.
+        U-KAN 编码器。
 
     Returns 5 multi-scale features (shallow -> deep, deepest LAST):
         [C0 @ H/2, C1 @ H/4, C2 @ H/8, C3 @ H/16, C4 @ H/32]
@@ -360,7 +366,7 @@ class UKANEncoder(nn.Module):
         kan_input_dim = embed_dims[0]
         norm_layer = nn.LayerNorm
 
-        # Optional 1x1 stem for non-RGB inputs (e.g. grayscale CT/MR).
+        # 可选 1x1 主干 for non-RGB inputs ( e. g. grayscale CT / MR ) / Optional 1x1 stem for non-RGB inputs (e.g. grayscale CT/MR).
         if in_channels != 3:
             self.in_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             stem_in = 3
@@ -368,7 +374,7 @@ class UKANEncoder(nn.Module):
             self.in_proj = nn.Identity()
             stem_in = in_channels
 
-        # -- Conv encoder stages --
+        # -- Conv 编码器 / -- Conv encoder stages --
         self.encoder1 = _ConvLayer(stem_in, kan_input_dim // 8)
         self.encoder2 = _ConvLayer(kan_input_dim // 8, kan_input_dim // 4)
         self.encoder3 = _ConvLayer(kan_input_dim // 4, kan_input_dim)
@@ -386,7 +392,7 @@ class UKANEncoder(nn.Module):
             dim=embed_dims[2], drop=drop_rate, drop_path=dpr[1],
             norm_layer=norm_layer, no_kan=no_kan)])
 
-        # -- Patch embeddings (KAN stage + bottleneck) --
+        # -- Patch embeddings (KAN stage + 瓶颈层 / -- Patch embeddings (KAN stage + bottleneck) --
         self.patch_embed3 = _PatchEmbed(
             img_size=img_size // 4, patch_size=3, stride=2,
             in_chans=embed_dims[0], embed_dim=embed_dims[1])
@@ -394,7 +400,7 @@ class UKANEncoder(nn.Module):
             img_size=img_size // 8, patch_size=3, stride=2,
             in_chans=embed_dims[1], embed_dim=embed_dims[2])
 
-        # Channel list for each returned feature (deepest LAST).
+        # 通道 list for each returned 特征 ( deepest LAST ) / Channel list for each returned feature (deepest LAST).
         self.out_channels: List[int] = [
             kan_input_dim // 8,   # t1  H/2
             kan_input_dim // 4,   # t2  H/4
@@ -403,28 +409,28 @@ class UKANEncoder(nn.Module):
             embed_dims[2],        # t5  H/32
         ]
 
-        # ``pretrained`` is accepted for interface parity but unused
-        # (no canonical public U-KAN weights). The fallback helper is
-        # exposed for use by subclasses if needed.
+        # ` ` 预训练 ` ` is accepted for interface 一致性 but unused / ``pretrained`` is accepted for interface parity but unused
+        # ( no canonical public U-KAN 权重 ). The fallback helper is / (no canonical public U-KAN weights). The fallback helper is
+        # 暴露的 for use by subclasses if needed / exposed for use by subclasses if needed.
         self._pretrained_requested = bool(pretrained)
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         x = self.in_proj(x)
         B = x.shape[0]
 
-        # Stage 1: Conv + MaxPool -> H/2
+        # 阶段 1: Conv + MaxPool - > H / 2 / Stage 1: Conv + MaxPool -> H/2
         out = F.relu(F.max_pool2d(self.encoder1(x), 2, 2))
         t1 = out
 
-        # Stage 2: Conv + MaxPool -> H/4
+        # 阶段 2: Conv + MaxPool - > H / 4 / Stage 2: Conv + MaxPool -> H/4
         out = F.relu(F.max_pool2d(self.encoder2(out), 2, 2))
         t2 = out
 
-        # Stage 3: Conv + MaxPool -> H/8
+        # 阶段 3: Conv + MaxPool - > H / 8 / Stage 3: Conv + MaxPool -> H/8
         out = F.relu(F.max_pool2d(self.encoder3(out), 2, 2))
         t3 = out
 
-        # Stage 4: tokenized KAN stage -> H/16
+        # 阶段 4: tokenized KAN 阶段 - > H / 16 / Stage 4: tokenized KAN stage -> H/16
         out, H, W = self.patch_embed3(out)
         for blk in self.block1:
             out = blk(out, H, W)
@@ -432,7 +438,7 @@ class UKANEncoder(nn.Module):
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         t4 = out
 
-        # Stage 5 (bottleneck): tokenized KAN stage -> H/32
+        # 阶段 5 ( 瓶颈层 ): tokenized KAN 阶段 - > H / 32 / Stage 5 (bottleneck): tokenized KAN stage -> H/32
         out, H, W = self.patch_embed4(out)
         for blk in self.block2:
             out = blk(out, H, W)

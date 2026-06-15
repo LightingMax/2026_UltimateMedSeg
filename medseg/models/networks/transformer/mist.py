@@ -1,4 +1,5 @@
 """MIST: Multi-task Image Segmentation Transformer.
+    MIST: Multi-task 图像 分割 Transformer。
 
 Reference:
     Rishikesh et al., "MIST: Multi-task Image Segmentation Transformer for
@@ -31,8 +32,8 @@ Self-contained: only torch and timm are required.
 
 import os
 
-# Limit huggingface_hub retry/timeout budgets so a network outage does not
-# stall model construction for minutes. Must be set before importing timm.
+# Limit huggingface _ hub retry / timeout budgets so a 网络 outage does not / Limit huggingface_hub retry/timeout budgets so a network outage does not
+# stall 模型 construction for minutes. Must be set before importing timm / stall model construction for minutes. Must be set before importing timm.
 os.environ.setdefault('HF_HUB_ETAG_TIMEOUT', '3')
 os.environ.setdefault('HF_HUB_DOWNLOAD_TIMEOUT', '5')
 
@@ -68,6 +69,7 @@ class _ConvBNReLU(nn.Module):
 
 class _UpFuseBlock(nn.Module):
     """One stage of the segmentation decoder.
+        One stage of the segmentation 解码器。
 
     Takes the previously-decoded feature ``x`` (at coarser resolution) and the
     corresponding encoder skip ``skip`` (at the finer resolution). The decoded
@@ -95,7 +97,8 @@ class _UpFuseBlock(nn.Module):
 
 
 class _UpsampleBlock(nn.Module):
-    """Stride-halving upsample-conv block (no skip)."""
+    """Stride-halving upsample-conv block (no 跳跃连接。
+        Stride-halving upsample-conv block (no skip)."""
 
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -114,6 +117,7 @@ class _UpsampleBlock(nn.Module):
 
 class _BoundaryHead(nn.Module):
     """Auxiliary boundary refinement branch.
+        Auxiliary 边界 refinement 分支。
 
     Operates on the highest-resolution encoder feature (stride-4) and
     produces a single-channel boundary-attention map that is used to
@@ -134,7 +138,8 @@ class _BoundaryHead(nn.Module):
 
 
 class _ClsHead(nn.Module):
-    """Image-level classification branch (kept internally)."""
+    """Image-level 分类 分支 ( kept internally )。
+        Image-level classification branch (kept internally)."""
 
     def __init__(self, in_c, num_classes):
         super().__init__()
@@ -173,10 +178,11 @@ def _build_backbone(in_channels, pretrained=True):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class MIST(nn.Module):
     """MIST: Multi-task Image Segmentation Transformer.
+        MIST: Multi-task 图像 分割 Transformer。
 
     Args:
         in_channels: number of input image channels.
@@ -188,8 +194,8 @@ class MIST(nn.Module):
         decoder_channels: shared embedding width inside the seg decoder.
     """
 
-    # MiT-B2 / PVTv2-B2 use 4x4 patch embed + repeated stride-2 stages, hence
-    # an overall stride of 32; pad inputs to a multiple of this.
+    # MiT-B 2 / PVTv2-B 2 use 4x4 图块 embed + repeated 步长 - 2 阶段, hence / MiT-B2 / PVTv2-B2 use 4x4 patch embed + repeated stride-2 stages, hence
+    # an overall 步长 of 32; pad inputs to a multiple of this / an overall stride of 32; pad inputs to a multiple of this.
     _PATCH_MULT = 32
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
@@ -213,22 +219,22 @@ class MIST(nn.Module):
 
         dc = decoder_channels
 
-        # --- Segmentation decoder ------------------------------------------
-        # Stage A: stride 32 -> 16, fuse with c3
+        # --- Segmentation 解码器 / --- Segmentation decoder ------------------------------------------
+        # 阶段 A: 步长 32 - > 16, 融合 with c3 / Stage A: stride 32 -> 16, fuse with c3
         self.up_16 = _UpFuseBlock(in_c=c4, skip_c=c3, out_c=dc)
-        # Stage B: stride 16 -> 8, fuse with c2
+        # 阶段 B: 步长 16 - > 8, 融合 with c2 / Stage B: stride 16 -> 8, fuse with c2
         self.up_8 = _UpFuseBlock(in_c=dc, skip_c=c2, out_c=dc)
-        # Stage C: stride 8 -> 4, fuse with c1
+        # 阶段 C: 步长 8 - > 4, 融合 with c1 / Stage C: stride 8 -> 4, fuse with c1
         self.up_4 = _UpFuseBlock(in_c=dc, skip_c=c1, out_c=dc)
-        # Stage D: stride 4 -> 2 (no skip)
+        # Stage D: stride 4 -> 2 (no 跳跃连接 / Stage D: stride 4 -> 2 (no skip)
         self.up_2 = _UpsampleBlock(in_c=dc, out_c=dc // 2)
 
         self.seg_head = nn.Conv2d(dc // 2, num_classes, kernel_size=1)
 
-        # --- Classification & boundary branches (kept internally) ----------
+        # - - - 分类 & 边界 branches ( kept internally ) - - - - - - - - - - / --- Classification & boundary branches (kept internally) ----------
         self.cls_head = _ClsHead(c4, num_classes)
         self.boundary_head = _BoundaryHead(c1, mid_c=64)
-        # 1x1 fusion: combine seg logits with boundary attention
+        # 1x1 融合: 组合 seg logits with 边界 注意力 / 1x1 fusion: combine seg logits with boundary attention
         self.boundary_fuse = nn.Conv2d(
             num_classes + 1, num_classes, kernel_size=1,
         )
@@ -251,7 +257,7 @@ class MIST(nn.Module):
         feats = self.backbone(x_pad)
         f1, f2, f3, f4 = feats  # strides 4, 8, 16, 32
 
-        # Segmentation decoder: progressive upsample-conv-fuse
+        # Segmentation 解码器 / Segmentation decoder: progressive upsample-conv-fuse
         d = self.up_16(f4, f3)   # stride 16
         d = self.up_8(d, f2)     # stride 8
         d = self.up_4(d, f1)     # stride 4
@@ -259,7 +265,7 @@ class MIST(nn.Module):
 
         seg = self.seg_head(d)
 
-        # Auxiliary boundary refinement (sharpens the seg map)
+        # Auxiliary 边界 refinement ( sharpens the seg 映射 ) / Auxiliary boundary refinement (sharpens the seg map)
         boundary = self.boundary_head(f1)
         if boundary.shape[-2:] != seg.shape[-2:]:
             boundary = F.interpolate(
@@ -268,10 +274,10 @@ class MIST(nn.Module):
             )
         seg = self.boundary_fuse(torch.cat([seg, boundary], dim=1))
 
-        # Classification branch (computed for fidelity; not returned)
+        # 分类 分支 ( computed for fidelity; not returned ) / Classification branch (computed for fidelity; not returned)
         _ = self.cls_head(f4)
 
-        # Upsample to padded input resolution, then crop back to (H, W)
+        # 上采样 to padded 输入 分辨率, then crop back to ( H, W ) / Upsample to padded input resolution, then crop back to (H, W)
         seg = F.interpolate(
             seg, size=x_pad.shape[-2:], mode='bilinear', align_corners=False,
         )

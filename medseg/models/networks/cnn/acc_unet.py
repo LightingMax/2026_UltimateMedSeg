@@ -1,4 +1,5 @@
 """ACC-UNet: A Completely Convolutional UNet for the 2020s.
+    ACC-UNet: A Completely 卷积的 UNet for the 2020s。
 
 Modern convolutional UNet using large kernels, depthwise separable
 convolutions, and residual connections for competitive performance
@@ -22,7 +23,8 @@ from typing import List, Optional
 
 
 class _ModernConvBlock(nn.Module):
-    """Modern conv block: large kernel DWConv + pointwise + residual."""
+    """Modern conv 块: large 卷积核 DWConv + pointwise + 残差。
+        Modern conv block: large kernel DWConv + pointwise + residual."""
 
     def __init__(self, dim, kernel_size=7):
         super().__init__()
@@ -62,7 +64,7 @@ class _ACCStage(nn.Module):
     def forward(self, x):
         if self.downsample is not None:
             x = self.downsample(x.permute(0, 2, 3, 1)).permute(0, 3, 1, 2) if hasattr(self.downsample, '__len__') else None
-            # Simpler: use conv for downsampling
+            # Simpler: use conv for 下采样 / Simpler: use conv for downsampling
             x_in = x
             B, C, H, W = x_in.shape
             x_ln = F.layer_norm(x_in.permute(0, 2, 3, 1), [C]).permute(0, 3, 1, 2)
@@ -72,6 +74,7 @@ class _ACCStage(nn.Module):
 
 class ACCUNet(nn.Module):
     """ACC-UNet: Completely Convolutional UNet for the 2020s.
+        ACC-UNet: Completely 卷积的 UNet for the 2020s。
 
     Args:
         in_channels: Input channels.
@@ -94,13 +97,13 @@ class ACCUNet(nn.Module):
         embed_dims = embed_dims or [48, 96, 192, 384]
         depths = depths or [3, 3, 9, 3]
 
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0], 4, 4, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
         )
 
-        # Encoder stages
+        # 编码器 阶段 / Encoder stages
         self.enc_stages = nn.ModuleList()
         for i in range(len(embed_dims)):
             blocks = [_ModernConvBlock(embed_dims[i]) for _ in range(depths[i])]
@@ -113,7 +116,7 @@ class ACCUNet(nn.Module):
                 nn.BatchNorm2d(embed_dims[i + 1]),
             ))
 
-        # Decoder
+        # 解码 / Decoder
         self.upsamples = nn.ModuleList()
         self.merges = nn.ModuleList()
         self.dec_blocks = nn.ModuleList()

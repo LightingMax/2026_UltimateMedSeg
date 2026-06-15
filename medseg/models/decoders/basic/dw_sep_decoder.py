@@ -1,4 +1,5 @@
-"""Depthwise Separable Convolution Decoder - lightweight decoder."""
+"""Depthwise Separable Convolution Decoder - lightweight 解码器。
+    Depthwise Separable Convolution Decoder - lightweight decoder."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -9,7 +10,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class DWSepConvBlock(nn.Module):
-    """Depthwise separable convolution block."""
+    """Depthwise separable 卷积 块。
+        Depthwise separable convolution block."""
     def __init__(self, in_ch, out_ch):
         super().__init__()
         self.depthwise = nn.Conv2d(in_ch, in_ch, 3, padding=1, groups=in_ch, bias=False)
@@ -23,7 +25,8 @@ class DWSepConvBlock(nn.Module):
 
 @DECODER_REGISTRY.register("dw_sep")
 class DWSepDecoder(nn.Module):
-    """Lightweight decoder using depthwise separable convolutions."""
+    """Lightweight 解码器。
+        Lightweight decoder using depthwise separable convolutions."""
 
     def __init__(self, encoder_channels: List[int], bottleneck_channels: int,
                  skip_connection=None, **kwargs):

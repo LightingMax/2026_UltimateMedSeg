@@ -1,4 +1,5 @@
 """LDNet: Lesion-aware Dynamic Kernel Network for Polyp Segmentation.
+    LDNet: Lesion-aware 动态的 卷积核 网络 for 息肉 分割。
 
 Reference:
     Ruifei Zhang, Peiwen Lai, Xiang Wan, De-Jun Fan, Feng Gao,
@@ -40,7 +41,7 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# Basic building blocks
+# 基本 building blocks / Basic building blocks
 # ---------------------------------------------------------------------------
 class _ConvBlock(nn.Module):
     """Conv + BN + ReLU."""
@@ -57,7 +58,8 @@ class _ConvBlock(nn.Module):
 
 
 class _DecoderBlock(nn.Module):
-    """ConvBlock x2 followed by bilinear upsample (matches upstream)."""
+    """ConvBlock x2 followed by bilinear 上采样 ( matches upstream )。
+        ConvBlock x2 followed by bilinear upsample (matches upstream)."""
 
     def __init__(self, in_c, out_c, kernel_size=3, stride=1, padding=1):
         super().__init__()
@@ -75,11 +77,12 @@ class _DecoderBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Efficient Self-Attention (ESA) and Lesion-aware Cross-Attention (LCA)
-# (einops-free port of upstream modules)
+# 高效的 Self-Attention ( ESA ) and Lesion-aware Cross-Attention ( LCA ) / Efficient Self-Attention (ESA) and Lesion-aware Cross-Attention (LCA)
+# ( einops-free 移植 of upstream modules ) / (einops-free port of upstream modules)
 # ---------------------------------------------------------------------------
 class _PPM(nn.Module):
-    """Pyramid Pooling Module producing flattened key/value tokens."""
+    """金字塔 池化 模块 producing flattened key / value 标记。
+        Pyramid Pooling Module producing flattened key/value tokens."""
 
     def __init__(self, pooling_sizes=(1, 3, 5)):
         super().__init__()
@@ -140,7 +143,7 @@ class _ESALayer(nn.Module):
         inner = qkv.shape[1] // 3
         q, k, v = qkv[:, :inner], qkv[:, inner:2 * inner], qkv[:, 2 * inner:]
 
-        # q: (b, head, h*w, dim_head)
+        # q: ( b, 头部, h * w, dim _ 头部 ) / q: (b, head, h*w, dim_head)
         q = q.view(b, self.heads, self.dim_head, h * w).permute(0, 1, 3, 2)
         # k, v through PPM -> (b, inner, n_kv)
         k = self.ppm(k)
@@ -171,7 +174,8 @@ class _ESABlock(nn.Module):
 
 
 def _mask_average_pooling(x, mask):
-    """Mask-weighted average pooling -> (b, c, 1) feature per sample."""
+    """Mask-weighted average 池化 - > ( b, c, 1 ) 特征 per 样本。
+        Mask-weighted average pooling -> (b, c, 1) feature per sample."""
     mask = torch.sigmoid(mask)
     h, w = x.shape[2], x.shape[3]
     eps = 5e-4
@@ -205,8 +209,8 @@ class _LCALayer(nn.Module):
 
         q = q.view(b, self.heads, self.dim_head, h * w).permute(0, 1, 3, 2)
 
-        # Mask must broadcast over per-class channel; if mask has multiple
-        # channels, average them so MAP returns a single token per head.
+        # 掩码 must broadcast over per-class 通道; if 掩码 has multiple / Mask must broadcast over per-class channel; if mask has multiple
+        # 通道, average them so 映射 返回 a single 标记 per 头部 / channels, average them so MAP returns a single token per head.
         if mask.shape[1] > 1:
             mask = mask.mean(dim=1, keepdim=True)
         k = _mask_average_pooling(k, mask)
@@ -230,7 +234,7 @@ class _LCABlock(nn.Module):
 
     def forward(self, x, mask):
         b, c, h, w = x.shape
-        # Mask may be at a coarser resolution than x; align to x first.
+        # 掩码 may be at a coarser 分辨率 than x; align to x first / Mask may be at a coarser resolution than x; align to x first.
         if mask.shape[-2:] != x.shape[-2:]:
             mask = F.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
         tokens = x.flatten(2).transpose(1, 2)
@@ -240,7 +244,7 @@ class _LCABlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Head Updator (Lesion-aware dynamic kernel refinement)
+# 头部 Updator ( Lesion-aware 动态的 卷积核 refinement ) / Head Updator (Lesion-aware dynamic kernel refinement)
 # ---------------------------------------------------------------------------
 class _HeadUpdator(nn.Module):
     def __init__(self, in_channels=64, feat_channels=64,
@@ -269,19 +273,19 @@ class _HeadUpdator(nn.Module):
         self.activation = nn.ReLU(inplace=True)
 
     def forward(self, feat, head, pred):
-        # feat: (B, C, H, W), head: (B, N, C, K, K), pred: (B, N, h, w)
+        # feat: ( B, C, H, W ), 头部: ( B, N, C, K, K ), pred: ( B, N, h, w ) / feat: (B, C, H, W), head: (B, N, C, K, K), pred: (B, N, h, w)
         bs, num_classes = head.shape[:2]
 
-        # Align pred to feat resolution (upsample-by-2 in upstream).
+        # Align pred to feat 分辨率 ( upsample-by - 2 in upstream ) / Align pred to feat resolution (upsample-by-2 in upstream).
         if pred.shape[-2:] != feat.shape[-2:]:
             pred = F.interpolate(pred, size=feat.shape[-2:], mode='bilinear',
                                  align_corners=False)
         pred = torch.sigmoid(pred)
 
-        # Assemble: pool feat by each class mask -> (B, N, C)
+        # Assemble: pool feat by each class 掩码 - > ( B, N, C ) / Assemble: pool feat by each class mask -> (B, N, C)
         assemble_feat = torch.einsum('bnhw,bchw->bnc', pred, feat)
 
-        # head: (B, N, C, K, K) -> (B, N, K*K, C)
+        # 头部: ( B, N, C, K, K ) - > ( B, N, K * K, C ) / head: (B, N, C, K, K) -> (B, N, K*K, C)
         head = head.reshape(bs, num_classes, self.in_channels, -1).permute(0, 1, 3, 2)
 
         assemble_feat = assemble_feat.reshape(-1, self.in_channels)  # (B*N, C)
@@ -317,10 +321,11 @@ class _HeadUpdator(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Dynamic conv applied per-sample (one kernel per image)
+# 动态的 conv applied per-sample ( one 卷积核 per 图像 ) / Dynamic conv applied per-sample (one kernel per image)
 # ---------------------------------------------------------------------------
 def _dynamic_conv(feat, head, padding):
-    """feat: (B, C, H, W), head: (B, N, C, K, K) -> (B, N, H, W)."""
+    """feat: ( B, C, H, W ), 头部: ( B, N, C, K, K ) - > ( B, N, H, W )。
+        feat: (B, C, H, W), head: (B, N, C, K, K) -> (B, N, H, W)."""
     bs = feat.size(0)
     n = head.size(1)
     h, w = feat.shape[-2:]
@@ -331,10 +336,11 @@ def _dynamic_conv(feat, head, padding):
 
 
 # ---------------------------------------------------------------------------
-# Res2Net-50 backbone wrapper (timm) with SSL-tolerant pretrained loading
+# Res2Net - 50 骨干网络 封装器 ( timm ) with SSL-tolerant 预训练 loading / Res2Net-50 backbone wrapper (timm) with SSL-tolerant pretrained loading
 # ---------------------------------------------------------------------------
 class _Res2NetBackbone(nn.Module):
     """Wraps timm res2net50_26w_4s as a multi-stage feature extractor.
+        Wraps timm res2net50 _ 26w _ 4s as a multi-stage 特征 extractor。
 
     Returns features at strides {2, 4, 8, 16, 32} with channels
     {64, 256, 512, 1024, 2048}.
@@ -350,7 +356,7 @@ class _Res2NetBackbone(nn.Module):
             out_indices=(0, 1, 2, 3, 4),
             in_chans=in_chans,
         )
-        # Cache channels for downstream construction.
+        # Cache 通道 for downstream construction / Cache channels for downstream construction.
         self.out_channels = self.model.feature_info.channels()
 
     def forward(self, x):
@@ -359,10 +365,11 @@ class _Res2NetBackbone(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class LDNet(nn.Module):
     """LDNet with Res2Net-50 backbone and Lesion-aware Dynamic Kernels.
+        LDNet with Res2Net - 50 骨干网络 and Lesion-aware 动态的 Kernels。
 
     Args:
         in_channels: number of input image channels.
@@ -384,24 +391,24 @@ class LDNet(nn.Module):
         self.unified_channels = unified_channels
         self.conv_kernel_size = conv_kernel_size
 
-        # Encoder
+        # 编码器 / Encoder
         self.backbone = _Res2NetBackbone(in_chans=in_channels, pretrained=pretrained)
         c1, c2, c3, c4, c5 = self.backbone.out_channels  # 64, 256, 512, 1024, 2048
 
-        # Channel reduction
+        # 通道 reduction / Channel reduction
         self.reduce2 = nn.Conv2d(c2, 64, 1)
         self.reduce3 = nn.Conv2d(c3, 128, 1)
         self.reduce4 = nn.Conv2d(c4, 256, 1)
         self.reduce5 = nn.Conv2d(c5, 512, 1)
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder5 = _DecoderBlock(in_c=512, out_c=512)
         self.decoder4 = _DecoderBlock(in_c=512 + 256, out_c=256)
         self.decoder3 = _DecoderBlock(in_c=256 + 128, out_c=128)
         self.decoder2 = _DecoderBlock(in_c=128 + 64, out_c=64)
         self.decoder1 = _DecoderBlock(in_c=64 + c1, out_c=64)
 
-        # Global context for the initial dynamic kernel
+        # 全局的 context for the initial 动态的 卷积核 / Global context for the initial dynamic kernel
         self.global_pool = nn.Sequential(
             nn.GroupNorm(16, 512),
             nn.ReLU(inplace=True),
@@ -412,7 +419,7 @@ class LDNet(nn.Module):
             self.num_classes * self.unified_channels * conv_kernel_size * conv_kernel_size,
         )
 
-        # Kernel refinement modules (one per decoder stage after d5)
+        # Kernel refinement modules (one per 解码器 / Kernel refinement modules (one per decoder stage after d5)
         self.head_updators = nn.ModuleList([_HeadUpdator(
             in_channels=unified_channels,
             feat_channels=unified_channels,
@@ -420,20 +427,20 @@ class LDNet(nn.Module):
             conv_kernel_size=conv_kernel_size,
         ) for _ in range(4)])
 
-        # Unify-channel convs (project decoder features to `unified_channels`)
+        # Unify-channel convs (project 解码器 / Unify-channel convs (project decoder features to `unified_channels`)
         self.unify1 = nn.Conv2d(64, unified_channels, 1)
         self.unify2 = nn.Conv2d(64, unified_channels, 1)
         self.unify3 = nn.Conv2d(128, unified_channels, 1)
         self.unify4 = nn.Conv2d(256, unified_channels, 1)
         self.unify5 = nn.Conv2d(512, unified_channels, 1)
 
-        # ESA on encoder skips (matches upstream channel counts)
+        # ESA on 编码器 / ESA on encoder skips (matches upstream channel counts)
         self.esa1 = _ESABlock(dim=c1)   # raw e1 (stem)
         self.esa2 = _ESABlock(dim=64)   # reduced e2
         self.esa3 = _ESABlock(dim=128)  # reduced e3
         self.esa4 = _ESABlock(dim=256)  # reduced e4
 
-        # LCA on decoder features (matches upstream channel counts)
+        # LCA on 解码器 / LCA on decoder features (matches upstream channel counts)
         self.lca1 = _LCABlock(dim=64)
         self.lca2 = _LCABlock(dim=128)
         self.lca3 = _LCABlock(dim=256)
@@ -462,11 +469,11 @@ class LDNet(nn.Module):
     # ----------------------------------------------------------------- forward
     def forward(self, x):
         in_h, in_w = x.shape[-2:]
-        # Res2Net stem requires inputs divisible by 32 for the stride-32 stage.
+        # Res2Net 主干 requires inputs divisible by 32 for the 步长 - 32 阶段 / Res2Net stem requires inputs divisible by 32 for the stride-32 stage.
         x_in, (ph, pw) = self._pad_to_multiple(x, multiple=32)
         bs = x_in.shape[0]
 
-        # Encoder
+        # 编码器 / Encoder
         e1, e2_, e3_, e4_, e5_ = self.backbone(x_in)
 
         e2 = self.reduce2(e2_)
@@ -474,11 +481,11 @@ class LDNet(nn.Module):
         e4 = self.reduce4(e4_)
         e5 = self.reduce5(e5_)
 
-        # Decoder bootstrap
+        # 解码 bootstrap / Decoder bootstrap
         d5 = self.decoder5(e5)
         feat5 = self.unify5(d5)
 
-        # Initial dynamic kernel from global context of bottleneck
+        # Initial dynamic kernel from global context of 瓶颈层 / Initial dynamic kernel from global context of bottleneck
         gc = self.global_pool(e5).reshape(bs, -1)
         head = self.generate_head(gc).reshape(
             bs, self.num_classes, self.unified_channels,
@@ -505,8 +512,8 @@ class LDNet(nn.Module):
             pred = _dynamic_conv(feat_i, head,
                                  padding=int(self.conv_kernel_size // 2))
 
-        # `pred` is at full input resolution (after padding). Crop the pad and
-        # ensure exact output H/W via interpolation if any rounding differs.
+        # ` pred ` is at full 输入 分辨率 ( after 填充 ). Crop the pad and / `pred` is at full input resolution (after padding). Crop the pad and
+        # ensure exact 输出 H / W via interpolation if any rounding differs / ensure exact output H/W via interpolation if any rounding differs.
         if ph != 0 or pw != 0:
             pred = pred[..., :pred.shape[-2] - ph, :pred.shape[-1] - pw]
         if pred.shape[-2:] != (in_h, in_w):

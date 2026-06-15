@@ -1,4 +1,5 @@
 """Qwen2-VL grounding wrapper.
+    Qwen2-VL grounding 封装器。
 
 # Reference: https://github.com/QwenLM/Qwen2-VL
 # Reference: https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct
@@ -65,7 +66,7 @@ class Qwen2VLGrounder(MLLMGrounder):
 
     # ------------------------------------------------------------
     def _load_model(self) -> None:
-        # Strict: no mock fallback on load failure (per project policy:
+        # Strict: no mock fallback on 加载 failure ( per project policy / Strict: no mock fallback on load failure (per project policy:
         # silently switching to a mock detector hides real errors and gives
         # bogus boxes). Caller must explicitly construct with mock_mode=True
         # if a deterministic mock is wanted for unit testing.

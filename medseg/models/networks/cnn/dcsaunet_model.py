@@ -1,4 +1,5 @@
 """DCSAU-Net – self-contained port from github.com/xq141839/DCSAU-Net.
+    DCSAU-Net – self-contained 移植 from github. com / xq141839 / DCSAU-Net。
 
 Combines splat.py, resnet.py, encoder.py, and DCSAU_Net.py into one file.
 
@@ -79,7 +80,7 @@ class SplAtConv2d(Module):
         return out.contiguous()
 
 
-# ── ResNet with Split-Attention Bottleneck (from resnet.py) ──────────────────
+# ── ResNet with Split-Attention 瓶颈层 / ── ResNet with Split-Attention Bottleneck (from resnet.py) ──────────────────
 class _DCSABottleneck(nn.Module):
     expansion = 4
 
@@ -320,6 +321,7 @@ class _DCSAUModel(nn.Module):
 
 class DCSAUNet(nn.Module):
     """DCSAU-Net wrapper with standard interface.
+        DCSAU-Net 封装器 with 标准 interface。
 
     Args:
         in_channels (int): Number of input channels (default: 3).

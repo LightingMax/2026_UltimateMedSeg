@@ -1,4 +1,5 @@
 """CSWin Encoder: extracted from CSWin-UNet.
+    CSWin 编码器。
 
 Pure global MHSA encoder (simplified CSWin port) with patch-embed (stride-4)
 and 4 stages of transformer blocks. Each non-final stage applies a 3x3 stride-2
@@ -21,7 +22,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 class _CrossWindowAttention(nn.Module):
-    """Cross-shaped window self-attention: horizontal + vertical strips."""
+    """Cross-shaped 窗口 自注意力: horizontal + vertical strips。
+        Cross-shaped window self-attention: horizontal + vertical strips."""
 
     def __init__(self, dim, num_heads=4, strip_size=7):
         super().__init__()
@@ -89,6 +91,7 @@ class _CSWinStage(nn.Module):
 @ENCODER_REGISTRY.register("cswin")
 class CSWinEncoder(nn.Module):
     """CSWin (simplified) encoder.
+        CSWin (simplified) 编码器。
 
     Stem (patch embed) downsamples by 4 (Conv2d k=4 s=4), then 4 transformer
     stages. After each of the first 3 stages a 3x3 stride-2 conv halves the
@@ -117,7 +120,7 @@ class CSWinEncoder(nn.Module):
         num_heads = list(num_heads) if num_heads is not None else [2, 4, 8, 16]
         dims = [embed_dim * (2 ** i) for i in range(len(depths))]
 
-        # Optional 1x1 stem for non-RGB inputs.
+        # 可选 1x1 主干 for non-RGB inputs / Optional 1x1 stem for non-RGB inputs.
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, 1, bias=False)
             stem_in = 3

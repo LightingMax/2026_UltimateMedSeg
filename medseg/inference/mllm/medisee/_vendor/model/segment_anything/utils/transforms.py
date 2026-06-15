@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from copy import deepcopy
 from typing import Tuple
@@ -65,7 +65,7 @@ class ResizeLongestSide:
         transformation may not exactly match apply_image. apply_image is
         the transformation expected by the model.
         """
-        # Expects an image in BCHW format. May not exactly match apply_image.
+        # Expects an 图像 in BCHW format. May not exactly match 应用 _ 图像 / Expects an image in BCHW format. May not exactly match apply_image.
         target_size = self.get_preprocess_shape(
             image.shape[0], image.shape[1], self.target_length
         )

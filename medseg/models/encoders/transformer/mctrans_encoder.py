@@ -1,4 +1,5 @@
 """MCTrans Encoder: faithful port from https://github.com/JiYuanFeng/MCTrans
+    MCTrans 编码器。
 
 Reference: Ji et al., "Multi-Compound Transformer for Accurate Biomedical
            Image Segmentation", MICCAI 2021.
@@ -39,7 +40,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 # ====================================================================
-#  ResNet-18/34 backbone (1:1 port of mctrans/models/encoders/resnet.py)
+# ResNet - 18 / 34 骨干网络 ( 1: 1 移植 of mctrans / models / encoders / resnet. py ) / ResNet-18/34 backbone (1:1 port of mctrans/models/encoders/resnet.py)
 # ====================================================================
 class BasicBlock(nn.Module):
     expansion = 1
@@ -83,6 +84,7 @@ def _make_res_layer(block, inplanes, planes, blocks, stride=1, dilation=1):
 
 class ResNet(nn.Module):
     """ResNet-18 / ResNet-34 backbone (BasicBlock variant).
+        ResNet - 18 / ResNet - 34 骨干网络 ( BasicBlock variant )。
 
     Mirrors mctrans.models.encoders.resnet.ResNet with arch_settings::
         18: (BasicBlock, (2, 2, 2, 2))
@@ -103,7 +105,7 @@ class ResNet(nn.Module):
         assert depth in self.arch_settings, f"invalid depth {depth} for resnet"
         block, stage_blocks = self.arch_settings[depth]
 
-        # stem (conv 7x7, stride 2 + maxpool 3x3, stride 2)
+        # 主干 ( conv 7x7, 步长 2 + maxpool 3x3, 步长 2 ) / stem (conv 7x7, stride 2 + maxpool 3x3, stride 2)
         self.conv1 = nn.Conv2d(in_channels, 64, 7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -119,7 +121,7 @@ class ResNet(nn.Module):
             inplanes = planes * block.expansion
             self.res_layers.append(layer)
 
-        # 5 output channels: stem(64), layer1..4 (64,128,256,512)
+        # 5 输出 通道: 主干 ( 64 ), layer1.. 4 ( 64, 128, 256, 512 ) / 5 output channels: stem(64), layer1..4 (64,128,256,512)
         self.out_channels_full = (64, 64, 128, 256, 512)
 
     def forward(self, x):
@@ -137,7 +139,8 @@ class ResNet(nn.Module):
 #  Sine 2-D position encoding (1:1 from trans/utils.py / DETR convention)
 # ====================================================================
 class PositionEmbeddingSine(nn.Module):
-    """Standard 2-D sine positional embedding used by DETR and MCTrans."""
+    """标准 2-D sine positional 嵌入 used by DETR and MCTrans。
+        Standard 2-D sine positional embedding used by DETR and MCTrans."""
 
     def __init__(self, num_pos_feats=128, temperature=10000, normalize=True, scale=None):
         super().__init__()
@@ -149,7 +152,7 @@ class PositionEmbeddingSine(nn.Module):
         self.scale = scale
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        # x: (B, C, H, W);  mask: (B, H, W) bool, True=padding
+        # x: ( B, C, H, W ); 掩码: ( B, H, W ) bool, True = 填充 / x: (B, C, H, W);  mask: (B, H, W) bool, True=padding
         not_mask = ~mask
         y_embed = not_mask.cumsum(1, dtype=torch.float32)
         x_embed = not_mask.cumsum(2, dtype=torch.float32)
@@ -185,6 +188,7 @@ def _get_activation(act: str):
 
 class DSALayer(nn.Module):
     """Transformer Self-Attention layer.
+        Transformer Self-Attention 层。
 
     Same outer skeleton as ``mctrans.models.trans.transformer.DSALayer``:
     self-attn (with positional embedding via ``with_pos_embed``) -> dropout1 ->
@@ -194,7 +198,7 @@ class DSALayer(nn.Module):
     def __init__(self, d_model=240, d_ffn=1024, dropout=0.1,
                  activation="relu", n_heads=8):
         super().__init__()
-        # NOTE: official MCTrans uses MSDeformAttn here — replaced by vanilla
+        # 注意: official MCTrans uses MSDeformAttn here — replaced by 基础版 / NOTE: official MCTrans uses MSDeformAttn here — replaced by vanilla
         # nn.MultiheadAttention for pure-PyTorch portability.
         self.self_attn = nn.MultiheadAttention(d_model, n_heads,
                                                dropout=dropout, batch_first=True)
@@ -240,7 +244,8 @@ class DSA(nn.Module):
 
 
 class CALayer(nn.Module):
-    """Transformer Cross-Attention layer (1:1 from trans/transformer.CALayer)."""
+    """Transformer Cross-Attention 层 ( 1: 1 from trans / Transformer. CALayer )。
+        Transformer Cross-Attention layer (1:1 from trans/transformer.CALayer)."""
 
     def __init__(self, d_model=240, d_ffn=1024, dropout=0.1,
                  activation="relu", n_heads=8):
@@ -266,12 +271,12 @@ class CALayer(nn.Module):
         return self.norm3(tgt)
 
     def forward(self, tgt, src):
-        # self-attention on proxy queries
+        # 自注意力 on proxy queries / self-attention on proxy queries
         q = k = tgt
         sa, _ = self.self_attn(q.transpose(0, 1), k.transpose(0, 1),
                                tgt.transpose(0, 1))
         tgt = self.norm2(tgt + self.dropout2(sa.transpose(0, 1)))
-        # cross-attention: proxy queries attend to multi-scale tokens
+        # 交叉注意力: proxy queries attend to 多尺度 标记 / cross-attention: proxy queries attend to multi-scale tokens
         ca, _ = self.cross_attn(tgt.transpose(0, 1),
                                 src.transpose(0, 1),
                                 src.transpose(0, 1))
@@ -305,7 +310,8 @@ class CA(nn.Module):
 #  MCTrans center (1:1 logic from mctrans/models/centers/mctrans.py)
 # ====================================================================
 class MCTransCenter(nn.Module):
-    """MCTrans center module: project, multi-scale flatten, DSA, recover."""
+    """MCTrans center 模块: project, 多尺度 展平, DSA, recover。
+        MCTrans center module: project, multi-scale flatten, DSA, recover."""
 
     def __init__(self, in_channels, proj_idxs, d_model=240, nhead=8,
                  d_ffn=1024, dropout=0.1, n_sa_layers=6,
@@ -315,8 +321,8 @@ class MCTransCenter(nn.Module):
         self.n_levels = len(self.proj_idxs)
         self.d_model = d_model
 
-        # Conv-3x3 projections to a unified d_model (matches official ConvModule
-        # with kernel=3, padding=1, BN, ReLU)
+        # Conv - 3x3 projections to a 统一的 d _ 模型 ( matches official ConvModule / Conv-3x3 projections to a unified d_model (matches official ConvModule
+        # with 卷积核 = 3, 填充 = 1, BN, ReLU ) / with kernel=3, padding=1, BN, ReLU)
         self.projs = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(in_channels[idx], d_model, 3, padding=1, bias=False),
@@ -352,7 +358,7 @@ class MCTransCenter(nn.Module):
                 cnn_feats.append(f)
             else:
                 tran_feats.append(f)
-        # apply 3x3 projections, then build sine positional encoding
+        # 应用 3x3 projections, then build sine positional encoding / apply 3x3 projections, then build sine positional encoding
         for i, proj in enumerate(self.projs):
             tran_feats[i] = proj(tran_feats[i])
             n, _, h, w = tran_feats[i].shape
@@ -376,13 +382,13 @@ class MCTransCenter(nn.Module):
         feat_flat = torch.cat(feat_flat, dim=1)
         pos_flat = torch.cat(pos_flat, dim=1)
 
-        # multi-scale self-attention
+        # 多尺度 自注意力 / multi-scale self-attention
         feat_flat = self.dsa(feat_flat, pos=pos_flat)
 
-        # auxiliary cross-attention with proxy queries (output kept as buffer)
+        # auxiliary 交叉注意力 with proxy queries ( 输出 kept as buffer ) / auxiliary cross-attention with proxy queries (output kept as buffer)
         self.proxy_logits = self.ca(feat_flat)
 
-        # split and recover spatial maps
+        # split and recover 空间的 映射 / split and recover spatial maps
         sizes = [h * w for h, w in shapes]
         parts = feat_flat.split(sizes, dim=1)
         out_trans = []
@@ -395,11 +401,12 @@ class MCTransCenter(nn.Module):
 
 
 # ====================================================================
-#  Registered encoder
+# Registered 编码器 / Registered encoder
 # ====================================================================
 @ENCODER_REGISTRY.register("mctrans")
 class MCTransEncoder(nn.Module):
     """MCTrans encoder: ResNet-34 backbone + MCTrans center.
+        MCTrans 编码器。
 
     Faithful port of JiYuanFeng/MCTrans (MICCAI 2021).  The encoder returns
     the four post-stem stages so that it is compatible with any 4-level
@@ -433,7 +440,7 @@ class MCTransEncoder(nn.Module):
     ):
         super().__init__()
         self.backbone = ResNet(depth=depth, in_channels=in_channels)
-        # backbone outputs: [stem(64), layer1(64), layer2(128), layer3(256), layer4(512)]
+        # 骨干网络 outputs: [ 主干 ( 64 ), layer1 ( 64 ), layer2 ( 128 ), layer3 ( 256 ), layer4 ( 512 ) ] / backbone outputs: [stem(64), layer1(64), layer2(128), layer3(256), layer4(512)]
         # Official proj_idxs=(2,3,4) -> layer2/3/4
         self.center = MCTransCenter(
             in_channels=self.backbone.out_channels_full,
@@ -447,7 +454,7 @@ class MCTransEncoder(nn.Module):
             n_category=n_category,
         )
 
-        # We expose the four post-stem stages: layer1 (cnn) + layer2/3/4 (transformer).
+        # We expose the four post-stem 阶段: layer1 ( cnn ) + layer2 / 3 / 4 ( Transformer ) / We expose the four post-stem stages: layer1 (cnn) + layer2/3/4 (transformer).
         self.out_channels = [64, d_model, d_model, d_model]
 
         if pretrained and pretrained_path:
@@ -463,5 +470,5 @@ class MCTransEncoder(nn.Module):
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         feats = self.backbone(x)               # 5 stages: stem, l1, l2, l3, l4
         all_feats = self.center(feats)         # cnn_feats + trans_feats (still 5)
-        # Drop the stem feature so output matches the 4-level decoder contract.
+        # Drop the stem feature so output matches the 4-level 解码器 / Drop the stem feature so output matches the 4-level decoder contract.
         return all_feats[1:]                   # [layer1, layer2', layer3', layer4']

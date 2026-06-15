@@ -1,4 +1,5 @@
 """SAM ViT-B: canonical Meta SAM-family backbone for medical segmentation.
+    SAM ViT-B: canonical Meta SAM-family 骨干网络 for 医学的 分割。
 
 Reference:
     Alexander Kirillov et al., "Segment Anything," 2023.
@@ -23,7 +24,7 @@ from __future__ import annotations
 
 import os
 
-# Bound HF Hub timeouts so an offline / blocked environment can't stall model
+# Bound HF Hub timeouts so an offline / blocked environment can't stall 模型 / Bound HF Hub timeouts so an offline / blocked environment can't stall model
 # construction. Must be set before timm imports huggingface_hub internally.
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "5")
@@ -43,7 +44,8 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 # ---------------------------------------------------------------------------
 def _interpolate_pos_embed(pos_embed: torch.Tensor, num_prefix: int,
                            new_hw: tuple) -> torch.Tensor:
-    """Bicubic-resample a 1-D positional embedding to a new (H, W) grid."""
+    """Bicubic-resample a 1-D positional 嵌入 to a new ( H, W ) grid。
+        Bicubic-resample a 1-D positional embedding to a new (H, W) grid."""
     prefix = pos_embed[:, :num_prefix]
     grid = pos_embed[:, num_prefix:]
     N = grid.shape[1]
@@ -62,10 +64,11 @@ def _interpolate_pos_embed(pos_embed: torch.Tensor, num_prefix: int,
 
 
 # ---------------------------------------------------------------------------
-# Image encoder: SAM ViT-B/16 (built on timm's vit_base_patch16_224)
+# Image 编码器 / Image encoder: SAM ViT-B/16 (built on timm's vit_base_patch16_224)
 # ---------------------------------------------------------------------------
 class _SAMImageEncoderViTB(nn.Module):
     """Canonical SAM-style ViT-B/16 image encoder.
+        Canonical SAM-style ViT-B/16 image 编码器。
 
     timm does not ship Meta's SAM weights, so we reuse the structurally
     identical ``vit_base_patch16_224`` (12 layers, 768-dim, patch 16) and
@@ -90,8 +93,8 @@ class _SAMImageEncoderViTB(nn.Module):
 
         vit = load_with_ssl_fallback(_create, pretrained=pretrained)
 
-        # Keep only the Conv2d patch projection so we can feed arbitrary
-        # (H, W) inputs that are multiples of PATCH_SIZE.
+        # Keep only the Conv2d 图块 projection so we can feed arbitrary / Keep only the Conv2d patch projection so we can feed arbitrary
+        # ( H, W ) inputs that are multiples of 图块 _ 大小 / (H, W) inputs that are multiples of PATCH_SIZE.
         self.proj = vit.patch_embed.proj
         self.cls_token = vit.cls_token
         self.pos_embed = vit.pos_embed  # (1, 1 + 14*14, 768)
@@ -119,17 +122,18 @@ class _SAMImageEncoderViTB(nn.Module):
             x = blk(x)
         x = self.norm(x)
 
-        # Drop the CLS token and reshape to a 2-D feature grid.
+        # Drop the CLS 标记 and 重塑 to a 2-D 特征 grid / Drop the CLS token and reshape to a 2-D feature grid.
         x = x[:, 1:]
         x = x.transpose(1, 2).reshape(B, self.EMBED_DIM, Hp, Wp).contiguous()
         return x
 
 
 # ---------------------------------------------------------------------------
-# Mask decoder: four 2x ConvTranspose stages (BN + GELU between stages).
+# Mask 解码器 / Mask decoder: four 2x ConvTranspose stages (BN + GELU between stages).
 # ---------------------------------------------------------------------------
 class _UpBlock(nn.Module):
-    """ConvTranspose2d (stride 2, kernel 2) + BatchNorm2d + GELU."""
+    """ConvTranspose2d ( 步长 2, 卷积核 2 ) + BatchNorm2d + GELU。
+        ConvTranspose2d (stride 2, kernel 2) + BatchNorm2d + GELU."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -143,6 +147,7 @@ class _UpBlock(nn.Module):
 
 class _SAMMaskDecoder(nn.Module):
     """Four 2x ConvTranspose stages: 768 -> 256 -> 128 -> 64 -> num_classes.
+        Four 2x ConvTranspose 阶段: 768 - > 256 - > 128 - > 64 - > num _ classes。
 
     Each intermediate stage applies BatchNorm + GELU; the final stage emits
     raw logits (no normalization / activation).
@@ -164,10 +169,11 @@ class _SAMMaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SAMViTBase(SAMBase):
     """Canonical Meta SAM ViT-B segmentation network (prompt-free).
+        Canonical Meta SAM ViT-B 分割 网络 ( prompt-free )。
 
     The model exposes the three canonical SAM submodules
     (``image_encoder``, ``prompt_encoder``, ``mask_decoder``) so freeze
@@ -205,21 +211,21 @@ class SAMViTBase(SAMBase):
             inference_only=inference_only,
         )
 
-        # 1) Image encoder — SAM ViT-B/16 via timm.
+        # 1) Image 编码器 / 1) Image encoder — SAM ViT-B/16 via timm.
         self.image_encoder = _SAMImageEncoderViTB(
             in_channels=in_channels,
             pretrained=self._pretrained,
         )
 
-        # 2) Prompt encoder — not used in this prompt-free variant.
+        # 2) Prompt 编码器 / 2) Prompt encoder — not used in this prompt-free variant.
         self.prompt_encoder = None
 
-        # 3) Mask decoder — four 2x ConvTranspose stages.
+        # 3) Mask 解码器 / 3) Mask decoder — four 2x ConvTranspose stages.
         self.mask_decoder = _SAMMaskDecoder(
             embed_dim=self.EMBED_DIM, num_classes=num_classes,
         )
 
-        # Optional local checkpoint override.
+        # 可选 局部的 检查点 覆盖 / Optional local checkpoint override.
         if pretrained_path:
             try:
                 state = torch.load(pretrained_path, map_location="cpu")
@@ -254,21 +260,21 @@ class SAMViTBase(SAMBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H, W = x.shape[-2:]
 
-        # Backbone is strict patch-aligned: pad to a multiple of 16.
+        # 骨干网络 is strict patch-aligned: pad to a multiple of 16 / Backbone is strict patch-aligned: pad to a multiple of 16.
         x_pad, (pad_h, pad_w) = self._pad_to_multiple(x, self.PATCH)
 
         feat = self.image_encoder(x_pad)          # (B, 768, H'/16, W'/16)
         logits = self.mask_decoder(feat)          # (B, num_classes, H', W')
 
-        # The decoder upsamples exactly 16x, so logits should already match
-        # x_pad's spatial size; bilinear is a defensive safety net.
+        # The 解码器 / The decoder upsamples exactly 16x, so logits should already match
+        # x _ pad's 空间的 大小; bilinear is a defensive safety net / x_pad's spatial size; bilinear is a defensive safety net.
         if logits.shape[-2:] != x_pad.shape[-2:]:
             logits = F.interpolate(
                 logits, size=x_pad.shape[-2:],
                 mode="bilinear", align_corners=False,
             )
 
-        # Crop back to the original input spatial size.
+        # Crop back to the original 输入 空间的 大小 / Crop back to the original input spatial size.
         if pad_h or pad_w:
             logits = logits[..., :H, :W]
         return logits

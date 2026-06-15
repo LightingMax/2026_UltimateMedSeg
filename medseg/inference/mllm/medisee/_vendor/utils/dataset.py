@@ -72,7 +72,7 @@ def collate_fn(
         inferences.append(inference)
 
     if use_mm_start_end:
-        # replace <image> token
+        # replace < 图像 > 标记 / replace <image> token
         for i in range(len(conversation_list)):
             replace_token = DEFAULT_IMAGE_TOKEN
             replace_token = (
@@ -397,8 +397,9 @@ class ValDataset(torch.utils.data.Dataset):
             return len(self.images)                       
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -468,12 +469,12 @@ class ValDataset(torch.utils.data.Dataset):
             conversations.append(conv.get_prompt())
             i += 1
 
-        # preprocess image for clip
+        # preprocess 图像 for clip / preprocess image for clip
         image_clip = self.clip_image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
         ][0]
 
-        # preprocess image for sam
+        # preprocess 图像 for sam / preprocess image for sam
         image = self.transform.apply_image(image)
         resize = image.shape[:2]
         image = self.preprocess(torch.from_numpy(image).permute(2, 0, 1).contiguous())
@@ -562,8 +563,9 @@ class ValDataset_SAMed2D_default(torch.utils.data.Dataset):
         return len(self.data_dict)                     
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -613,12 +615,12 @@ class ValDataset_SAMed2D_default(torch.utils.data.Dataset):
 
 
 
-        # preprocess image for clip
+        # preprocess 图像 for clip / preprocess image for clip
         image_clip = self.clip_image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
         ][0]
 
-        # preprocess image for sam
+        # preprocess 图像 for sam / preprocess image for sam
         image = self.transform.apply_image(image)
         resize = image.shape[:2]
         image = self.preprocess(torch.from_numpy(image).permute(2, 0, 1).contiguous())
@@ -690,8 +692,9 @@ class ValDataset_SAMed2D_one_image(torch.utils.data.Dataset):
         return len(self.data_dict)                     
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -741,12 +744,12 @@ class ValDataset_SAMed2D_one_image(torch.utils.data.Dataset):
 
 
 
-        # preprocess image for clip
+        # preprocess 图像 for clip / preprocess image for clip
         image_clip = self.clip_image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
         ][0]
 
-        # preprocess image for sam
+        # preprocess 图像 for sam / preprocess image for sam
         image = self.transform.apply_image(image)
         resize = image.shape[:2]
         image = self.preprocess(torch.from_numpy(image).permute(2, 0, 1).contiguous())
@@ -831,8 +834,9 @@ class ValDataset_SAMed2D_demo(torch.utils.data.Dataset):
         return len(self.data_dict)                     
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -882,12 +886,12 @@ class ValDataset_SAMed2D_demo(torch.utils.data.Dataset):
 
 
 
-        # preprocess image for clip
+        # preprocess 图像 for clip / preprocess image for clip
         image_clip = self.clip_image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
         ][0]
 
-        # preprocess image for sam
+        # preprocess 图像 for sam / preprocess image for sam
         image = self.transform.apply_image(image)
         resize = image.shape[:2]
         image = self.preprocess(torch.from_numpy(image).permute(2, 0, 1).contiguous())
@@ -954,8 +958,9 @@ class ValDataset_Reasoning_Med_Seg_with_explanation_long(torch.utils.data.Datase
         return len(self.data_dict)                        
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -1007,12 +1012,12 @@ class ValDataset_Reasoning_Med_Seg_with_explanation_long(torch.utils.data.Datase
 
 
 
-        # preprocess image for clip
+        # preprocess 图像 for clip / preprocess image for clip
         image_clip = self.clip_image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
         ][0]
 
-        # preprocess image for sam
+        # preprocess 图像 for sam / preprocess image for sam
         image = self.transform.apply_image(image)
         resize = image.shape[:2]
         image = self.preprocess(torch.from_numpy(image).permute(2, 0, 1).contiguous())

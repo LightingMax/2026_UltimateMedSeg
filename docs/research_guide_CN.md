@@ -63,7 +63,7 @@ python train.py --config configs/architectures/networks/general/transunet.yaml \
 
 ### 实验设计
 
-**3 个代表性编码器** × **全部 40 个解码器**：
+**3 个代表性编码器** × **全部 45 个解码器**：
 
 | 编码器 | 类型 | 选择理由 |
 |--------|------|----------|
@@ -106,7 +106,7 @@ python train.py --config configs/architectures/decoder_study/general/resnet50_em
 
 ### 可用 YAML
 
-`configs/architectures/decoder_study/general/` 包含 120 个 YAML（3 个编码器 × 40 个解码器）。
+`configs/architectures/decoder_study/general/` 包含 133 个 YAML（3 个编码器 × 45 个解码器）。
 
 ---
 

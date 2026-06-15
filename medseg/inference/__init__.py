@@ -1,4 +1,5 @@
 """Inference utilities: model ensemble (logit averaging) + test-time augmentation.
+    推理 utilities: 模型 集成 ( logit averaging ) + test-time 数据增强。
 
 Modules:
     ensemble.py : EnsembleModel for logit-averaging multiple segmentation models.

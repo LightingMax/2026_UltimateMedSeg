@@ -1,4 +1,5 @@
 """CFM Decoder - Cascaded Fusion Module (Polyp-PVT style).
+    CFM 解码器。
 
 Reference: Dong et al. "Polyp-PVT: Polyp Segmentation with Pyramid Vision
 Transformers" (2021). The original CFM fuses multi-scale encoder features by
@@ -21,7 +22,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class _BasicConv2d(nn.Module):
-    """Conv -> BN -> ReLU helper used throughout the RFB block."""
+    """Conv - > BN - > ReLU helper used throughout the RFB 块。
+        Conv -> BN -> ReLU helper used throughout the RFB block."""
 
     def __init__(self, in_ch: int, out_ch: int, kernel_size, stride: int = 1,
                  padding=0, dilation: int = 1):
@@ -38,6 +40,7 @@ class _BasicConv2d(nn.Module):
 
 class _RFB(nn.Module):
     """Receptive-Field Block (Polyp-PVT variant).
+        Receptive-Field 块 ( Polyp-PVT variant )。
 
     Four parallel branches with asymmetric + dilated convolutions widen the
     receptive field, then their concatenation is fused with a residual 1x1
@@ -83,6 +86,7 @@ class _RFB(nn.Module):
 @DECODER_REGISTRY.register("cfm")
 class CFMDecoder(nn.Module):
     """Cascaded Fusion Module decoder.
+        Cascaded Fusion Module 解码器。
 
     Args:
         encoder_channels: Skip-connection channels (shallow -> deep), typically
@@ -102,16 +106,16 @@ class CFMDecoder(nn.Module):
         super().__init__()
         self.img_size = img_size
         self.common_channels = common_channels
-        # ``skip_connection`` is accepted for API symmetry; CFM ignores it.
+        # ` ` 跳跃 _ connection ` ` is accepted for API symmetry; CFM ignores it / ``skip_connection`` is accepted for API symmetry; CFM ignores it.
         self.skip_connection = None
 
-        # One RFB per skip stage (shallow -> deep) and one for the bottleneck.
+        # One RFB per 跳跃连接 / One RFB per skip stage (shallow -> deep) and one for the bottleneck.
         self.skip_rfbs = nn.ModuleList(
             [_RFB(c, common_channels) for c in encoder_channels]
         )
         self.bottleneck_rfb = _RFB(bottleneck_channels, common_channels)
 
-        # One 3x3 fusion conv per skip (applied after the cascade multiply).
+        # One 3x3 fusion conv per 跳跃连接 / One 3x3 fusion conv per skip (applied after the cascade multiply).
         self.cascade_convs = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(common_channels, common_channels,
@@ -122,7 +126,7 @@ class CFMDecoder(nn.Module):
             for _ in encoder_channels
         ])
 
-        # Output sits at the shallowest skip's spatial size with ``common_channels``.
+        # Output sits at the shallowest 跳跃连接 / Output sits at the shallowest skip's spatial size with ``common_channels``.
         self._out_channels = common_channels
 
     @property
@@ -131,10 +135,10 @@ class CFMDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # ``skip_features`` is ordered shallow -> deep.
+        # ` ` 跳跃 _ 特征 ` ` is ordered 浅层 - > 深度 / ``skip_features`` is ordered shallow -> deep.
         n_skips = len(skip_features)
         if n_skips == 0:
-            # Degenerate case: no skips, just project the bottleneck.
+            # Degenerate case: no skips, just project the 瓶颈层 / Degenerate case: no skips, just project the bottleneck.
             return self.bottleneck_rfb(bottleneck_feat)
         if n_skips > len(self.skip_rfbs):
             raise ValueError(
@@ -142,15 +146,15 @@ class CFMDecoder(nn.Module):
                 f"but received {n_skips}."
             )
 
-        # Project each input to ``common_channels`` via its matching RFB.
-        # When ``n_skips < len(self.skip_rfbs)`` we use the shallowest N RFBs,
-        # matching the convention that skip_features[i] has channels
-        # encoder_channels[i].
+        # Project each 输入 to ` ` common _ 通道 ` ` via its matching RFB / Project each input to ``common_channels`` via its matching RFB.
+        # When ` ` n _ skips < len ( self. 跳跃 _ rfbs ) ` ` we use the shallowest N RFBs / When ``n_skips < len(self.skip_rfbs)`` we use the shallowest N RFBs,
+        # matching the convention that 跳跃 _ 特征 [ i ] has 通道 / matching the convention that skip_features[i] has channels
+        # 编码器 _ 通道 [ i ] / encoder_channels[i].
         skip_feats = [self.skip_rfbs[i](skip_features[i]) for i in range(n_skips)]
         x = self.bottleneck_rfb(bottleneck_feat)
 
-        # Cascade deepest -> shallowest: upsample, elementwise multiply with
-        # the matching skip, then 3x3 conv.
+        # Cascade deepest - > shallowest: 上采样, elementwise multiply with / Cascade deepest -> shallowest: upsample, elementwise multiply with
+        # the matching 跳跃连接 / the matching skip, then 3x3 conv.
         for i in range(n_skips - 1, -1, -1):
             skip = skip_feats[i]
             if x.shape[2:] != skip.shape[2:]:

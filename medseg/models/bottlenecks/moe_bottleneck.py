@@ -1,4 +1,5 @@
 """Mixture-of-Experts (MoE) bottleneck.
+    Mixture-of-Experts (MoE) 瓶颈层。
 
 Inspired by:
     - Shazeer et al., "Outrageously Large Neural Networks: The Sparsely-Gated
@@ -49,7 +50,7 @@ class MoELayer(nn.Module):
         topk_logits, topk_idx = logits.topk(self.top_k, dim=1)
         gates = F.softmax(topk_logits, dim=1)  # B, k, H, W
 
-        # Evaluate all experts (efficient for small E)
+        # Evaluate all experts ( 高效的 for small E ) / Evaluate all experts (efficient for small E)
         expert_outs = torch.stack([e(x) for e in self.experts], dim=1)  # B,E,C,H,W
 
         # Gather selected experts
@@ -65,6 +66,7 @@ class MoELayer(nn.Module):
 @BOTTLENECK_REGISTRY.register("moe")
 class MoEBottleneck(nn.Module):
     """Mixture-of-Experts bottleneck with residual.
+        Mixture-of-Experts 瓶颈层。
 
     Args:
         in_channels: Number of input/output channels.

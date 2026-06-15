@@ -1,4 +1,5 @@
 """HSNet: Hybrid Semantic Network for Polyp Segmentation.
+    HSNet: Hybrid 语义的 网络 for 息肉 分割。
 
 Reference:
     Wenchao Zhang et al. "HSNet: A hybrid semantic network for polyp segmentation."
@@ -105,7 +106,8 @@ class Mlp(nn.Module):
 
 
 class Attention(nn.Module):
-    """PVT-style attention with spatial reduction. Returns (x, q, k)."""
+    """PVT-style 注意力 with 空间的 reduction. 返回 ( x, q, k )。
+        PVT-style attention with spatial reduction. Returns (x, q, k)."""
 
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None,
                  attn_drop=0., proj_drop=0., sr_ratio=1):
@@ -145,7 +147,8 @@ class Attention(nn.Module):
 
 
 class Block(nn.Module):
-    """PVT transformer block. Returns (x, q, k)."""
+    """PVT Transformer 块. 返回 ( x, q, k )。
+        PVT transformer block. Returns (x, q, k)."""
 
     def __init__(self, dim, num_heads=1, mlp_ratio=4., qkv_bias=False, qk_scale=None,
                  drop=0., attn_drop=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm,
@@ -194,7 +197,8 @@ class Bottleneck(nn.Module):
 
 
 class Linear_Eca_block(nn.Module):
-    """ECA: GAP -> 1D conv -> sigmoid -> expand to input shape."""
+    """ECA: GAP - > 1D conv - > sigmoid - > expand to 输入 形状。
+        ECA: GAP -> 1D conv -> sigmoid -> expand to input shape."""
 
     def __init__(self):
         super().__init__()
@@ -211,7 +215,8 @@ class Linear_Eca_block(nn.Module):
 
 
 class HybridAttention(nn.Module):
-    """Split channels: ECA on first half, spatial attention on second half, concat."""
+    """Split 通道: ECA on first half, 空间的 注意力 on second half, concat。
+        Split channels: ECA on first half, spatial attention on second half, concat."""
 
     def __init__(self, in_planes, out_planes):
         super().__init__()
@@ -234,6 +239,7 @@ class HybridAttention(nn.Module):
 
 class HybridSenmentic(nn.Module):
     """Transformer-based hybrid semantic block.
+        Transformer-based hybrid 语义的 块。
     OverlapPatchEmbed → Block (PVT attention) → norm → q*k attention →
     ECA gate + Spatial gate → weighted → Bottleneck(input) → multiply → upsample 2x
     """
@@ -270,10 +276,11 @@ class HybridSenmentic(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder
+# 解码 / Decoder
 # ---------------------------------------------------------------------------
 class Decoder(nn.Module):
-    """Official HSNet decoder with HybridSemantic + HybridAttention cascade."""
+    """Official HSNet 解码器。
+        Official HSNet decoder with HybridSemantic + HybridAttention cascade."""
 
     def __init__(self, embed_dims=[512, 320, 128, 64]):
         super().__init__()
@@ -305,10 +312,11 @@ class Decoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class HSNet(nn.Module):
     """Hybrid Semantic Network (HSNet) for polyp segmentation.
+        Hybrid 语义的 网络 ( HSNet ) for 息肉 分割。
 
     Args:
         in_channels: number of input image channels.
@@ -323,7 +331,7 @@ class HSNet(nn.Module):
         self.num_classes = num_classes
         self.img_size = img_size
 
-        # Backbone (PVTv2-B2)
+        # 骨干网络 ( PVTv2-B 2 ) / Backbone (PVTv2-B2)
         self.backbone = load_with_ssl_fallback(
             timm.create_model, 'pvt_v2_b2',
             features_only=True, pretrained=bool(pretrained), in_chans=in_channels)
@@ -337,7 +345,7 @@ class HSNet(nn.Module):
 
         self.decoder = Decoder(embed_dims=[c4, c3, c2, c1])
 
-        # Output heads
+        # 输出 heads / Output heads
         self.out1 = nn.Conv2d(c1, num_classes, 1)
         self.out2 = nn.Conv2d(c2, num_classes, 1)
         self.out3 = nn.Conv2d(c3, num_classes, 1)
@@ -361,7 +369,7 @@ class HSNet(nn.Module):
 
     def forward(self, x):
         H_orig, W_orig = x.shape[-2:]
-        # Encode
+        # 编码 / Encode
         pvt = self.backbone(x)
         # Decode
         x1, x2, x3, x4 = self.decoder(pvt)
@@ -373,12 +381,12 @@ class HSNet(nn.Module):
         y4 = self.pooling(self.bn_dc4(self.dc4(x4)))
         y = y1 + y2 + y3 + y4
         coeff = self.sigmoid(self.fc2(self.relu(self.fc1(y.reshape(B, -1)))))
-        # Per-scale predictions
+        # Per-scale 预测 / Per-scale predictions
         prediction1 = self.out1(x1) * coeff[:, 0].reshape(B, 1, 1, 1)
         prediction2 = self.out2(x2) * coeff[:, 1].reshape(B, 1, 1, 1)
         prediction3 = self.out3(x3) * coeff[:, 2].reshape(B, 1, 1, 1)
         prediction4 = self.out4(x4) * coeff[:, 3].reshape(B, 1, 1, 1)
-        # Upsample to original resolution
+        # 上采样 to original 分辨率 / Upsample to original resolution
         target = (H_orig, W_orig)
         p1 = F.interpolate(prediction1, size=target, mode='bilinear', align_corners=True)
         p2 = F.interpolate(prediction2, size=target, mode='bilinear', align_corners=True)

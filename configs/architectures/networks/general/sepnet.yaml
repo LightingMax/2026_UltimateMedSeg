@@ -1,5 +1,7 @@
 # SEPNet: MAP(RFB) + CRC Progressive Feature Refinement (Polyp)
+# SEPNet: MAP 分割网络
 # SEPNet: MAP(RFB) + CRC Progressive Feature Refinement (Polyp)
+# SEPNet: MAP 分割网络
 # Domain: polyp
 
 model:

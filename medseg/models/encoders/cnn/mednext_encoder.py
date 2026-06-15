@@ -1,4 +1,5 @@
 """MedNeXt encoder (2D).
+    MedNeXt 编码器。
 
 Faithful port of the MedNeXt encoder blocks from MIC-DKFZ/MedNeXt.
 Each MedNeXt block is a ConvNeXt-style residual unit:
@@ -28,6 +29,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 class _MedNeXtBlock(nn.Module):
     """MedNeXt block – faithful to MIC-DKFZ/MedNeXt ``MedNeXtBlock``.
+        MedNeXt 块 – 忠实 to MIC-DKFZ / MedNeXt ` ` MedNeXtBlock ` `。
 
     DWConv -> GroupNorm -> 1x1 expand -> GELU -> [GRN] -> 1x1 contract + residual.
     """
@@ -39,12 +41,12 @@ class _MedNeXtBlock(nn.Module):
         super().__init__()
         self.do_res = do_res
 
-        # Depthwise convolution (groups = in_ch per original)
+        # 深度可分离卷积 ( groups = in _ ch per original ) / Depthwise convolution (groups = in_ch per original)
         self.conv1 = nn.Conv2d(
             in_ch, in_ch, kernel_size,
             padding=kernel_size // 2, groups=in_ch)
 
-        # Normalization – GroupNorm with num_groups = in_ch (original default)
+        # 归一化 – GroupNorm with num _ groups = in _ ch ( original 默认值 ) / Normalization – GroupNorm with num_groups = in_ch (original default)
         if norm_type == 'group':
             self.norm = nn.GroupNorm(
                 num_groups=n_groups if n_groups else in_ch,
@@ -56,7 +58,7 @@ class _MedNeXtBlock(nn.Module):
         self.conv2 = nn.Conv2d(in_ch, exp_r * in_ch, 1)
         self.act = nn.GELU()
 
-        # Optional Global Response Normalization (after GELU, before conv3)
+        # 可选 全局的 Response 归一化 ( after GELU, before conv3 ) / Optional Global Response Normalization (after GELU, before conv3)
         self.grn = grn
         if grn:
             exp_ch = exp_r * in_ch
@@ -81,6 +83,7 @@ class _MedNeXtBlock(nn.Module):
 
 class _MedNeXtDownBlock(nn.Module):
     """MedNeXt down block – faithful to MIC-DKFZ ``MedNeXtDownBlock``.
+        MedNeXt down 块 – 忠实 to MIC-DKFZ ` ` MedNeXtDownBlock ` `。
 
     Overrides the depthwise conv to stride=2 for 2x spatial downsampling.
     The main path has NO residual (per original). An optional stride-2
@@ -91,17 +94,17 @@ class _MedNeXtDownBlock(nn.Module):
                  kernel_size: int = 7, do_res: bool = False,
                  norm_type: str = 'group', grn: bool = False):
         super().__init__()
-        # Inner block (no residual – matches original MedNeXtDownBlock)
+        # Inner 块 ( no 残差 – matches original MedNeXtDownBlock ) / Inner block (no residual – matches original MedNeXtDownBlock)
         self.block = _MedNeXtBlock(
             in_ch, out_ch, exp_r, kernel_size,
             do_res=False, norm_type=norm_type, grn=grn)
 
-        # Override conv1 with stride=2 for spatial downsampling
+        # 覆盖 conv1 with 步长 = 2 for 空间的 下采样 / Override conv1 with stride=2 for spatial downsampling
         self.block.conv1 = nn.Conv2d(
             in_ch, in_ch, kernel_size,
             stride=2, padding=kernel_size // 2, groups=in_ch)
 
-        # Optional stride-2 1x1 residual projection
+        # 可选 步长 - 2 1x1 残差 projection / Optional stride-2 1x1 residual projection
         self.do_res = do_res
         if do_res:
             self.res_conv = nn.Conv2d(in_ch, out_ch, 1, stride=2)
@@ -127,6 +130,7 @@ def _make_stage(n_ch: int, num_blocks: int,
 @ENCODER_REGISTRY.register("mednext")
 class MedNeXtEncoder(nn.Module):
     """MedNeXt encoder with 4 multi-scale outputs.
+        MedNeXt 编码器。
 
     Faithful to MIC-DKFZ/MedNeXt encoder blocks with 1x1 stem,
     MedNeXtBlock (DWConv→Norm→expand→GELU→[GRN]→contract+residual),
@@ -165,26 +169,26 @@ class MedNeXtEncoder(nn.Module):
         channels = [n_ch, 2 * n_ch, 4 * n_ch, 8 * n_ch]
         self.out_channels: List[int] = channels
 
-        # Stem: 1x1 conv (per original MedNeXt)
+        # 主干: 1x1 conv ( per original MedNeXt ) / Stem: 1x1 conv (per original MedNeXt)
         self.stem = nn.Conv2d(in_channels, n_ch, 1)
 
-        # Stage 1 at /1
+        # 阶段 1 at / 1 / Stage 1 at /1
         self.stage1 = _make_stage(n_ch, depths[0],
                                   exp_r, kernel_size, norm_type, grn)
 
-        # Down + Stage 2 at /2
+        # Down + 阶段 2 at / 2 / Down + Stage 2 at /2
         self.down1 = _MedNeXtDownBlock(n_ch, 2 * n_ch, exp_r,
                                        kernel_size, norm_type=norm_type, grn=grn)
         self.stage2 = _make_stage(2 * n_ch, max(depths[1] - 1, 0),
                                   exp_r, kernel_size, norm_type, grn)
 
-        # Down + Stage 3 at /4
+        # Down + 阶段 3 at / 4 / Down + Stage 3 at /4
         self.down2 = _MedNeXtDownBlock(2 * n_ch, 4 * n_ch, exp_r,
                                        kernel_size, norm_type=norm_type, grn=grn)
         self.stage3 = _make_stage(4 * n_ch, max(depths[2] - 1, 0),
                                   exp_r, kernel_size, norm_type, grn)
 
-        # Down + Stage 4 at /8 (+ optional bottleneck refinement)
+        # Down + Stage 4 at /8 (+ optional 瓶颈层 / Down + Stage 4 at /8 (+ optional bottleneck refinement)
         self.down3 = _MedNeXtDownBlock(4 * n_ch, 8 * n_ch, exp_r,
                                        kernel_size, norm_type=norm_type, grn=grn)
         stage4_blocks = max(depths[3] - 1, 0) + max(depths[4], 0)
@@ -192,7 +196,7 @@ class MedNeXtEncoder(nn.Module):
                                   exp_r, kernel_size, norm_type, grn)
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        # Handle single-channel input by replicating to in_channels
+        # Handle single-channel 输入 by replicating to in _ 通道 / Handle single-channel input by replicating to in_channels
         if x.size(1) == 1 and self.stem.in_channels == 3:
             x = x.repeat(1, 3, 1, 1)
 

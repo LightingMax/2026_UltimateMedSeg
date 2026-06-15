@@ -1,8 +1,9 @@
 # TPRO (MICCAI 2023)
-# Reference: https://github.com/shijun18/TPRO
+# 参考: https: / / github. com / shijun18 / TPRO / Reference: https://github.com/shijun18/TPRO
 # Paper: https://arxiv.org/abs/2308.09728
 # Implemented from paper formulas; not a copy of the official repo.
 """TPRO: Text-Prompted Multi-modal medical image segmentation.
+    TPRO: Text-Prompted Multi-modal 医学的 图像 分割。
 
 The paper describes a U-shape segmentation network in which **knowledge
 prompts** (per-class descriptive text snippets) are encoded by a frozen
@@ -51,7 +52,7 @@ except Exception:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Swin-like encoder (4 stages, hierarchical token mixing)
+# Swin-like 编码器 / Swin-like encoder (4 stages, hierarchical token mixing)
 # ---------------------------------------------------------------------------
 class _ConvAct(nn.Module):
     def __init__(self, in_c: int, out_c: int, k=3, s=1, p=1):
@@ -65,7 +66,8 @@ class _ConvAct(nn.Module):
 
 
 class _EncoderStage(nn.Module):
-    """A stage = optional channel projection + N residual conv blocks."""
+    """A 阶段 = 可选 通道 projection + N 残差 conv blocks。
+        A stage = optional channel projection + N residual conv blocks."""
 
     def __init__(self, in_c: int, out_c: int, depth: int = 2, downsample_stride: int = 1):
         super().__init__()
@@ -82,6 +84,7 @@ class _EncoderStage(nn.Module):
 
 class _SwinLikeEncoder(nn.Module):
     """Hierarchical encoder yielding 4 pyramid scales.
+        Hierarchical 编码器。
 
     Output channels: (96, 192, 384, 768), scales (/4, /8, /16, /32).
     """
@@ -105,10 +108,11 @@ class _SwinLikeEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Knowledge & anatomy prompt encoder (HF wrapper)
+# Knowledge & anatomy prompt 编码器 / Knowledge & anatomy prompt encoder (HF wrapper)
 # ---------------------------------------------------------------------------
 class _PromptEncoder(nn.Module):
     """Wraps a frozen HF text encoder; returns sentence-pool per prompt.
+        Wraps a frozen HF text 编码器。
 
     Strict: requires HF; ``hf_name=None`` builds an explicit untrained BERT.
     """
@@ -153,7 +157,7 @@ class _PromptEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Cross-attention fusion block: visual tokens query text prompts
+# Cross-attention 融合 块: visual 标记 query text prompts / Cross-attention fusion block: visual tokens query text prompts
 # ---------------------------------------------------------------------------
 class _PromptFusion(nn.Module):
     def __init__(self, vis_dim: int, text_dim: int, n_heads: int = 4):
@@ -169,7 +173,8 @@ class _PromptFusion(nn.Module):
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
     def forward(self, vis: torch.Tensor, prompts: torch.Tensor) -> torch.Tensor:
-        """vis: (B, C, H, W); prompts: (B, P, D_text). Returns (B, C, H, W)."""
+        """vis: ( B, C, H, W ); prompts: ( B, P, D _ text ). 返回 ( B, C, H, W )。
+            vis: (B, C, H, W); prompts: (B, P, D_text). Returns (B, C, H, W)."""
         B, C, H, W = vis.shape
         v = vis.flatten(2).transpose(1, 2)        # (B, HW, C)
         p = self.text_proj(prompts)               # (B, P, C)
@@ -180,7 +185,7 @@ class _PromptFusion(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder block: upsample -> concat -> conv
+# 解码 块: 上采样 - > concat - > conv / Decoder block: upsample -> concat -> conv
 # ---------------------------------------------------------------------------
 class _DecBlock(nn.Module):
     def __init__(self, in_c: int, skip_c: int, out_c: int):
@@ -199,10 +204,11 @@ class _DecBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class TPRO(nn.Module):
-    """TPRO: Text-Prompted multi-modal medical image segmentation."""
+    """TPRO: Text-Prompted multi-modal 医学的 图像 分割。
+        TPRO: Text-Prompted multi-modal medical image segmentation."""
 
     is_text_guided = True
 
@@ -233,13 +239,13 @@ class TPRO(nn.Module):
         nn.init.trunc_normal_(self.class_prompt, std=0.02)
         nn.init.trunc_normal_(self.anatomy_prompt, std=0.02)
 
-        # Fusion blocks at every encoder scale (paper §3.3)
+        # Fusion blocks at every 编码器 / Fusion blocks at every encoder scale (paper §3.3)
         self.fuse0 = _PromptFusion(c0, text_dim, n_heads)
         self.fuse1 = _PromptFusion(c1, text_dim, n_heads)
         self.fuse2 = _PromptFusion(c2, text_dim, n_heads)
         self.fuse3 = _PromptFusion(c3, text_dim, n_heads)
 
-        # U-Net decoder
+        # U-Net 解码器 / U-Net decoder
         self.dec3 = _DecBlock(c3, c2, c2)
         self.dec2 = _DecBlock(c2, c1, c1)
         self.dec1 = _DecBlock(c1, c0, c0)
@@ -248,10 +254,11 @@ class TPRO(nn.Module):
 
     # ------------------------------------------------------------------
     def _resolve_prompts(self, image: torch.Tensor, text: Any) -> torch.Tensor:
-        """Return (B, P, text_dim) — P = num_classes + n_anatomy_prompts."""
+        """返回 ( B, P, text _ dim ) — P = num _ classes + n _ anatomy _ prompts。
+            Return (B, P, text_dim) — P = num_classes + n_anatomy_prompts."""
         B = image.shape[0]
         device = image.device
-        # Anatomy bank: always learnable, broadcast across batch
+        # Anatomy bank: always learnable, broadcast across 批次 / Anatomy bank: always learnable, broadcast across batch
         ana = self.anatomy_prompt.unsqueeze(0).expand(B, -1, -1)
 
         # 自动处理字符串输入 / Auto-handle string input
@@ -267,7 +274,7 @@ class TPRO(nn.Module):
             mask = text.get("attention_mask")
             if mask is not None:
                 mask = mask.to(device).long()
-            # If multiple prompts are concatenated as (B, C, L), encode each.
+            # If multiple prompts are concatenated as ( B, C, L ), 编码 each / If multiple prompts are concatenated as (B, C, L), encode each.
             if ids.dim() == 3:
                 Bp, C, L = ids.shape
                 ids = ids.view(Bp * C, L)
@@ -279,7 +286,7 @@ class TPRO(nn.Module):
                         f"text supplies {cls.shape[1]} prompts but num_classes={self.num_classes}"
                     )
             else:
-                # single caption per sample -> broadcast to num_classes
+                # single caption per 样本 - > broadcast to num _ classes / single caption per sample -> broadcast to num_classes
                 pooled = self.prompt_encoder(ids, mask)  # (B, D)
                 cls = pooled.unsqueeze(1).expand(-1, self.num_classes, -1)
         elif isinstance(text, torch.Tensor):

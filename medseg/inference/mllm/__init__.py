@@ -1,4 +1,5 @@
 """MLLM-based Grounding × Segmentation pipeline.
+    MLLM-based Grounding × 分割 pipeline。
 
 模块结构：
 - base.py                : MLLMGrounder 抽象基类（统一 detect 接口）
@@ -53,7 +54,7 @@ from medseg.inference.mllm.medsam_wrapper import MedSAMMaskGenerator
 from medseg.inference.mllm.pipeline import MLLMGroundingSegPipeline, build_pipeline_from_config
 
 MLLM_REGISTRY = {
-    # Qwen family (native grounding tokens)
+    # Qwen family ( native grounding 标记 ) / Qwen family (native grounding tokens)
     "qwen2vl": Qwen2VLGrounder,
     "qwen25vl": Qwen25VLGrounder,
     "qwen2_5vl": Qwen25VLGrounder,         # alias

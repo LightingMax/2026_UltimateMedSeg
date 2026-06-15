@@ -1,5 +1,7 @@
 # U-VixLSTM: Vision-xLSTM (mLSTM) Encoder + Skip Decoder (Pathology)
+# U-VixLSTM: Vision-xLSTM 分割网络
 # U-VixLSTM: Vision-xLSTM (mLSTM) Encoder + Skip Decoder (Pathology)
+# U-VixLSTM: Vision-xLSTM 分割网络
 # Domain: pathology
 
 model:

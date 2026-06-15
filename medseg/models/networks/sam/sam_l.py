@@ -1,4 +1,5 @@
 """SAMViTLarge — SAM-style segmentation model with a ViT-L/16 image encoder.
+    SAMViTLarge — SAM-style segmentation model with a ViT-L/16 image 编码器。
 
 Encoder:
     timm ``vit_large_patch16_224`` (1024-dim, 24 transformer blocks, patch 16).
@@ -39,7 +40,8 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 # Helper building blocks (underscore-prefixed; not part of the public API).
 # ---------------------------------------------------------------------------
 class _UpBlock(nn.Module):
-    """ConvTranspose2d (stride 2) followed by optional BN + GELU."""
+    """ConvTranspose2d ( 步长 2 ) followed by 可选 BN + GELU。
+        ConvTranspose2d (stride 2) followed by optional BN + GELU."""
 
     def __init__(self, in_ch: int, out_ch: int, last: bool = False):
         super().__init__()
@@ -56,7 +58,8 @@ class _UpBlock(nn.Module):
 
 
 class _MaskDecoder(nn.Module):
-    """4-stage transposed-conv decoder: 1024 -> 384 -> 192 -> 96 -> C."""
+    """4-stage transposed-conv 解码器。
+        4-stage transposed-conv decoder: 1024 -> 384 -> 192 -> 96 -> C."""
 
     def __init__(self, embed_dim: int, num_classes: int):
         super().__init__()
@@ -92,10 +95,11 @@ def _build_vit_l_encoder(img_size: int, in_channels: int, pretrained: bool):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SAMViTLarge(SAMBase):
     """SAM-style segmentation network with a ViT-L/16 image encoder.
+        SAM-style segmentation network with a ViT-L/16 image 编码器。
 
     Args:
         in_channels: number of input image channels.
@@ -142,7 +146,7 @@ class SAMViTLarge(SAMBase):
             inference_only=inference_only,
         )
 
-        # Image encoder: timm ViT-L/16 (1024-dim, 24 blocks).
+        # Image 编码器 / Image encoder: timm ViT-L/16 (1024-dim, 24 blocks).
         self.image_encoder = _build_vit_l_encoder(
             img_size=img_size,
             in_channels=in_channels,
@@ -155,10 +159,10 @@ class SAMViTLarge(SAMBase):
         # Prompt-free generalist seg variant.
         self.prompt_encoder = None
 
-        # 4x ConvTranspose decoder: 1024 -> 384 -> 192 -> 96 -> num_classes.
+        # 4x ConvTranspose 解码器 / 4x ConvTranspose decoder: 1024 -> 384 -> 192 -> 96 -> num_classes.
         self.mask_decoder = _MaskDecoder(self._EMBED_DIM, num_classes)
 
-        # Optional local checkpoint override.
+        # 可选 局部的 检查点 覆盖 / Optional local checkpoint override.
         if pretrained_path:
             try:
                 state = torch.load(pretrained_path, map_location="cpu")
@@ -180,6 +184,7 @@ class SAMViTLarge(SAMBase):
     # ------------------------------------------------------------------
     def _encode(self, x: torch.Tensor) -> torch.Tensor:
         """Run the ViT-L encoder and return a (B, C, Hp, Wp) feature grid.
+            Run the ViT-L 编码器。
 
         ``x`` must already be padded to a multiple of ``_PATCH``.
         """
@@ -188,8 +193,8 @@ class SAMViTLarge(SAMBase):
 
         tokens = self.image_encoder.forward_features(x)
 
-        # timm may return either (B, N, C) tokens or an already-shaped (B, C, H, W)
-        # feature map depending on version / pooling settings.
+        # timm may 返回 either ( B, N, C ) 标记 or an already-shaped ( B, C, H, W ) / timm may return either (B, N, C) tokens or an already-shaped (B, C, H, W)
+        # 特征图 depending on version / 池化 settings / feature map depending on version / pooling settings.
         if tokens.dim() == 4:
             return tokens
 
@@ -213,8 +218,8 @@ class SAMViTLarge(SAMBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
 
-        # Pad input to the nearest multiple of the patch size, remembering the
-        # original size so we can crop the final logits.
+        # Pad 输入 to the nearest multiple of the 图块 大小, remembering the / Pad input to the nearest multiple of the patch size, remembering the
+        # original 大小 so we can crop the final logits / original size so we can crop the final logits.
         pad_h = (self._PATCH - H % self._PATCH) % self._PATCH
         pad_w = (self._PATCH - W % self._PATCH) % self._PATCH
         if pad_h or pad_w:

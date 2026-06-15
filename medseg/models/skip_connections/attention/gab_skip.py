@@ -1,4 +1,5 @@
 """Group Aggregation Bridge (GAB) skip — adapted from EGE-UNet (MICCAI 2023 W).
+    Group Aggregation Bridge (GAB) 跳跃连接。
 
 Original GroupAggregationBridge fuses (xh, xl, mask) — high-res feature,
 low-res feature, and a 1-channel segmentation mask used as group-wise
@@ -58,7 +59,8 @@ from medseg.registry import SKIP_REGISTRY
 
 
 class _LayerNorm(nn.Module):
-    """LayerNorm for channels-first 2D tensors (matches the EGE-UNet helper)."""
+    """LayerNorm for channels-first 2D 张量 ( matches the EGE-UNet helper )。
+        LayerNorm for channels-first 2D tensors (matches the EGE-UNet helper)."""
 
     def __init__(self, normalized_shape, eps=1e-6):
         super().__init__()
@@ -75,15 +77,16 @@ class _LayerNorm(nn.Module):
 
 
 def _even_split(C: int, n: int) -> list[int]:
-    """Split C channels into n groups as evenly as possible (matching torch.chunk semantics)."""
+    """Split C 通道 into n groups as evenly as possible ( matching torch. chunk semantics )。
+        Split C channels into n groups as evenly as possible (matching torch.chunk semantics)."""
     base = C // n
     rem = C - base * n
-    # torch.chunk distributes the remainder into the FIRST `rem` chunks (size base+1)
+    # torch. chunk distributes the remainder into the FIRST ` rem ` chunks ( 大小 base + 1 ) / torch.chunk distributes the remainder into the FIRST `rem` chunks (size base+1)
     # Actually torch.chunk distributes the remainder into the LAST chunk(s) but as one
-    # bigger one. For our purposes we mirror that: first n-1 of size base+1 each up to
-    # rem, then remaining of size base.
-    # To stay 1:1 compatible with torch.chunk, just call torch.chunk and read sizes.
-    # Here we just compute matching sizes.
+    # bigger one. For our purposes we mirror that: first n - 1 of 大小 base + 1 each up to / bigger one. For our purposes we mirror that: first n-1 of size base+1 each up to
+    # rem, then remaining of 大小 base / rem, then remaining of size base.
+    # To stay 1: 1 兼容的 with torch. chunk, just call torch. chunk and read sizes / To stay 1:1 compatible with torch.chunk, just call torch.chunk and read sizes.
+    # Here we just 计算 matching sizes / Here we just compute matching sizes.
     sizes = [base + (1 if i < rem else 0) for i in range(n)]
     return sizes
 
@@ -91,6 +94,7 @@ def _even_split(C: int, n: int) -> list[int]:
 @SKIP_REGISTRY.register("gab")
 class GABSkip(nn.Module):
     """Group Aggregation Bridge skip (per-pair adaptation of EGE-UNet GAB).
+        Group Aggregation Bridge 跳跃连接。
 
     Output channel count: skip_ch (xl-dim, matching original).
     """
@@ -115,6 +119,7 @@ class GABSkip(nn.Module):
 
     def set_mask(self, mask: Optional[torch.Tensor]) -> None:
         """Provide a (B, 1, H, W) or (B, k, H, W) mask for the next forward.
+            Provide a ( B, 1, H, W ) or ( B, k, H, W ) 掩码 for the next 前向传播。
         Pass None to clear. Multi-channel masks are mean-reduced to 1 channel.
         """
         self._mask = mask
@@ -124,7 +129,8 @@ class GABSkip(nn.Module):
 
     @contextmanager
     def mask_ctx(self, mask: Optional[torch.Tensor]):
-        """Context manager — sets mask, yields, restores prior state."""
+        """Context manager — sets 掩码, yields, restores prior state。
+            Context manager — sets mask, yields, restores prior state."""
         prev = self._mask
         self._mask = mask
         try:
@@ -151,7 +157,7 @@ class GABSkip(nn.Module):
         pre_project = nn.Conv2d(xh_ch, xl_ch, 1).to(device)
 
         groups = nn.ModuleList()
-        # For each chunk i, expected_in = chunk_sizes[i] (from xh) + chunk_sizes[i] (from xl) + 1 (mask)
+        # For each chunk i, expected _ in = chunk _ sizes [ i ] ( from xh ) + chunk _ sizes [ i ] ( from xl ) + 1 ( 掩码 ) / For each chunk i, expected_in = chunk_sizes[i] (from xh) + chunk_sizes[i] (from xl) + 1 (mask)
         # = 2*chunk_sizes[i] + 1
         for i, d in enumerate(self.dilations):
             csize = chunk_sizes[i]
@@ -174,24 +180,24 @@ class GABSkip(nn.Module):
             "groups": groups,
             "tail": tail,
         })
-        # Register as a submodule so parameters() picks them up
+        # 注册 as a submodule so 参数 ( ) picks them up / Register as a submodule so parameters() picks them up
         safe_name = f"_gab_{xh_ch}_{xl_ch}_{str(device).replace(':', '_')}"
         setattr(self, safe_name, mod)
         self._cache[key] = mod
         return mod
 
     # ──────────────────────────────────────────────────────────────────────
-    # Forward
+    # 前向传播 / Forward
     # ──────────────────────────────────────────────────────────────────────
 
     def forward(self, decoder_feat: torch.Tensor, skip_feat: torch.Tensor) -> torch.Tensor:
         xh, xl = decoder_feat, skip_feat
-        # Align spatial dims to xl (skip)
+        # Align 空间的 dims to xl ( 跳跃 ) / Align spatial dims to xl (skip)
         if xh.shape[2:] != xl.shape[2:]:
             xh = F.interpolate(xh, size=xl.shape[2:], mode="bilinear", align_corners=True)
 
         B, _, H, W = xl.shape
-        # Compute the chunk sizes (these must match for xh and xl, because both
+        # 计算 the chunk sizes ( these must match for xh and xl, because both / Compute the chunk sizes (these must match for xh and xl, because both
         # are projected/native at the same xl_ch count after pre_project).
         xl_ch = xl.shape[1]
         chunk_sizes = _even_split(xl_ch, self.n_chunks)
@@ -199,24 +205,24 @@ class GABSkip(nn.Module):
         mod = self._build_modules(xh.shape[1], xl_ch, xh.device, chunk_sizes)
         xh = mod["pre_project"](xh)  # now xh has xl_ch channels too
 
-        # Build / sanitize the mask. Default is zeros (no guidance).
+        # Build / sanitize the 掩码. 默认值 is zeros ( no guidance ) / Build / sanitize the mask. Default is zeros (no guidance).
         if self._mask is not None:
             mask = self._mask
             # Move device if needed
             if mask.device != xl.device:
                 mask = mask.to(xl.device)
-            # Reduce multi-channel mask to 1 channel
+            # Reduce multi-channel 掩码 to 1 通道 / Reduce multi-channel mask to 1 channel
             if mask.dim() == 4 and mask.shape[1] != 1:
                 mask = mask.mean(dim=1, keepdim=True)
             elif mask.dim() == 3:
                 mask = mask.unsqueeze(1)  # (B, H, W) -> (B, 1, H, W)
-            # Spatial align
+            # 空间的 align / Spatial align
             if mask.shape[2:] != xl.shape[2:]:
                 mask = F.interpolate(mask, size=xl.shape[2:], mode="bilinear",
                                      align_corners=True)
             # Cast dtype
             mask = mask.to(xl.dtype)
-            # Batch broadcasting
+            # 批次 broadcasting / Batch broadcasting
             if mask.shape[0] != B:
                 if mask.shape[0] == 1:
                     mask = mask.expand(B, -1, -1, -1)
@@ -227,7 +233,7 @@ class GABSkip(nn.Module):
         else:
             mask = torch.zeros((B, 1, H, W), device=xl.device, dtype=xl.dtype)
 
-        # Chunk both features (use torch.split with explicit sizes to ensure exact match)
+        # Chunk both 特征 ( use torch. split with explicit sizes to ensure exact match ) / Chunk both features (use torch.split with explicit sizes to ensure exact match)
         xh_chunks = list(torch.split(xh, chunk_sizes, dim=1))
         xl_chunks = list(torch.split(xl, chunk_sizes, dim=1))
 

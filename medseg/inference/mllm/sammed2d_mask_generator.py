@@ -1,8 +1,9 @@
 # SAM-Med2D MaskGenerator wrapper (pipeline segmenter 端)
-# SAM-Med2D MaskGenerator wrapper (pipeline segmenter side)
-# Reference: https://github.com/OpenGVLab/SAM-Med2D
+# SAM-Med 2D MaskGenerator 封装器 ( pipeline segmenter side ) / SAM-Med2D MaskGenerator wrapper (pipeline segmenter side)
+# 参考: https: / / github. com / OpenGVLab / SAM-Med 2D / Reference: https://github.com/OpenGVLab/SAM-Med2D
 # Paper: https://arxiv.org/abs/2308.16184
 """SAM-Med2D mask generator for the MLLM grounding pipeline.
+    SAM-Med 2D 掩码 generator for the MLLM grounding pipeline。
 
 与 SAM2MaskGenerator / MedSAMMaskGenerator 实现相同的 predict_from_boxes 接口，
 可作为 pipeline.py 中 detector → segmenter 的 segmenter 端使用。
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class SAMMed2DMaskGenerator:
     """SAM-Med2D box-prompt mask generator。
+        SAM-Med 2D box-prompt 掩码 generator 。。
     SAM-Med2D box-prompt mask generator.
 
     接口与 SAM2MaskGenerator / MedSAMMaskGenerator 一致：

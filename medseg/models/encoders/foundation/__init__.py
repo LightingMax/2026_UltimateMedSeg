@@ -1,4 +1,5 @@
-"""Foundation model encoders (sub-categorized by modality / domain)."""
+"""Foundation 模型 encoders ( sub-categorized by modality / domain )。
+    Foundation model encoders (sub-categorized by modality / domain)."""
 from . import general
 from . import pathology
 from . import ultrasound

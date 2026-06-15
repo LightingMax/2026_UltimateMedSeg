@@ -1,4 +1,5 @@
 """MedCLIP ViT image encoder (foundation-model encoder).
+    MedCLIP ViT image encoder (foundation-model 编码器。
 
 MedCLIP (Wang et al., 2022) is a contrastive vision-language model pretrained
 on medical image-text pairs. The official release uses a ViT-B/16 backbone
@@ -27,18 +28,19 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, HuggingFaceViTWrapper, convert_timm_vit_state_to_hf
 
 
-# MedCLIP's vision tower is ViT-B/16; embed_dim=768, patch_size=16.
+# MedCLIP's vision tower is ViT-B / 16; embed _ dim = 768, 图块 _ 大小 = 16 / MedCLIP's vision tower is ViT-B/16; embed_dim=768, patch_size=16.
 _MEDCLIP_EMBED_DIM = 768
 _MEDCLIP_PATCH_SIZE = 16
 _MEDCLIP_GCS_URL = "https://storage.googleapis.com/pytrial/medclip-vit-pretrained.zip"
 
-# Primary weight source: Google Cloud Storage.
+# Primary 权重 来源: Google Cloud Storage / Primary weight source: Google Cloud Storage.
 PRIMARY_BACKBONE_NAME = "medclip-vit-gcs"
 
 
 @ENCODER_REGISTRY.register("medclip")
 class MedCLIPEncoder(BaseFoundationEncoder):
     """MedCLIP ViT-B/16 image encoder with DPT-style multi-block multi-scale output.
+        MedCLIP ViT-B/16 image 编码器。
 
     Constructor follows the BaseFoundationEncoder contract. MedCLIP weights
     are auto-downloaded from GCS or loaded via ``pretrained_path``.
@@ -56,7 +58,7 @@ class MedCLIPEncoder(BaseFoundationEncoder):
         self.embed_dim = _MEDCLIP_EMBED_DIM
         self.patch_size = _MEDCLIP_PATCH_SIZE
 
-        # Build the ViT-B/16 backbone via transformers.
+        # Build the ViT-B / 16 骨干网络 via transformers / Build the ViT-B/16 backbone via transformers.
         if pretrained:
             try:
                 from transformers import ViTModel, ViTConfig
@@ -66,7 +68,7 @@ class MedCLIPEncoder(BaseFoundationEncoder):
                 )
 
             if pretrained_path:
-                # Load from local checkpoint.
+                # 加载 from 局部的 检查点 / Load from local checkpoint.
                 _cfg = ViTConfig(
                     hidden_size=768, num_hidden_layers=12,
                     num_attention_heads=12, intermediate_size=3072,
@@ -178,22 +180,22 @@ class MedCLIPEncoder(BaseFoundationEncoder):
         self._backbone_name = PRIMARY_BACKBONE_NAME
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
-        # Adapter for non-RGB inputs (MedCLIP/ViT-B expects 3 channels).
+        # 适配器 for non-RGB inputs ( MedCLIP / ViT-B expects 3 通道 ) / Adapter for non-RGB inputs (MedCLIP/ViT-B expects 3 channels).
         if in_channels != 3:
             self.input_adapter = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # DPT-style multi-block: project the token grid (B, dim, h, w) to four
-        # pyramid stages with channels [dim/8, dim/4, dim/2, dim].
-        # Spatial scales (deepest LAST):
-        #   stage 0: ConvTranspose 4x  -> ~H/4,  dim/8
-        #   stage 1: ConvTranspose 2x  -> ~H/8,  dim/4
-        #   stage 2: Identity          -> ~H/16, dim/2
-        #   stage 3: MaxPool 2x        -> ~H/32, dim
+        # DPT-style multi-block: project the 标记 grid ( B, dim, h, w ) to four / DPT-style multi-block: project the token grid (B, dim, h, w) to four
+        # 金字塔 阶段 with 通道 [ dim / 8, dim / 4, dim / 2, dim ] / pyramid stages with channels [dim/8, dim/4, dim/2, dim].
+        # 空间的 scales ( deepest LAST ) / Spatial scales (deepest LAST):
+        # 阶段 0: ConvTranspose 4x - > ~ H / 4, dim / 8 / stage 0: ConvTranspose 4x  -> ~H/4,  dim/8
+        # 阶段 1: ConvTranspose 2x - > ~ H / 8, dim / 4 / stage 1: ConvTranspose 2x  -> ~H/8,  dim/4
+        # 阶段 2: Identity - > ~ H / 16, dim / 2 / stage 2: Identity          -> ~H/16, dim/2
+        # 阶段 3: MaxPool 2x - > ~ H / 32, dim / stage 3: MaxPool 2x        -> ~H/32, dim
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -216,7 +218,7 @@ class MedCLIPEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

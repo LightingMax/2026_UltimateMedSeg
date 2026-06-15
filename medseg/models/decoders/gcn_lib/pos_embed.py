@@ -1,4 +1,5 @@
 """2D relative positional embedding for graph convolution.
+    2D 相对的 positional 嵌入 for graph 卷积。
 
 Source: https://github.com/SLDGroup/G-CASCADE (lib/gcn_lib/pos_embed.py)
 """
@@ -8,6 +9,7 @@ import numpy as np
 
 def get_2d_relative_pos_embed(embed_dim, grid_size):
     """Generate 2D relative positional embedding.
+        生成 2D 相对的 positional 嵌入。
 
     Args:
         embed_dim: Embedding dimension.
@@ -36,7 +38,7 @@ def get_2d_relative_pos_embed(embed_dim, grid_size):
     pos_h = torch.from_numpy(pos_h).float().unsqueeze(1)
     pos_w = torch.from_numpy(pos_w).float().unsqueeze(0)
 
-    # Build relative position table
+    # Build 相对的 position table / Build relative position table
     rel_pos_h = torch.cat([pos_h, -pos_h.flip(0)[:-1]], dim=0)
     rel_pos_w = torch.cat([pos_w, -pos_w.flip(1)[:, :-1]], dim=1)
 

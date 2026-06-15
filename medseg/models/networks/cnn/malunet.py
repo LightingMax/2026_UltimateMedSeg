@@ -1,4 +1,5 @@
 """MALUNet: Multi-Axis Large-kernel UNet for Medical Image Segmentation.
+    MALUNet: Multi-Axis Large-kernel UNet for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/JCruan519/MALUNet  (2023)
@@ -34,7 +35,7 @@ class DepthWiseConv2d(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Gated Attention Unit
+# Gated 注意力 Unit / Gated Attention Unit
 # ---------------------------------------------------------------------------
 
 class GatedAttentionUnit(nn.Module):
@@ -56,7 +57,7 @@ class GatedAttentionUnit(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Dilated Gated Attention
+# Dilated Gated 注意力 / Dilated Gated Attention
 # ---------------------------------------------------------------------------
 
 class DilatedGatedAttention(nn.Module):
@@ -79,11 +80,12 @@ class DilatedGatedAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# External Attention Block
+# External 注意力 块 / External Attention Block
 # ---------------------------------------------------------------------------
 
 class EABlock(nn.Module):
-    """External Attention: low-rank linear attention."""
+    """External 注意力: low-rank linear 注意力。
+        External Attention: low-rank linear attention."""
     def __init__(self, in_c):
         super().__init__()
         self.conv1 = nn.Conv2d(in_c, in_c, 1)
@@ -109,7 +111,7 @@ class EABlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SC_Att_Bridge (Spatial-Channel Attention Bridge)
+# SC _ Att _ Bridge ( Spatial-Channel 注意力 Bridge ) / SC_Att_Bridge (Spatial-Channel Attention Bridge)
 # ---------------------------------------------------------------------------
 
 class _ChannelAttBridge(nn.Module):
@@ -190,7 +192,7 @@ class MALUNet(nn.Module):
         self.bridge = bridge
         self.deep_supervision = deep_supervision
 
-        # Encoder
+        # 编码器 / Encoder
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, stride=1, padding=1)
@@ -207,7 +209,7 @@ class MALUNet(nn.Module):
         if bridge:
             self.scab = SCABridge(c_list, split_att)
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder1 = nn.Sequential(DilatedGatedAttention(c_list[5], c_list[4]), EABlock(c_list[4]))
         self.decoder2 = nn.Sequential(DilatedGatedAttention(c_list[4], c_list[3]), EABlock(c_list[3]))
         self.decoder3 = nn.Sequential(DilatedGatedAttention(c_list[3], c_list[2]), EABlock(c_list[2]))
@@ -222,7 +224,7 @@ class MALUNet(nn.Module):
 
         self.final = nn.Conv2d(c_list[0], num_classes, kernel_size=1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c_list[4], num_classes, 1),
@@ -289,7 +291,8 @@ class MALUNet(nn.Module):
         return out0
 
     def _ds_forward(self, out0, intermediates, input_size):
-        """Deep supervision: return [main_output, aux1, aux2, ...]."""
+        """深度 supervision: 返回 [ main _ 输出, aux1, aux2,... ]。
+            Deep supervision: return [main_output, aux1, aux2, ...]."""
         aux = []
         for feat, head in zip(intermediates, self.ds_heads):
             a = head(feat)

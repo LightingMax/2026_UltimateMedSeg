@@ -1,4 +1,5 @@
 """SAMUS: SAM-based UltraSound segmentation network.
+    SAMUS: SAM-based UltraSound 分割 网络。
 
 Reference:
     Xian Lin, Yangyang Xiang, Li Zhang, Xin Yang, Zengqiang Yan, Li Yu.
@@ -28,8 +29,8 @@ from __future__ import annotations
 
 import os
 
-# Limit huggingface_hub retry/timeout budgets so a network outage does not
-# stall model construction for minutes. Must be set before importing timm.
+# Limit huggingface _ hub retry / timeout budgets so a 网络 outage does not / Limit huggingface_hub retry/timeout budgets so a network outage does not
+# stall 模型 construction for minutes. Must be set before importing timm / stall model construction for minutes. Must be set before importing timm.
 os.environ.setdefault('HF_HUB_ETAG_TIMEOUT', '3')
 os.environ.setdefault('HF_HUB_DOWNLOAD_TIMEOUT', '5')
 
@@ -51,6 +52,7 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 def _interpolate_pos_embed(pos_embed: torch.Tensor, num_prefix: int,
                            new_hw: tuple) -> torch.Tensor:
     """Bicubic-resample a 1-D positional embedding to a new (H, W) grid.
+        Bicubic-resample a 1-D positional 嵌入 to a new ( H, W ) grid。
 
     ``pos_embed`` has shape (1, num_prefix + N, C) where the first
     ``num_prefix`` tokens (e.g. the CLS token) are kept untouched and the
@@ -77,6 +79,7 @@ def _interpolate_pos_embed(pos_embed: torch.Tensor, num_prefix: int,
 
 class _PositionBiasAdapter(nn.Module):
     """Small MLP that injects a learnable bias into the patch tokens.
+        Small MLP that injects a learnable 偏置 into the 图块 标记。
 
     SAMUS notes that SAM's positional embeddings are tuned for 1024x1024
     inputs and degrade on 256x256 ultrasound frames. The adapter is a
@@ -91,7 +94,7 @@ class _PositionBiasAdapter(nn.Module):
         self.fc1 = nn.Linear(dim, hidden)
         self.act = nn.GELU()
         self.fc2 = nn.Linear(hidden, dim)
-        # Zero-init the output projection so the adapter starts as a no-op.
+        # Zero-init the 输出 projection so the 适配器 starts as a no-op / Zero-init the output projection so the adapter starts as a no-op.
         nn.init.zeros_(self.fc2.weight)
         nn.init.zeros_(self.fc2.bias)
 
@@ -101,6 +104,7 @@ class _PositionBiasAdapter(nn.Module):
 
 class _ViTBackbone(nn.Module):
     """SAM-style ViT-B/16 backbone built on top of timm's vit_base_patch16_224.
+        SAM-style ViT-B / 16 骨干网络 built on top of timm's vit _ base _ patch16 _ 224。
 
     We extract the patch-embed Conv2d, cls token, pos-embed, transformer
     blocks and final LayerNorm from the timm model, and run a custom forward
@@ -122,8 +126,8 @@ class _ViTBackbone(nn.Module):
             in_chans=in_channels,
         )
 
-        # Patch embedding: keep only the Conv2d projection so we are free to
-        # feed inputs of arbitrary (H, W) that are multiples of patch_size.
+        # 图块 嵌入: keep only the Conv2d projection so we are free to / Patch embedding: keep only the Conv2d projection so we are free to
+        # feed inputs of arbitrary ( H, W ) that are multiples of 图块 _ 大小 / feed inputs of arbitrary (H, W) that are multiples of patch_size.
         self.proj = vit.patch_embed.proj
         self.cls_token = vit.cls_token
         self.pos_embed = vit.pos_embed  # (1, 1 + 14*14, 768)
@@ -131,11 +135,12 @@ class _ViTBackbone(nn.Module):
         self.blocks = vit.blocks
         self.norm = vit.norm
 
-        # Trainable position-bias adapter inserted right after pos-embedding.
+        # Trainable position-bias 适配器 inserted right after pos-embedding / Trainable position-bias adapter inserted right after pos-embedding.
         self.pos_bias_adapter = _PositionBiasAdapter(self.EMBED_DIM)
 
     def forward(self, x: torch.Tensor):
         """Return ``(tokens_grid, Hp, Wp)`` where ``tokens_grid`` has shape
+            返回 ` ` ( 标记 _ grid, Hp, Wp ) ` ` where ` ` 标记 _ grid ` ` has 形状。
         ``(B, EMBED_DIM, Hp, Wp)`` and ``Hp = H / PATCH_SIZE`` (likewise Wp).
         ``x`` must already be padded to a multiple of ``PATCH_SIZE``.
         """
@@ -157,7 +162,7 @@ class _ViTBackbone(nn.Module):
             x = blk(x)
         x = self.norm(x)
 
-        # Drop the CLS token and reshape back to a 2-D feature grid.
+        # Drop the CLS 标记 and 重塑 back to a 2-D 特征 grid / Drop the CLS token and reshape back to a 2-D feature grid.
         x = x[:, 1:]
         x = x.transpose(1, 2).reshape(B, self.EMBED_DIM, Hp, Wp).contiguous()
         return x, Hp, Wp
@@ -165,6 +170,7 @@ class _ViTBackbone(nn.Module):
 
 class _UpBlock(nn.Module):
     """One stage of the lightweight CNN decoder.
+        One stage of the lightweight CNN 解码器。
 
     ConvTranspose2d (stride 2, kernel 2) -> BatchNorm2d -> GELU.
     The last decoder stage skips BN/GELU since it produces the logits.
@@ -185,7 +191,8 @@ class _UpBlock(nn.Module):
 
 
 class _LightCNNDecoder(nn.Module):
-    """4-stage transposed-conv decoder, total upsampling 16x."""
+    """4-stage transposed-conv 解码器。
+        4-stage transposed-conv decoder, total upsampling 16x."""
 
     def __init__(self, num_classes: int, dims=(768, 384, 192, 96)):
         super().__init__()
@@ -205,10 +212,11 @@ class _LightCNNDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SAMUS(SAMBase):
     """SAMUS: SAM-style ViT-B encoder with a lightweight CNN decoder.
+        SAMUS: SAM-style ViT-B 编码器。
 
     Args:
         in_channels: number of input image channels.
@@ -234,7 +242,7 @@ class SAMUS(SAMBase):
 
         self.image_encoder = _ViTBackbone(in_channels=in_channels,
                                           pretrained=self._pretrained)
-        # SAMUS is prompt-free; expose None so SAMBase.apply_freeze can
+        # SAMUS is prompt-free; expose None so SAMBase. 应用 _ freeze can / SAMUS is prompt-free; expose None so SAMBase.apply_freeze can
         # introspect uniformly across SAM-family models.
         self.prompt_encoder = None
         self.mask_decoder = _LightCNNDecoder(num_classes=num_classes,
@@ -259,8 +267,8 @@ class SAMUS(SAMBase):
         feat, _, _ = self.image_encoder(x_pad)
         logits = self.mask_decoder(feat)
 
-        # The decoder upsamples exactly 16x, so logits should already match
-        # x_pad's spatial size; bilinear is a safety net for odd cases.
+        # The 解码器 / The decoder upsamples exactly 16x, so logits should already match
+        # x _ pad's 空间的 大小; bilinear is a safety net for odd cases / x_pad's spatial size; bilinear is a safety net for odd cases.
         if logits.shape[-2:] != x_pad.shape[-2:]:
             logits = F.interpolate(
                 logits, size=x_pad.shape[-2:],

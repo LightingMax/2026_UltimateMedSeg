@@ -1,4 +1,5 @@
 """MambaVesselNet++: Hybrid CNN-Mamba for Medical Image Segmentation (2D).
+    MambaVesselNet + +: Hybrid CNN-Mamba for 医学的 图像 分割 ( 2D )。
 
 Reference:
     "MambaVesselNet++: A Hybrid CNN-Mamba Architecture for Medical Image
@@ -26,7 +27,8 @@ from medseg.models.encoders.vmunet_encoder import SS2D
 
 
 class _ResConvBlock(nn.Module):
-    """Residual conv block: 2x Conv3x3-BN-ReLU with skip."""
+    """Residual conv block: 2x Conv3x3-BN-ReLU with 跳跃连接。
+        Residual conv block: 2x Conv3x3-BN-ReLU with skip."""
     def __init__(self, in_ch, out_ch):
         super().__init__()
         self.conv1 = nn.Conv2d(in_ch, out_ch, 3, 1, 1, bias=False)
@@ -44,7 +46,8 @@ class _ResConvBlock(nn.Module):
 
 
 class _MambaBlock2D(nn.Module):
-    """2D Mamba block: LayerNorm + SS2D + residual."""
+    """2D Mamba 块: LayerNorm + SS2D + 残差。
+        2D Mamba block: LayerNorm + SS2D + residual."""
     def __init__(self, dim):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
@@ -61,7 +64,8 @@ class _MambaBlock2D(nn.Module):
 
 
 class MambaVesselNetPP(nn.Module):
-    """MambaVesselNet++ 2D for vessel segmentation."""
+    """MambaVesselNet + + 2D for 血管 分割。
+        MambaVesselNet++ 2D for vessel segmentation."""
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  feature_dims=None, **kwargs):
         super().__init__()
@@ -70,7 +74,7 @@ class MambaVesselNetPP(nn.Module):
         D = feature_dims
         self.num_classes = num_classes
 
-        # Encoder (residual conv blocks)
+        # 编码器 ( 残差 conv blocks ) / Encoder (residual conv blocks)
         self.enc1 = _ResConvBlock(in_channels, D[0])
         self.enc2 = _ResConvBlock(D[0], D[1])
         self.enc3 = _ResConvBlock(D[1], D[2])
@@ -79,13 +83,13 @@ class MambaVesselNetPP(nn.Module):
 
         self.down = nn.Conv2d
 
-        # Mamba blocks in bottleneck
+        # Mamba blocks in 瓶颈层 / Mamba blocks in bottleneck
         self.mamba1 = _MambaBlock2D(D[4])
         self.mamba2 = _MambaBlock2D(D[4])
         self.mamba3 = _MambaBlock2D(D[4])
         self.mamba4 = _MambaBlock2D(D[4])
 
-        # Decoder
+        # 解码 / Decoder
         self.dec5 = _ResConvBlock(D[4], D[3])
         self.dec4 = _ResConvBlock(D[3] * 2, D[2])
         self.dec3 = _ResConvBlock(D[2] * 2, D[1])
@@ -107,10 +111,10 @@ class MambaVesselNetPP(nn.Module):
         e4 = self.enc4(F.avg_pool2d(e3, 2))
         e5 = self.enc5(F.avg_pool2d(e4, 2))
 
-        # Mamba bottleneck
+        # Mamba 瓶颈层 / Mamba bottleneck
         b = self.mamba4(self.mamba3(self.mamba2(self.mamba1(e5))))
 
-        # Decoder with skip connections
+        # Decoder with 跳跃连接 / Decoder with skip connections
         d5 = self.dec5(F.interpolate(b, scale_factor=2, mode='bilinear', align_corners=False))
         d5 = d5[:, :, :e4.shape[2], :e4.shape[3]]
         d4 = self.dec4(torch.cat([d5, e4], dim=1))

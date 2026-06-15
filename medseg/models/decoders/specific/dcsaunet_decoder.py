@@ -1,4 +1,5 @@
 """DCSAU-Net Decoder: faithful port from https://github.com/xq141839/DCSAU-Net
+    DCSAU-Net 解码器。
 
 Reference: Xu et al., "DCSAU-Net: A Deeper and More Compact Split-Attention U-Net
            for Medical Image Segmentation"
@@ -22,7 +23,8 @@ from medseg.models.encoders.dcsaunet_encoder import Bottleneck, SplAtConv2d
 
 
 class Up(nn.Module):
-    """Bilinear 2x upsample + pad + concat (from original DCSAU-Net)."""
+    """Bilinear 2x 上采样 + pad + concat ( from original DCSAU-Net )。
+        Bilinear 2x upsample + pad + concat (from original DCSAU-Net)."""
 
     def __init__(self):
         super().__init__()
@@ -40,7 +42,8 @@ class Up(nn.Module):
 def _make_csa_layer(block, inplanes, planes, blocks, radix=2, cardinality=1,
                     bottleneck_width=64, avd=True, avd_first=False,
                     norm_layer=nn.BatchNorm2d):
-    """Build a CSA (Channel Split Attention) layer with correct input channels."""
+    """Build a CSA ( 通道 Split 注意力 ) 层 with correct 输入 通道。
+        Build a CSA (Channel Split Attention) layer with correct input channels."""
     downsample = None
     if inplanes != planes * block.expansion:
         down_layers = [
@@ -68,6 +71,7 @@ def _make_csa_layer(block, inplanes, planes, blocks, radix=2, cardinality=1,
 @DECODER_REGISTRY.register("dcsaunet")
 class DCSAUNetDecoder(nn.Module):
     """DCSAU-Net decoder with Up (bilinear+concat) + CSA Bottleneck refinement.
+        DCSAU-Net 解码器。
 
     Faithful to the original DCSAU-Net Model decoder path.
     Architecture:
@@ -86,24 +90,24 @@ class DCSAUNetDecoder(nn.Module):
                  blocks_per_layer: int = 2,
                  **kwargs):
         super().__init__()
-        # encoder_channels for DCSAU-Net: [64, 64, 128, 256] (skip features)
-        # bottleneck_channels: 512
+        # 编码器 _ 通道 for DCSAU-Net: [ 64, 64, 128, 256 ] ( 跳跃 特征 ) / encoder_channels for DCSAU-Net: [64, 64, 128, 256] (skip features)
+        # 瓶颈层 _ 通道: 512 / bottleneck_channels: 512
         skip_channels = list(reversed(encoder_channels))  # [256, 128, 64, 64]
 
-        # Decoder planes mirror the encoder decoder layers
+        # Decoder planes mirror the 编码器 / Decoder planes mirror the encoder decoder layers
         # Original: layer5(64), layer6(32), layer7(16), layer8(16) with expansion=4
-        # Gives output channels: 256, 128, 64, 64
+        # Gives 输出 通道: 256, 128, 64, 64 / Gives output channels: 256, 128, 64, 64
         n_skips = len(skip_channels)
 
-        # Compute decoder planes to produce target output channels
-        # After concat: deeper_ch + skip_ch; after CSA layer: planes * 4
+        # Compute 解码器 / Compute decoder planes to produce target output channels
+        # After concat: deeper _ ch + 跳跃 _ ch; after CSA 层: planes * 4 / After concat: deeper_ch + skip_ch; after CSA layer: planes * 4
         self.up_blocks = nn.ModuleList()
         self.csa_layers = nn.ModuleList()
 
         in_ch = bottleneck_channels
         decoder_planes = []
         for i, skip_ch in enumerate(skip_channels):
-            # Target output for this level matches skip_ch
+            # 目标 输出 for this level matches 跳跃 _ ch / Target output for this level matches skip_ch
             target_out = skip_ch
             planes = target_out // Bottleneck.expansion  # planes for Bottleneck
             decoder_planes.append(planes)

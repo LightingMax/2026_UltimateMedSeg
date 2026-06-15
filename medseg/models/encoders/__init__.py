@@ -1,4 +1,5 @@
 """Encoder modules.
+    编码器 modules。
 
 Encoders are organised into family sub-packages (cnn, transformer, mamba,
 rwkv, linear_attn, wrapper). Importing this package triggers registration of
@@ -27,8 +28,8 @@ from . import wrapper as _wr
 from . import kan_mlp as _km
 from . import foundation as _fo
 
-# Re-export every encoder module as a top-level attribute of
-# ``medseg.models.encoders`` so legacy ``medseg.models.encoders.<stem>`` attribute access
+# Re-export every 编码器 / Re-export every encoder module as a top-level attribute of
+# ` ` medseg. models. encoders ` ` so 遗留 ` ` medseg. models. encoders. < 主干 > ` ` attribute access / ``medseg.models.encoders`` so legacy ``medseg.models.encoders.<stem>`` attribute access
 # (not just ``import``) keeps working.
 for _pkg, _stems in [
     (_cnn, [
@@ -84,17 +85,17 @@ for _pkg, _stems in [
         'rolling_unet_encoder',
         'unext_encoder',
     ]),
-    # NOTE: foundation encoders (sam_vit_encoder, clip_encoder, ...) install
-    # their own sys.modules['medseg.models.encoders.<stem>'] aliases from inside each
-    # family sub-package (general/pathology/...). Do NOT re-register them here.
+    # 注意: foundation encoders ( sam _ vit _ 编码器, clip _ 编码器,... ) install / NOTE: foundation encoders (sam_vit_encoder, clip_encoder, ...) install
+    # their own sys. modules [ ' medseg. models. encoders. < 主干 > ' ] aliases from inside each / their own sys.modules['medseg.models.encoders.<stem>'] aliases from inside each
+    # family sub-package ( general / 病理学 /... ). Do NOT re-register them here / family sub-package (general/pathology/...). Do NOT re-register them here.
 ]:
     for _stem in _stems:
         _attr = getattr(_pkg, _stem, None)
         if _attr is not None:
             globals()[_stem] = _attr
 
-# Also pull foundation encoder stems into our top-level namespace for
-# attribute-style access (medseg.models.encoders.sam_vit_encoder). The sys.modules
+# Also pull foundation 编码器 / Also pull foundation encoder stems into our top-level namespace for
+# attribute-style access ( medseg. models. encoders. sam _ vit _ 编码器 ). The sys. modules / attribute-style access (medseg.models.encoders.sam_vit_encoder). The sys.modules
 # alias was already installed by the family sub-package __init__.
 import sys as _sys
 for _stem in ('sam_vit_encoder', 'clip_encoder', 'dino_encoder', 'dinov2_encoder',

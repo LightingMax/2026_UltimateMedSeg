@@ -1,4 +1,5 @@
 """EMCAD (Efficient Multi-scale Convolutional Attention Decoding) Decoder.
+    EMCAD (Efficient Multi-scale Convolutional Attention Decoding) 解码器。
 Faithfully ported from: https://github.com/SLDGroup/EMCAD/blob/main/lib/decoders.py
 
 EMCAD has its own internal skip connection mechanism (LGAG + additive aggregation),
@@ -30,7 +31,8 @@ def channel_shuffle(x, groups):
 
 
 class MSDC(nn.Module):
-    """Multi-scale depth-wise convolution."""
+    """Multi-scale depth-wise 卷积。
+        Multi-scale depth-wise convolution."""
     def __init__(self, in_channels, kernel_sizes, stride, dw_parallel=True):
         super().__init__()
         self.in_channels = in_channels
@@ -56,7 +58,8 @@ class MSDC(nn.Module):
 
 
 class MSCB(nn.Module):
-    """Multi-scale convolution block."""
+    """Multi-scale 卷积 块。
+        Multi-scale convolution block."""
     def __init__(self, in_channels, out_channels, stride=1, kernel_sizes=[1, 3, 5],
                  expansion_factor=2, dw_parallel=True, add=True):
         super().__init__()
@@ -109,7 +112,8 @@ def MSCBLayer(in_channels, out_channels, n=1, stride=1, kernel_sizes=[1, 3, 5],
 
 
 class EUCB(nn.Module):
-    """Efficient up-convolution block."""
+    """高效的 up-convolution 块。
+        Efficient up-convolution block."""
     def __init__(self, in_channels, out_channels, kernel_size=3):
         super().__init__()
         self.in_channels = in_channels
@@ -130,7 +134,8 @@ class EUCB(nn.Module):
 
 
 class LGAG(nn.Module):
-    """Large-kernel grouped attention gate."""
+    """Large-kernel grouped 注意力 gate。
+        Large-kernel grouped attention gate."""
     def __init__(self, F_g, F_l, F_int, kernel_size=3, groups=1):
         super().__init__()
         if kernel_size == 1:
@@ -159,7 +164,8 @@ class LGAG(nn.Module):
 
 
 class CAB(nn.Module):
-    """Channel attention block."""
+    """通道 注意力 块。
+        Channel attention block."""
     def __init__(self, in_channels, ratio=16):
         super().__init__()
         if in_channels < ratio:
@@ -179,7 +185,8 @@ class CAB(nn.Module):
 
 
 class SAB(nn.Module):
-    """Spatial attention block."""
+    """空间的 注意力 块。
+        Spatial attention block."""
     def __init__(self, kernel_size=7):
         super().__init__()
         self.conv = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
@@ -195,6 +202,7 @@ class SAB(nn.Module):
 @DECODER_REGISTRY.register("emcad")
 class EMCADDecoder(nn.Module):
     """EMCAD decoder - faithful port from original repo.
+        EMCAD 解码器。
 
     Has its own internal skip mechanism (LGAG + additive aggregation + CAB + SAB).
     External skip_connection parameter is IGNORED.
@@ -219,21 +227,21 @@ class EMCADDecoder(nn.Module):
         if kernel_sizes is None:
             kernel_sizes = [1, 3, 5]
 
-        # channels: [deepest, ..., shallowest] matching original EMCAD convention
-        # encoder_channels is [shallow, ..., deep-1], bottleneck_channels is deepest
-        # Reverse encoder_channels so skips go from deep to shallow
+        # 通道: [ deepest,..., shallowest ] matching original EMCAD convention / channels: [deepest, ..., shallowest] matching original EMCAD convention
+        # 编码器 _ 通道 is [ 浅层,..., 深度 - 1 ], 瓶颈层 _ 通道 is deepest / encoder_channels is [shallow, ..., deep-1], bottleneck_channels is deepest
+        # Reverse 编码器 _ 通道 so skips go from 深度 to 浅层 / Reverse encoder_channels so skips go from deep to shallow
         skip_chs = list(reversed(encoder_channels))  # [deep-1, ..., shallow]
         channels = [bottleneck_channels] + skip_chs
 
         eucb_ks = 3
 
-        # Stage 4 (deepest): MSCB + MSCAM
+        # 阶段 4 ( deepest ): MSCB + MSCAM / Stage 4 (deepest): MSCB + MSCAM
         self.mscb4 = MSCBLayer(channels[0], channels[0], n=1, stride=1,
                                 kernel_sizes=kernel_sizes, expansion_factor=expansion_factor,
                                 dw_parallel=dw_parallel, add=add)
         self.cab4 = CAB(channels[0])
 
-        # Build decoder stages for each skip connection
+        # Build 解码器 / Build decoder stages for each skip connection
         self.eucbs = nn.ModuleList()
         self.lgags = nn.ModuleList()
         self.mscbs = nn.ModuleList()
@@ -260,22 +268,22 @@ class EMCADDecoder(nn.Module):
     def forward(self, bottleneck_feat: torch.Tensor, skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))  # deep to shallow
 
-        # Stage 4: MSCAM + MSCB on bottleneck
+        # Stage 4: MSCAM + MSCB on 瓶颈层 / Stage 4: MSCAM + MSCB on bottleneck
         d = self.cab4(bottleneck_feat) * bottleneck_feat
         d = self.sab(d) * d
         d = self.mscb4(d)
 
         # Progressive decoding with LGAG gating
         for i in range(len(self.eucbs)):
-            # EUCB (upsample)
+            # EUCB ( 上采样 ) / EUCB (upsample)
             d = self.eucbs[i](d)
-            # Match spatial size to skip feature (needed for ViT encoders
-            # whose pyramid ratios differ from the standard 2x stride)
+            # Match spatial size to 跳跃连接 / Match spatial size to skip feature (needed for ViT encoders
+            # whose 金字塔 ratios differ from the 标准 2x 步长 ) / whose pyramid ratios differ from the standard 2x stride)
             skip_i = skips[i]
             if d.shape[2:] != skip_i.shape[2:]:
                 d = F.interpolate(d, size=skip_i.shape[2:],
                                   mode='bilinear', align_corners=False)
-            # LGAG (attention gate on skip feature)
+            # LGAG (attention gate on 跳跃连接 / LGAG (attention gate on skip feature)
             x_skip = self.lgags[i](g=d, x=skip_i)
             # Additive aggregation
             d = d + x_skip

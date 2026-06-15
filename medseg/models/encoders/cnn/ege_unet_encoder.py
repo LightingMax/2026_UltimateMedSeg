@@ -1,4 +1,5 @@
 """EGE-UNet Encoder: 6-stage encoder with Conv + GHPA (Group Hadamard Product Attention).
+    EGE-UNet Encoder: 6-stage 编码器。
 EGE-UNet 编码器：6 阶段编码器，前 3 阶段 Conv3x3+GN+GELU+MaxPool，后 3 阶段 GHPA。
 
 Stages / 各阶段:
@@ -9,7 +10,7 @@ Stages / 各阶段:
 
 out_channels: [8, 16, 24, 32, 48, 64] (default c_list)
 """
-# Reference: https://github.com/JCruan519/EGE-UNet
+# 参考: https: / / github. com / JCruan519 / EGE-UNet / Reference: https://github.com/JCruan519/EGE-UNet
 
 import math
 import torch
@@ -27,6 +28,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 class _LayerNorm(nn.Module):
     """ConvNeXt-style LayerNorm supporting channels_first format.
+        ConvNeXt-style LayerNorm supporting 通道 _ first format。
     ConvNeXt 风格层归一化，支持通道优先格式。
     """
     def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
@@ -53,6 +55,7 @@ class _LayerNorm(nn.Module):
 
 class DepthWiseConv2d(nn.Module):
     """Depthwise separable convolution: depthwise conv + GroupNorm + pointwise conv.
+        Depthwise separable 卷积: depthwise conv + GroupNorm + pointwise conv。
     深度可分离卷积：深度卷积 + GroupNorm + 逐点卷积。
     """
     def __init__(self, dim_in, dim_out, kernel_size=3, padding=1, stride=1, dilation=1):
@@ -67,12 +70,13 @@ class DepthWiseConv2d(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Grouped Multi-Axis Hadamard Product Attention (GHPA)
+# Grouped Multi-Axis Hadamard Product 注意力 ( GHPA ) / Grouped Multi-Axis Hadamard Product Attention (GHPA)
 # 分组多轴 Hadamard 乘积注意力
 # ---------------------------------------------------------------------------
 
 class GHPA(nn.Module):
     """Grouped multi-axis Hadamard Product Attention.
+        Grouped multi-axis Hadamard Product 注意力。
     分组多轴 Hadamard 乘积注意力。
 
     Splits channels into 4 groups, applies learnable params along
@@ -155,6 +159,7 @@ class GHPA(nn.Module):
 @ENCODER_REGISTRY.register("ege_unet")
 class EGEUNetEncoder(nn.Module):
     """EGE-UNet encoder: 6-stage with Conv + GHPA.
+        EGE-UNet 编码器。
     EGE-UNet 编码器：6 阶段，前 3 阶段为轻量卷积，后 3 阶段为 GHPA。
 
     Stages / 各阶段:
@@ -203,6 +208,7 @@ class EGEUNetEncoder(nn.Module):
 
     def _init_weights(self, m):
         """Weight initialization following EGE-UNet convention.
+            权重 initialization following EGE-UNet convention。
         按 EGE-UNet 惯例初始化权重。"""
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
@@ -220,6 +226,7 @@ class EGEUNetEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Encode input to 6 multi-scale feature maps.
+            编码 输入 to 6 多尺度特征 映射。
         将输入编码为 6 个多尺度特征图。
 
         Returns: [t1(c0,H/2), t2(c1,H/4), t3(c2,H/8),

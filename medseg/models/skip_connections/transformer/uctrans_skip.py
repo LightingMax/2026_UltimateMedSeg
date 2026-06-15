@@ -1,4 +1,5 @@
 """UCTransNet Skip — Channel-wise Cross Transformer (AAAI 2022).
+    UCTransNet 跳跃连接。
 
 Adapted from: https://github.com/McGregorWwww/UCTransNet
 Paper: UCTransNet: Rethinking the Skip Connections in U-Net from a
@@ -33,6 +34,7 @@ from medseg.registry import SKIP_REGISTRY
 
 class _CrossChannelAttention(nn.Module):
     """CCT-style cross-channel multi-head attention.
+        CCT-style cross-channel 多头 注意力。
 
     Decoder features serve as queries; skip features serve as key/value.
     """
@@ -61,7 +63,7 @@ class _CrossChannelAttention(nn.Module):
         K = self.k_proj(skip_seq).view(B, L, H, D).transpose(1, 2)
         V = self.v_proj(skip_seq).view(B, L, H, D).transpose(1, 2)
 
-        # Scaled dot-product attention
+        # Scaled dot-product 注意力 / Scaled dot-product attention
         attn = torch.matmul(Q, K.transpose(-2, -1)) / self.scale
         attn = F.softmax(attn, dim=-1)
         attn = self.dropout(attn)
@@ -72,7 +74,8 @@ class _CrossChannelAttention(nn.Module):
 
 
 class _CCTBlock(nn.Module):
-    """CCT transformer block: cross-attention + FFN with residuals."""
+    """CCT Transformer 块: 交叉注意力 + FFN with residuals。
+        CCT transformer block: cross-attention + FFN with residuals."""
 
     def __init__(self, channels, num_heads=4, mlp_ratio=4, dropout=0.0):
         super().__init__()
@@ -90,11 +93,11 @@ class _CCTBlock(nn.Module):
         )
 
     def forward(self, decoder_seq, skip_seq):
-        # Cross-attention with residual
+        # Cross-attention with 残差 / Cross-attention with residual
         d_norm = self.attn_norm_d(decoder_seq)
         s_norm = self.attn_norm_s(skip_seq)
         d = decoder_seq + self.cross_attn(d_norm, s_norm)
-        # FFN with residual
+        # FFN with 残差 / FFN with residual
         d = d + self.ffn(self.ffn_norm(d))
         return d
 
@@ -102,6 +105,7 @@ class _CCTBlock(nn.Module):
 @SKIP_REGISTRY.register("uctrans")
 class UCTransSkip(nn.Module):
     """UCTransNet CTrans skip connection (per-pair adaptation).
+        UCTransNet CTrans 跳跃连接。
 
     Uses CCT (cross-channel transformer attention) between decoder and
     skip features, followed by CCA (concatenation + conv fusion).
@@ -129,19 +133,19 @@ class UCTransSkip(nn.Module):
             return self._cache[key]
 
         unified = max(decoder_ch, skip_ch)
-        # Ensure unified is divisible by num_heads
+        # Ensure 统一的 is divisible by num _ heads / Ensure unified is divisible by num_heads
         while unified % self.num_heads != 0:
             unified += 1
 
         dec_proj = nn.Conv2d(decoder_ch, unified, 1, bias=False).to(device)
         skip_proj = nn.Conv2d(skip_ch, unified, 1, bias=False).to(device)
 
-        # CCT transformer block
+        # CCT Transformer 块 / CCT transformer block
         cct = _CCTBlock(unified, num_heads=self.num_heads,
                         mlp_ratio=self.mlp_ratio,
                         dropout=self.dropout).to(device)
 
-        # CCA: concat fusion (unified + unified = 2*unified) -> conv
+        # CCA: concat 融合 ( 统一的 + 统一的 = 2 * 统一的 ) - > conv / CCA: concat fusion (unified + unified = 2*unified) -> conv
         cca_fuse = nn.Sequential(
             nn.Conv2d(unified * 2, decoder_ch + skip_ch, 3, 1, 1, bias=False),
             nn.BatchNorm2d(decoder_ch + skip_ch),
@@ -164,7 +168,7 @@ class UCTransSkip(nn.Module):
                 skip_feat: torch.Tensor) -> torch.Tensor:
         B, _, H, W = decoder_feat.shape
 
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[2:] != decoder_feat.shape[2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=(H, W),
@@ -175,22 +179,22 @@ class UCTransSkip(nn.Module):
         skip_ch = skip_feat.shape[1]
         mod = self._build(dec_ch, skip_ch, decoder_feat.device)
 
-        # Project to unified channels
+        # Project to 统一的 通道 / Project to unified channels
         d = mod["dec_proj"](decoder_feat)  # (B, unified, H, W)
         s = mod["skip_proj"](skip_feat)    # (B, unified, H, W)
 
-        # Flatten spatial -> sequence: (B, H*W, unified)
+        # 展平 空间的 - > 序列: ( B, H * W, 统一的 ) / Flatten spatial -> sequence: (B, H*W, unified)
         L = H * W
         d_seq = d.flatten(2).transpose(1, 2)
         s_seq = s.flatten(2).transpose(1, 2)
 
-        # CCT: cross-channel transformer attention
+        # CCT: cross-channel Transformer 注意力 / CCT: cross-channel transformer attention
         d_refined = mod["cct"](d_seq, s_seq)  # (B, L, unified)
 
-        # Reshape back to 2D
+        # 重塑 back to 2D / Reshape back to 2D
         unified = d.shape[1]
         d_2d = d_refined.transpose(1, 2).view(B, unified, H, W)
 
-        # CCA: concatenation + conv fusion
+        # CCA: concatenation + conv 融合 / CCA: concatenation + conv fusion
         fused = torch.cat([d_2d, s], dim=1)  # (B, 2*unified, H, W)
         return mod["cca_fuse"](fused)  # (B, decoder_ch + skip_ch, H, W)

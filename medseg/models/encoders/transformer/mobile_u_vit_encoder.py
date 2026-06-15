@@ -1,4 +1,5 @@
 """Mobile-U-ViT encoder.
+    Mobile-U-ViT 编码器。
 
 Extracted encoder-only stages from ``medseg.models.networks.transformer.mobile_u_vit``.
 
@@ -43,7 +44,8 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 
 class _LargeKernelDWConv(nn.Module):
-    """Large kernel depthwise separable convolution (DW 7x7 + PW 1x1)."""
+    """Large 卷积核 depthwise separable 卷积 ( DW 7x7 + PW 1x1 )。
+        Large kernel depthwise separable convolution (DW 7x7 + PW 1x1)."""
 
     def __init__(self, dim: int, kernel_size: int = 7):
         super().__init__()
@@ -58,7 +60,8 @@ class _LargeKernelDWConv(nn.Module):
 
 
 class _MobileBlock(nn.Module):
-    """Mobile building block: large-kernel DWConv + FFN with residuals."""
+    """Mobile building 块: large-kernel DWConv + FFN with residuals。
+        Mobile building block: large-kernel DWConv + FFN with residuals."""
 
     def __init__(self, dim: int, mlp_ratio: float = 4.0):
         super().__init__()
@@ -80,6 +83,7 @@ class _MobileBlock(nn.Module):
 
 class _ViTBlock(nn.Module):
     """Lightweight ViT block (MHSA + FFN) operating on BCHW tensors.
+        轻量级 ViT 块 ( MHSA + FFN ) operating on BCHW 张量。
 
     Spatial dimensions are derived from the runtime tensor shape so any input
     resolution is supported.
@@ -107,6 +111,7 @@ class _ViTBlock(nn.Module):
 @ENCODER_REGISTRY.register("mobile_u_vit")
 class MobileUViTEncoder(nn.Module):
     """Mobile-U-ViT encoder: LK-DWConv MobileBlocks + ViT bottleneck.
+        Mobile-U-ViT 编码器。
 
     Args:
         in_channels: Input channels. If != 3, a 1x1 conv projects to 3.
@@ -142,8 +147,8 @@ class MobileUViTEncoder(nn.Module):
         self.embed_dims = embed_dims
         self.depths = depths
 
-        # Optional 1x1 stem to project non-RGB inputs to 3 channels so the
-        # large-kernel stem operates on the original spec.
+        # 可选 1x1 主干 to project non-RGB inputs to 3 通道 so the / Optional 1x1 stem to project non-RGB inputs to 3 channels so the
+        # large-kernel 主干 operates on the original spec / large-kernel stem operates on the original spec.
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_in = 3
@@ -151,14 +156,14 @@ class MobileUViTEncoder(nn.Module):
             self.input_proj = nn.Identity()
             stem_in = 3
 
-        # Stem: large kernel 7x7 stride-2 conv -> /2
+        # 主干: large 卷积核 7x7 步长 - 2 conv - > / 2 / Stem: large kernel 7x7 stride-2 conv -> /2
         self.stem = nn.Sequential(
             nn.Conv2d(stem_in, embed_dims[0], 7, 2, 3, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
             nn.GELU(),
         )
 
-        # Encoder stages + (N-1) downsamples between them.
+        # 编码器 阶段 + ( N - 1 ) downsamples between them / Encoder stages + (N-1) downsamples between them.
         self.enc_stages = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         for i in range(len(embed_dims)):
@@ -170,7 +175,7 @@ class MobileUViTEncoder(nn.Module):
                     nn.BatchNorm2d(embed_dims[i + 1]),
                 ))
 
-        # Bottleneck applied IN-PLACE on the deepest stage (no extra downsample).
+        # 瓶颈层 applied IN-PLACE on the deepest 阶段 ( no extra 下采样 ) / Bottleneck applied IN-PLACE on the deepest stage (no extra downsample).
         if use_vit_bottleneck:
             self.bottleneck = nn.Sequential(
                 _ViTBlock(embed_dims[-1], num_heads=4),
@@ -192,11 +197,11 @@ class MobileUViTEncoder(nn.Module):
         for i, stage in enumerate(self.enc_stages):
             x = stage(x)
             if i == len(self.enc_stages) - 1:
-                # Refine the deepest feature with the ViT bottleneck before
-                # exposing it to the decoder.
+                # Refine the deepest feature with the ViT 瓶颈层 / Refine the deepest feature with the ViT bottleneck before
+                # exposing it to the 解码器 / exposing it to the decoder.
                 x = self.bottleneck(x)
             features.append(x)
             if i < len(self.downsamples):
                 x = self.downsamples[i](x)
-        # features[0] = highest-res / shallowest, features[-1] = deepest.
+        # 特征 [ 0 ] = highest-res / shallowest, 特征 [ - 1 ] = deepest / features[0] = highest-res / shallowest, features[-1] = deepest.
         return features

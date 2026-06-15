@@ -1,4 +1,5 @@
 """Qwen2.5-VL grounding wrapper.
+    Qwen2. 5-VL grounding 封装器。
 
 # Reference: https://github.com/QwenLM/Qwen2.5-VL
 # Reference: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class Qwen25VLGrounder(Qwen2VLGrounder):
-    """Qwen2.5-VL grounding wrapper (inference-only)."""
+    """Qwen2. 5-VL grounding 封装器 ( inference-only )。
+        Qwen2.5-VL grounding wrapper (inference-only)."""
 
     DEFAULT_PROMPT = (
         "Locate the {class_name} in this medical image. "
@@ -56,6 +58,7 @@ class Qwen25VLGrounder(Qwen2VLGrounder):
     # ------------------------------------------------------------------
     def _load_model(self) -> None:
         """Load Qwen2.5-VL via transformers. Raises if the model class is
+            加载 Qwen2. 5-VL via transformers. Raises if the 模型 class is。
         missing — we deliberately do **not** substitute ``AutoModelForVision2Seq``,
         because the auto wrapper would silently drop Qwen2.5-VL-specific
         forward-pass logic (M-RoPE, windowed attention) and quietly degrade

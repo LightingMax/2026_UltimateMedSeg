@@ -1,4 +1,4 @@
-"""CNN-family encoders."""
+"""CNN系列编码器 / CNN-family encoders."""
 
 import sys as _sys
 

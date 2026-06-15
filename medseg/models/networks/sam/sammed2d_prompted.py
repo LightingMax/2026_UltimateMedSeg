@@ -1,8 +1,9 @@
 # SAM-Med2D (arXiv 2308 / OpenGVLab 2024 continuous release)
-# Reference: https://github.com/OpenGVLab/SAM-Med2D
+# 参考: https: / / github. com / OpenGVLab / SAM-Med 2D / Reference: https://github.com/OpenGVLab/SAM-Med2D
 # Paper: https://arxiv.org/abs/2308.16184
 # Implemented from paper formulas; not a copy of the official repo.
 """SAM-Med2D wrapper -- prompt-driven medical segmentation via SAM ViT-B
+    SAM-Med 2D 封装器 - - prompt-driven 医学的 分割 via SAM ViT-B。
 fine-tuned on 4.6M medical image-mask pairs by OpenGVLab.
 
 The OpenGVLab release keeps Kirillov et al.'s SAM ViT-B architecture but
@@ -60,6 +61,7 @@ except Exception:  # pragma: no cover
 # ---------------------------------------------------------------------------
 def _strip_sammed2d_state(sd: dict) -> dict:
     """Normalise the OpenGVLab checkpoint to the segment_anything key space.
+        Normalise the OpenGVLab 检查点 to the segment _ anything key space。
 
     The HF release wraps the SAM state under one of several roots
     (``"model"`` / ``"state_dict"``) and additionally renames keys when
@@ -81,19 +83,20 @@ def _strip_sammed2d_state(sd: dict) -> dict:
         if nk.startswith("module."):
             nk = nk[len("module."):]
         if ".Adapter" in nk or ".adapter" in nk or "adapter_" in nk:
-            # OpenGVLab adapter parameters - not supported by vanilla SAM
-            # ViT-B, so skip them. The vanilla architecture still receives
-            # all the fine-tuned ViT / prompt / decoder weights.
+            # OpenGVLab 适配器 参数 - not 支持的 by 基础版 SAM / OpenGVLab adapter parameters - not supported by vanilla SAM
+            # ViT-B, so 跳跃连接 / ViT-B, so skip them. The vanilla architecture still receives
+            # all the fine-tuned ViT / prompt / 解码器 / all the fine-tuned ViT / prompt / decoder weights.
             continue
         out[nk] = v
     return out
 
 
 # ---------------------------------------------------------------------------
-# Main module
+# Main 模块 / Main module
 # ---------------------------------------------------------------------------
 class SAMMed2DWrapper(nn.Module):
     """SAM-Med2D inference wrapper exposed as a text-guided segmenter.
+        SAM-Med 2D 推理 封装器 暴露的 as a text-guided segmenter。
 
     Args:
         in_channels:   must be 3 (SAM is RGB-only).
@@ -149,7 +152,7 @@ class SAMMed2DWrapper(nn.Module):
         self.img_size = img_size
         self.sam_type = sam_type
 
-        # Resolve checkpoint (strict).
+        # Resolve 检查点 ( strict ) / Resolve checkpoint (strict).
         if pretrained_path is not None:
             ckpt_path = pretrained_path
         elif pretrained:
@@ -160,19 +163,19 @@ class SAMMed2DWrapper(nn.Module):
                 "pretrained=True (auto-download) or pretrained_path=<file>."
             )
 
-        # Build the vanilla SAM ViT-B graph first (no weights), then load
-        # the OpenGVLab state. Passing checkpoint=None avoids segment_anything
-        # trying to torch.load itself; we do it ourselves so we can sanitise
+        # Build the 基础版 SAM ViT-B graph first ( no 权重 ), then 加载 / Build the vanilla SAM ViT-B graph first (no weights), then load
+        # the OpenGVLab state. Passing 检查点 = None avoids segment _ anything / the OpenGVLab state. Passing checkpoint=None avoids segment_anything
+        # trying to torch. 加载 itself; we do it ourselves so we can sanitise / trying to torch.load itself; we do it ourselves so we can sanitise
         # the keys.
         sam = sam_model_registry[sam_type](checkpoint=None)
         sd_raw = torch.load(ckpt_path, map_location="cpu")
         sd = _strip_sammed2d_state(sd_raw)
-        # The OpenGVLab checkpoint always contains the SAM-shaped parameters,
-        # so any "missing" key on our side is a fatal architecture mismatch
+        # The OpenGVLab 检查点 always contains the SAM-shaped 参数 / The OpenGVLab checkpoint always contains the SAM-shaped parameters,
+        # so any " missing " key on our side is a fatal 架构 mismatch / so any "missing" key on our side is a fatal architecture mismatch
         # rather than a silent fallback.
         missing, unexpected = sam.load_state_dict(sd, strict=False)
-        # Tolerate unexpected keys (adapter layers etc.); missing keys
-        # touching the actual SAM backbone would indicate a corrupt file.
+        # Tolerate unexpected keys ( 适配器 layers etc. ); missing keys / Tolerate unexpected keys (adapter layers etc.); missing keys
+        # touching the actual SAM 骨干网络 would indicate a corrupt file / touching the actual SAM backbone would indicate a corrupt file.
         bad = [m for m in missing if not m.startswith("mask_threshold")]
         if bad:
             raise RuntimeError(
@@ -183,7 +186,7 @@ class SAMMed2DWrapper(nn.Module):
 
         self.sam = sam
 
-        # Default click prompts (centre of the image, foreground) - used
+        # 默认值 click prompts ( centre of the 图像, foreground ) - used / Default click prompts (centre of the image, foreground) - used
         # whenever no explicit prompt is supplied via ``text=``.
         if default_clicks is None:
             cx = cy = img_size // 2
@@ -213,7 +216,7 @@ class SAMMed2DWrapper(nn.Module):
             arr = torch.tensor(default_click_labels, dtype=torch.float32)
             self.register_buffer("default_click_labels", arr, persistent=False)
 
-        # Optional freezing
+        # 可选 freezing / Optional freezing
         if freeze_image_encoder:
             for p in self.sam.image_encoder.parameters():
                 p.requires_grad = False
@@ -227,6 +230,7 @@ class SAMMed2DWrapper(nn.Module):
     # ------------------------------------------------------------------
     def _resolve_prompts(self, text: Any, B: int, device: torch.device):
         """Return ``(coords, labels)`` with shape ``(B, num_classes, K, 2)`` /
+            返回 ` ` ( coords, 标签 ) ` ` with 形状 ` ` ( B, num _ classes, K, 2 ) ` ` /。
         ``(B, num_classes, K)`` in *input-pixel* coordinates.
 
         The four branches mirror the SaLIP / BiomedParse text-handling
@@ -234,7 +238,7 @@ class SAMMed2DWrapper(nn.Module):
         """
         C = self.num_classes
         if text is None or isinstance(text, (str, list, tuple)):
-            # Use the registered default click prompt for every sample.
+            # Use the registered 默认值 click prompt for every 样本 / Use the registered default click prompt for every sample.
             coords = self.default_clicks.unsqueeze(0).expand(B, -1, -1, -1)
             labels = self.default_click_labels.unsqueeze(0).expand(B, -1, -1)
             return coords.to(device), labels.to(device)
@@ -259,7 +263,8 @@ class SAMMed2DWrapper(nn.Module):
 
     # ------------------------------------------------------------------
     def forward(self, image: torch.Tensor, text: Any = None) -> torch.Tensor:
-        """forward(image, text=None) -> (B, num_classes, H, W) logits."""
+        """前向传播 ( 图像, text = None ) - > ( B, num _ classes, H, W ) logits。
+            forward(image, text=None) -> (B, num_classes, H, W) logits."""
         if image.dim() != 4 or image.shape[1] != 3:
             raise ValueError(
                 f"SAM-Med2D expects (B, 3, H, W) input; got {tuple(image.shape)}."
@@ -278,15 +283,15 @@ class SAMMed2DWrapper(nn.Module):
         x = x * 255.0
         x = (x - self.sam.pixel_mean) / self.sam.pixel_std
 
-        # 2. Image encoder.
+        # 2. Image 编码器 / 2. Image encoder.
         image_embeddings = self.sam.image_encoder(x)            # (B, 256, S/16, S/16)
 
-        # 3. Prompts -> rescale coords to SAM input resolution.
+        # 3. Prompts - > rescale coords to SAM 输入 分辨率 / 3. Prompts -> rescale coords to SAM input resolution.
         coords, labels = self._resolve_prompts(text, B, device)
         scale = torch.tensor([S / W, S / H], device=device, dtype=coords.dtype)
         coords_s = coords * scale
 
-        # 4. + 5. Run prompt encoder + mask decoder per class.
+        # 4. + 5. Run prompt 编码器 / 4. + 5. Run prompt encoder + mask decoder per class.
         out_logits = []
         dense_pe = self.sam.prompt_encoder.get_dense_pe()
         for c in range(self.num_classes):
@@ -303,7 +308,7 @@ class SAMMed2DWrapper(nn.Module):
                 multimask_output=False,
             )
             out_logits.append(low_res)
-        # ``low_res`` is (B, 1, S/4, S/4); concatenate over the class axis.
+        # ` ` low _ res ` ` is ( B, 1, S / 4, S / 4 ); 拼接 over the class axis / ``low_res`` is (B, 1, S/4, S/4); concatenate over the class axis.
         logits = torch.cat(out_logits, dim=1)
         logits = F.interpolate(logits, size=(H, W), mode="bilinear", align_corners=False)
         return logits

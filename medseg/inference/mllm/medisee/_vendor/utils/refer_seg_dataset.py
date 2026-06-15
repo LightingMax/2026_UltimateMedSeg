@@ -106,8 +106,9 @@ class ReferSegDataset(torch.utils.data.Dataset):
         return self.samples_per_epoch
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -152,7 +153,7 @@ class ReferSegDataset(torch.utils.data.Dataset):
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # preprocess image for clip
+        # preprocess 图像 for clip / preprocess image for clip
         image_clip = self.clip_image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
         ][0]
@@ -254,12 +255,12 @@ class ReferSegDataset(torch.utils.data.Dataset):
 
         # if ds == 'grefcoco' and flag:
         #     import shutil
-        #     image_name = image_path.split("/")[-1]
-        #     save_dir = os.path.join("/group/30042/xlai/MediSee_refactor_final/debug", image_name.split(".")[0])
-        #     os.makedirs(save_dir, exist_ok=True)
-        #     shutil.copy(image_path, save_dir)
-        #     for i in range(masks.shape[0]):
-        #         cv2.imwrite(os.path.join(save_dir, "{}_{}_{}.jpg".format(image_name, i, sampled_classes[i])), masks[i].astype(np.int32) * 100)
+        # 图像 _ name = 图像 _ path. split ( " / " ) [ - 1 ] / image_name = image_path.split("/")[-1]
+        # 保存 _ dir = os. path. join ( " / group / 30042 / xlai / MediSee _ refactor _ final / debug ", 图像 _ name. split ( ". " ) [ 0 ] ) / save_dir = os.path.join("/group/30042/xlai/MediSee_refactor_final/debug", image_name.split(".")[0])
+        # os. makedirs ( 保存 _ dir, exist _ ok = True ) / os.makedirs(save_dir, exist_ok=True)
+        # shutil. copy ( 图像 _ path, 保存 _ dir ) / shutil.copy(image_path, save_dir)
+        # for i in range ( 掩码. 形状 [ 0 ] ) / for i in range(masks.shape[0]):
+        # cv2. imwrite ( os. path. join ( 保存 _ dir, " { } _ { } _ { }. jpg ". format ( 图像 _ name, i, sampled _ classes [ i ] ) ), 掩码 [ i ]. astype ( np. int32 ) * 100 ) / cv2.imwrite(os.path.join(save_dir, "{}_{}_{}.jpg".format(image_name, i, sampled_classes[i])), masks[i].astype(np.int32) * 100)
 
         masks = torch.from_numpy(masks)
         label = torch.ones(masks.shape[1], masks.shape[2]) * self.ignore_label

@@ -1,4 +1,5 @@
 """RWKV-UNet Encoder: 1:1 faithful port of the official implementation.
+    RWKV-UNet 编码器。
 
 Reference: "RWKV-UNet: Improving UNet with Linear Complexity for Medical Image
 Segmentation" — https://github.com/juntaoJianggavin/RWKV-UNet
@@ -40,11 +41,12 @@ from medseg.kernels.wkv import (  # noqa: F401  (re-exported)
 )
 
 
-# ---------- WKV kernel dispatcher (backward-compatible shim) ----------
+# - - - - - - - - - - WKV 卷积核 dispatcher ( backward-compatible shim ) - - - - - - - - - - / ---------- WKV kernel dispatcher (backward-compatible shim) ----------
 
 
 class WKV:
     """Backwards-compatible shim mimicking ``torch.autograd.Function.apply``.
+        Backwards-compatible shim mimicking ` ` torch. autograd. Function. 应用 ` `。
 
     External code (notably ``rir_zigzag_encoder.py``) calls
     ``WKV.apply(B, T, C, w, u, k, v)`` exactly as in the upstream Vision-RWKV
@@ -63,7 +65,7 @@ def RUN_WKV(B, T, C, w, u, k, v):
     return run_wkv(B, T, C, w.float(), u.float(), k.float(), v.float())
 
 
-# Legacy alias kept for any external import.
+# 遗留 alias kept for any external import / Legacy alias kept for any external import.
 wkv_pytorch_fast = wkv_pytorch
 
 
@@ -71,7 +73,8 @@ wkv_pytorch_fast = wkv_pytorch
 
 
 class DropPath(nn.Module):
-    """Stochastic Depth per sample (matches timm.DropPath)."""
+    """Stochastic 深度 per 样本 ( matches timm. DropPath )。
+        Stochastic Depth per sample (matches timm.DropPath)."""
 
     def __init__(self, drop_prob: float = 0.0):
         super().__init__()
@@ -88,7 +91,7 @@ class DropPath(nn.Module):
         return x.div(keep_prob) * rand
 
 
-# ---------- norm / act helpers (1:1 with module/basic_modules.py) ----------
+# - - - - - - - - - - norm / act helpers ( 1: 1 with 模块 / 基本 _ modules. py ) - - - - - - - - - - / ---------- norm / act helpers (1:1 with module/basic_modules.py) ----------
 
 
 class LayerNorm2d(nn.Module):
@@ -134,7 +137,8 @@ def get_act(act_layer: str = "relu"):
 
 
 class ConvNormAct(nn.Module):
-    """Conv -> Norm -> Act (1:1 with module.basic_modules.ConvNormAct)."""
+    """Conv - > Norm - > Act ( 1: 1 with 模块. 基本 _ modules. ConvNormAct )。
+        Conv -> Norm -> Act (1:1 with module.basic_modules.ConvNormAct)."""
 
     def __init__(
         self,
@@ -198,6 +202,7 @@ class SE(nn.Module):
 
 def q_shift(input, shift_pixel: int = 1, gamma: float = 1 / 4, patch_resolution=None):
     """Bidirectional spatial q-shift used by VRWKV.
+        Bidirectional 空间的 q-shift used by VRWKV。
 
     Splits channels into 5 groups; first 4 groups are shifted in the four
     cardinal directions, the remaining channels stay put. Matches the official
@@ -221,7 +226,8 @@ def q_shift(input, shift_pixel: int = 1, gamma: float = 1 / 4, patch_resolution=
 
 
 class VRWKV_SpatialMix(nn.Module):
-    """Vision-RWKV spatial mixing (matches the official VRWKV_SpatialMix)."""
+    """Vision-RWKV 空间的 mixing ( matches the official VRWKV _ SpatialMix )。
+        Vision-RWKV spatial mixing (matches the official VRWKV_SpatialMix)."""
 
     def __init__(self, n_embd: int, channel_gamma: float = 1 / 4, shift_pixel: int = 1):
         super().__init__()
@@ -230,7 +236,7 @@ class VRWKV_SpatialMix(nn.Module):
         self.shift_pixel = shift_pixel
         self.channel_gamma = channel_gamma if shift_pixel > 0 else None
 
-        # Learnable parameters (initialised to zero like the official repo).
+        # Learnable 参数 ( initialised to zero like the official repo ) / Learnable parameters (initialised to zero like the official repo).
         self.spatial_decay = nn.Parameter(torch.zeros(n_embd))
         self.spatial_first = nn.Parameter(torch.zeros(n_embd))
         self.spatial_mix_k = nn.Parameter(torch.ones([1, 1, n_embd]) * 0.5)
@@ -260,7 +266,7 @@ class VRWKV_SpatialMix(nn.Module):
     def forward(self, x, patch_resolution=None):
         B, T, C = x.size()
         sr, k, v = self.jit_func(x, patch_resolution)
-        # Note: official code passes spatial_decay/T and spatial_first/T to RUN_CUDA.
+        # 注意: official code passes 空间的 _ decay / T and 空间的 _ first / T to RUN _ CUDA / Note: official code passes spatial_decay/T and spatial_first/T to RUN_CUDA.
         x = RUN_WKV(B, T, C, self.spatial_decay / T, self.spatial_first / T, k, v)
         x = self.key_norm(x)
         x = sr * x
@@ -269,7 +275,8 @@ class VRWKV_SpatialMix(nn.Module):
 
 
 class VRWKV_ChannelMix(nn.Module):
-    """Vision-RWKV channel mixing (used by CCMix in the decoder)."""
+    """Vision-RWKV channel mixing (used by CCMix in the 解码器。
+        Vision-RWKV channel mixing (used by CCMix in the decoder)."""
 
     def __init__(self, n_embd: int, channel_gamma: float = 1 / 4, shift_pixel: int = 1,
                  hidden_rate: int = 2, key_norm: bool = True):
@@ -303,11 +310,12 @@ class VRWKV_ChannelMix(nn.Module):
         return x
 
 
-# ---------- GLSP (1:1 with the official Global-Local Spatial Perception) ----------
+# - - - - - - - - - - GLSP ( 1: 1 with the official Global-Local 空间的 Perception ) - - - - - - - - - - / ---------- GLSP (1:1 with the official Global-Local Spatial Perception) ----------
 
 
 class GLSP(nn.Module):
-    """Global-Local Spatial Perception block from RWKV-UNet (faithful port)."""
+    """Global-Local 空间的 Perception 块 from RWKV-UNet ( 忠实 移植 )。
+        Global-Local Spatial Perception block from RWKV-UNet (faithful port)."""
 
     def __init__(
         self,
@@ -342,10 +350,10 @@ class GLSP(nn.Module):
         else:
             self.se = nn.Identity()
         self.proj_drop = nn.Dropout(drop)
-        # Final 1x1 projection (no norm/act, matching the official block).
+        # Final 1x1 projection ( no norm / act, matching the official 块 ) / Final 1x1 projection (no norm/act, matching the official block).
         self.proj = ConvNormAct(dim_mid, dim_out, kernel_size=1, norm_layer="none", act_layer="none")
         self.drop_path = DropPath(drop_path) if drop_path else nn.Identity()
-        # Local depthwise branch (k=dw_ks, with stride for downsampling).
+        # 局部的 depthwise 分支 ( k = dw _ ks, with 步长 for 下采样 ) / Local depthwise branch (k=dw_ks, with stride for downsampling).
         self.conv_local = ConvNormAct(
             dim_mid, dim_mid,
             kernel_size=dw_ks, stride=stride, dilation=dilation, groups=dim_mid,
@@ -371,7 +379,7 @@ class GLSP(nn.Module):
         return x
 
 
-# ---------- RWKV-UNet Encoder (T / S / B) ----------
+# ---------- RWKV-UNet 编码器 / ---------- RWKV-UNet Encoder (T / S / B) ----------
 
 
 _VARIANT_PRESETS = {
@@ -404,6 +412,7 @@ _VARIANT_SHARED = dict(
 @ENCODER_REGISTRY.register("rwkv_unet")
 class RWKVUNetEncoder(nn.Module):
     """Faithful 1:1 port of the official RWKV_UNet_encoder (T / S / B variants).
+        忠实 1: 1 移植 of the official RWKV _ UNet _ 编码器 ( T / S / B variants )。
 
     Forward returns ``[enc1, enc2, enc3, stage4_out]`` where ``stage4_out`` is
     the deepest feature consumed by the bottleneck and ``enc1..enc3`` are the
@@ -421,7 +430,7 @@ class RWKVUNetEncoder(nn.Module):
         drop: float = 0.0,
         drop_path: float = 0.05,
         pretrained_path: str = None,
-        # Optional manual overrides (e.g. for ablation); leave at defaults to
+        # 可选 manual overrides ( e. g. for 消融实验 ); leave at defaults to / Optional manual overrides (e.g. for ablation); leave at defaults to
         # use the official preset for the chosen variant.
         depths=None,
         stem_dim=None,
@@ -444,7 +453,7 @@ class RWKVUNetEncoder(nn.Module):
             )
         preset = dict(_VARIANT_PRESETS[variant])
         shared = dict(_VARIANT_SHARED)
-        # Apply manual overrides if provided.
+        # 应用 manual overrides if provided / Apply manual overrides if provided.
         for name, val in [
             ("depths", depths), ("stem_dim", stem_dim), ("embed_dims", embed_dims),
             ("exp_ratios", exp_ratios),
@@ -478,7 +487,7 @@ class RWKVUNetEncoder(nn.Module):
         self.stem_dim = stem_dim
         self.depths = depths
 
-        # ---- stage 0: stem GLSP (no spatial attn, stride=1) ----
+        # - - - - 阶段 0: 主干 GLSP ( no 空间的 attn, 步长 = 1 ) - - - - / ---- stage 0: stem GLSP (no spatial attn, stride=1) ----
         self.stage0 = nn.ModuleList([
             GLSP(
                 in_channels, stem_dim,
@@ -490,7 +499,7 @@ class RWKVUNetEncoder(nn.Module):
             )
         ])
 
-        # Build remaining 4 stages.
+        # Build remaining 4 阶段 / Build remaining 4 stages.
         dprs = [x.item() for x in torch.linspace(0, drop_path, sum(depths))]
         emb_dim_pre = stem_dim
         cur_img_size = img_size  # tracked solely to keep parity with official ctor
@@ -517,12 +526,12 @@ class RWKVUNetEncoder(nn.Module):
                 emb_dim_pre = embed_dims[i]
             self.__setattr__(f"stage{i + 1}", nn.ModuleList(layers))
 
-        # The last layer of the official encoder body (used as bottleneck input).
+        # The last layer of the official 编码器 / The last layer of the official encoder body (used as bottleneck input).
         self.norm = get_norm(norm_layers[-1])(embed_dims[-1])
 
-        # Channels exposed to the model builder:
-        #   - skip features = enc1, enc2, enc3 (embed_dims[0..2])
-        #   - deepest feature (bottleneck input) = stage4 output (embed_dims[3])
+        # 通道 暴露的 to the 模型 builder / Channels exposed to the model builder:
+        # - 跳跃连接 / - skip features = enc1, enc2, enc3 (embed_dims[0..2])
+        # - deepest 特征 ( 瓶颈层 输入 ) = stage4 输出 ( embed _ dims [ 3 ] ) / - deepest feature (bottleneck input) = stage4 output (embed_dims[3])
         self.out_channels = list(embed_dims)
 
         self.apply(self._init_weights)
@@ -553,15 +562,15 @@ class RWKVUNetEncoder(nn.Module):
         print(f"[RWKVUNetEncoder] loaded pretrained '{path}': {msg}")
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        # If the network was configured for 3-channel input but the user passed
-        # a 1-channel tensor (mirroring the official RWKV_UNet.forward), repeat
-        # along the channel axis automatically.
+        # If the 网络 was configured for 3-channel 输入 but the user passed / If the network was configured for 3-channel input but the user passed
+        # a 1-channel 张量 ( mirroring the official RWKV _ UNet. 前向传播 ), repeat / a 1-channel tensor (mirroring the official RWKV_UNet.forward), repeat
+        # along the 通道 axis automatically / along the channel axis automatically.
         if x.shape[1] == 1 and self.in_channels == 3:
             x = x.repeat(1, 3, 1, 1)
 
         for blk in self.stage0:
             x = blk(x)
-        # enc0 is intentionally not exposed (decoder does not consume it).
+        # enc0 is intentionally not 暴露的 ( 解码 does not consume it ) / enc0 is intentionally not exposed (decoder does not consume it).
 
         for blk in self.stage1:
             x = blk(x)
@@ -577,6 +586,6 @@ class RWKVUNetEncoder(nn.Module):
 
         for blk in self.stage4:
             x = blk(x)
-        # x is the deepest feature; the bottleneck stage will run a no-op or
+        # x is the deepest feature; the 瓶颈层 / x is the deepest feature; the bottleneck stage will run a no-op or
         # custom transformation on it.
         return [enc1, enc2, enc3, x]

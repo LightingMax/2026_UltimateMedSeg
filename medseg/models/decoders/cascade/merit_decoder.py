@@ -1,4 +1,5 @@
 """MERIT Decoder – Multi-scale Hierarchical Vision Transformer with
+    MERIT 解码器。
 Cascaded Attention Decoding.
 
 Faithfully ported from: https://github.com/SLDGroup/MERIT
@@ -30,7 +31,8 @@ from medseg.registry import DECODER_REGISTRY
 # ── Building Blocks ──────────────────────────────────────────────────────────
 
 class _ConvBlock(nn.Module):
-    """Standard double-conv block (conv-BN-ReLU x2)."""
+    """标准 double-conv 块 ( conv-BN-ReLU x2 )。
+        Standard double-conv block (conv-BN-ReLU x2)."""
 
     def __init__(self, ch_in, ch_out):
         super().__init__()
@@ -48,7 +50,8 @@ class _ConvBlock(nn.Module):
 
 
 class _UpConv(nn.Module):
-    """Upsample 2x + conv + BN + ReLU."""
+    """上采样 2x + conv + BN + ReLU。
+        Upsample 2x + conv + BN + ReLU."""
 
     def __init__(self, ch_in, ch_out):
         super().__init__()
@@ -65,6 +68,7 @@ class _UpConv(nn.Module):
 
 class _AttentionGate(nn.Module):
     """MERIT attention gate (1x1 conv based, non-grouped).
+        MERIT 注意力 gate ( 1x1 conv based, non-grouped )。
 
     AG(g, x) = sigmoid(BN(Conv1x1(relu(BN(Conv1x1(g)) + BN(Conv1x1(x)))))) * x
     """
@@ -95,7 +99,8 @@ class _AttentionGate(nn.Module):
 
 
 class _ChannelAttention(nn.Module):
-    """CBAM-style channel attention: avg+max pool -> shared MLP -> sigmoid."""
+    """CBAM-style 通道 注意力: avg + max pool - > shared MLP - > sigmoid。
+        CBAM-style channel attention: avg+max pool -> shared MLP -> sigmoid."""
 
     def __init__(self, in_planes, ratio=16):
         super().__init__()
@@ -114,7 +119,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """CBAM-style spatial attention: avg+max along channel -> 7x7 conv -> sigmoid."""
+    """CBAM-style 空间的 注意力: avg + max along 通道 - > 7x7 conv - > sigmoid。
+        CBAM-style spatial attention: avg+max along channel -> 7x7 conv -> sigmoid."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -129,11 +135,12 @@ class _SpatialAttention(nn.Module):
         return self.sigmoid(self.conv(out))
 
 
-# ── MERIT Decoder (additive skip) ────────────────────────────────────────────
+# ── MERIT 解码器 / ── MERIT Decoder (additive skip) ────────────────────────────────────────────
 
 @DECODER_REGISTRY.register("merit_add")
 class MERITAddDecoder(nn.Module):
     """MERIT decoder with additive skip aggregation.
+        MERIT 解码器。
 
     Args:
         encoder_channels: List of encoder stage output channels (shallow to deep).
@@ -151,13 +158,13 @@ class MERITAddDecoder(nn.Module):
         skip_chs = list(reversed(encoder_channels))  # deep to shallow
         channels = [bottleneck_channels] + skip_chs  # e.g. [512, 320, 128, 64]
 
-        # 1x1 conv on bottleneck
+        # 1x1 conv on 瓶颈层 / 1x1 conv on bottleneck
         self.conv_1x1 = nn.Conv2d(channels[0], channels[0], 1, 1, 0)
 
-        # Stage 4 (bottleneck)
+        # 阶段 4 ( 瓶颈层 ) / Stage 4 (bottleneck)
         self.conv_block4 = _ConvBlock(channels[0], channels[0])
 
-        # Progressive decoding stages
+        # Progressive decoding 阶段 / Progressive decoding stages
         self.ups = nn.ModuleList()
         self.ags = nn.ModuleList()
         self.conv_blocks = nn.ModuleList()
@@ -166,7 +173,7 @@ class MERITAddDecoder(nn.Module):
             in_ch = channels[i]
             out_ch = channels[i + 1]
             self.ups.append(_UpConv(in_ch, out_ch))
-            # F_int for AG: channels[i+2] if available, else out_ch//2
+            # F _ int for AG: 通道 [ i + 2 ] if available, else out _ ch / / 2 / F_int for AG: channels[i+2] if available, else out_ch//2
             if i + 2 < len(channels):
                 f_int = channels[i + 2]
             else:
@@ -192,7 +199,7 @@ class MERITAddDecoder(nn.Module):
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))
 
-        # Stage 4
+        # 阶段 4 / Stage 4
         d4 = self.conv_1x1(bottleneck_feat)
         d4 = self.cas[0](d4) * d4
         d4 = self.sa(d4) * d4
@@ -203,12 +210,12 @@ class MERITAddDecoder(nn.Module):
         for i in range(len(self.ups)):
             # UpConv
             d = self.ups[i](d)
-            # Match spatial size
+            # Match 空间的 大小 / Match spatial size
             skip_i = skips[i]
             if d.shape[2:] != skip_i.shape[2:]:
                 d = F.interpolate(d, size=skip_i.shape[2:],
                                   mode='bilinear', align_corners=False)
-            # AG (attention gate on skip)
+            # AG (attention gate on 跳跃连接 / AG (attention gate on skip)
             x_skip = self.ags[i](g=d, x=skip_i)
             # Additive aggregation
             d = d + x_skip
@@ -221,11 +228,12 @@ class MERITAddDecoder(nn.Module):
         return d
 
 
-# ── MERIT Decoder (concatenation skip) ───────────────────────────────────────
+# ── MERIT 解码器 / ── MERIT Decoder (concatenation skip) ───────────────────────────────────────
 
 @DECODER_REGISTRY.register("merit_cat")
 class MERITCatDecoder(nn.Module):
     """MERIT decoder with concatenation skip aggregation.
+        MERIT 解码器。
 
     After concatenation, ChannelAttention operates on 2x channels.
 
@@ -259,10 +267,10 @@ class MERITCatDecoder(nn.Module):
                 f_int = out_ch // 2
             self.ags.append(_AttentionGate(F_g=out_ch, F_l=out_ch,
                                            F_int=f_int))
-            # After cat: 2*out_ch channels
+            # After cat: 2 * out _ ch 通道 / After cat: 2*out_ch channels
             self.conv_blocks.append(_ConvBlock(2 * out_ch, out_ch))
 
-        # CAM: stage 4 uses channels[0], stages 3/2/1 use 2*channels[i+1]
+        # CAM: 阶段 4 uses 通道 [ 0 ], 阶段 3 / 2 / 1 use 2 * 通道 [ i + 1 ] / CAM: stage 4 uses channels[0], stages 3/2/1 use 2*channels[i+1]
         self.cas = nn.ModuleList()
         self.cas.append(_ChannelAttention(channels[0]))
         for i in range(len(skip_chs)):
@@ -279,7 +287,7 @@ class MERITCatDecoder(nn.Module):
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))
 
-        # Stage 4
+        # 阶段 4 / Stage 4
         d4 = self.conv_1x1(bottleneck_feat)
         d4 = self.cas[0](d4) * d4
         d4 = self.sa(d4) * d4

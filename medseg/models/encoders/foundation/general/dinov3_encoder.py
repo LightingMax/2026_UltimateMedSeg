@@ -1,4 +1,5 @@
 """DINOv3 foundation-model encoder (Meta 2025) with DPT-style multi-block multi-scale.
+    DINOv3 foundation-model 编码器。
 
 Wraps a timm ViT pretrained with DINOv3 self-supervision and converts its
 single-scale patch-token grid into a 4-stage feature pyramid by applying
@@ -8,9 +9,9 @@ max-pool down-sample) directly on the reshaped tokens.
 Registered as ``"dinov3"`` in ``ENCODER_REGISTRY``.
 """
 # Source: Meta AI DINOv3 (arXiv:2508.10104, Aug 2025).
-# Requires timm >= 1.0.20 (DINOv3 backbone support added 2025-09-17).
+# Requires timm > = 1. 0. 20 ( DINOv3 骨干网络 support added 2025 - 09 - 17 ) / Requires timm >= 1.0.20 (DINOv3 backbone support added 2025-09-17).
 # Official variants: ViT-S/16, ViT-S+/16, ViT-B/16, ViT-L/16, ViT-H+/16, ViT-7B/16
-# (H+ is ViT-H-Plus, NOT standard ViT-H; no 'giant' variant exists).
+# ( H + is ViT-H-Plus, NOT 标准 ViT-H; no ' giant ' variant exists ) / (H+ is ViT-H-Plus, NOT standard ViT-H; no 'giant' variant exists).
 
 from __future__ import annotations
 
@@ -43,6 +44,7 @@ _DINOV3_NAMES = {
 @ENCODER_REGISTRY.register("dinov3")
 class DINOv3Encoder(BaseFoundationEncoder):
     """DINOv3 ViT encoder with an DPT-style multi-block multi-scale projector.
+        DINOv3 ViT 编码器。
 
     The backbone is a timm ViT (`vit_<variant>_patch16_dinov3`); the patch
     tokens of its last layer are reshaped to ``(B, D, h, w)`` and projected
@@ -104,8 +106,8 @@ class DINOv3Encoder(BaseFoundationEncoder):
                 dynamic_img_size=True,
             )
         else:
-            # User-provided checkpoint takes precedence: build without
-            # downloading timm weights, then load the local state dict.
+            # User-provided 检查点 takes precedence: build without / User-provided checkpoint takes precedence: build without
+            # downloading timm 权重, then 加载 the 局部的 state dict / downloading timm weights, then load the local state dict.
             self.backbone = timm.create_model(
                 PRIMARY_BACKBONE_NAME,
                 pretrained=False,
@@ -119,14 +121,14 @@ class DINOv3Encoder(BaseFoundationEncoder):
             msg = self.backbone.load_state_dict(state, strict=False)
             warnings.warn(f"DINOv3 local checkpoint load: {msg}")
 
-        # ---- backbone introspection -----------------------------------
+        # - - - - 骨干网络 introspection - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- backbone introspection -----------------------------------
         ps = self.backbone.patch_embed.patch_size
         self.patch_size = int(ps[0]) if isinstance(ps, (tuple, list)) else int(ps)
         self.embed_dim = int(getattr(self.backbone, "embed_dim",
                                      getattr(self.backbone, "num_features", 384)))
         self.num_prefix_tokens = int(getattr(self.backbone, "num_prefix_tokens", 1))
 
-        # ---- optional channel adapter (DINOv3 is RGB-only) ------------
+        # - - - - 可选 通道 适配器 ( DINOv3 is RGB-only ) - - - - - - - - - - - - / ---- optional channel adapter (DINOv3 is RGB-only) ------------
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3,
                                                      kernel_size=1, bias=False)
@@ -134,7 +136,7 @@ class DINOv3Encoder(BaseFoundationEncoder):
             self.input_adapter = nn.Identity()
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -146,7 +148,8 @@ class DINOv3Encoder(BaseFoundationEncoder):
         self._apply_freeze_policy()
 
     def _pad_to_multiple(self, x: torch.Tensor) -> Tuple[torch.Tensor, int, int]:
-        """Zero-pad ``x`` so its spatial dims are multiples of ``patch_size``."""
+        """Zero-pad ` ` x ` ` so its 空间的 dims are multiples of ` ` 图块 _ 大小 ` `。
+            Zero-pad ``x`` so its spatial dims are multiples of ``patch_size``."""
         _, _, H, W = x.shape
         ps = self.patch_size
         H_pad = int(math.ceil(H / ps) * ps)
@@ -158,6 +161,7 @@ class DINOv3Encoder(BaseFoundationEncoder):
     def _get_intermediate_layers(self, x: torch.Tensor,
                                   indices: List[int]) -> List[torch.Tensor]:
         """Extract intermediate layer outputs from a timm ViT backbone.
+            提取 intermediate 层 outputs from a timm ViT 骨干网络。
 
         Handles backbones with or without ``get_intermediate_layers``.
         For timm VisionTransformer / Eva, manually runs the forward pass
@@ -171,25 +175,25 @@ class DINOv3Encoder(BaseFoundationEncoder):
         # Manual extraction for timm VisionTransformer / Eva
         x = bb.patch_embed(x)
 
-        # patch_embed may return 3D [B,N,C] or 4D depending on timm version
+        # 图块 _ embed may 返回 3D [ B, N, C ] or 4D depending on timm version / patch_embed may return 3D [B,N,C] or 4D depending on timm version
         if x.dim() == 4:
-            # timm ViT patch_embed returns NHWC [B, h, w, C]
+            # timm ViT 图块 _ embed 返回 NHWC [ B, h, w, C ] / timm ViT patch_embed returns NHWC [B, h, w, C]
             x = x.flatten(1, 2)  # [B, h, w, C] -> [B, N, C]
 
-        # Position embedding
+        # Position 嵌入 / Position embedding
         pos_embed = bb.pos_embed
         if hasattr(bb, 'pos_embed_token'):
-            # Some Eva variants use separate pos tokens
+            # Some Eva variants use separate pos 标记 / Some Eva variants use separate pos tokens
             x = x + bb.pos_embed_token
         elif pos_embed is not None:
             if pos_embed.ndim == 3:
-                # Standard timm: pos_embed is (1, N_patches+prefix, D)
+                # 标准 timm: pos _ embed is ( 1, N _ 图块 + prefix, D ) / Standard timm: pos_embed is (1, N_patches+prefix, D)
                 x = x + pos_embed
             else:
-                # Reshape if needed
+                # 重塑 if needed / Reshape if needed
                 x = x + pos_embed.flatten(0, 1).unsqueeze(0)
 
-        # Prepend prefix tokens (cls_token, register tokens, etc.)
+        # Prepend prefix 标记 ( cls _ 标记, 注册 标记, etc. ) / Prepend prefix tokens (cls_token, register tokens, etc.)
         if hasattr(bb, 'cls_token') and bb.cls_token is not None:
             cls_tokens = bb.cls_token.expand(x.shape[0], -1, -1)
             x = torch.cat((cls_tokens, x), dim=1)
@@ -197,7 +201,7 @@ class DINOv3Encoder(BaseFoundationEncoder):
             reg_tokens = bb.reg_token.expand(x.shape[0], -1, -1)
             x = torch.cat((reg_tokens, x), dim=1)
 
-        # Dropout
+        # 随机丢弃 / Dropout
         if hasattr(bb, 'pos_drop'):
             x = bb.pos_drop(x)
         elif hasattr(bb, 'drop'):
@@ -211,7 +215,7 @@ class DINOv3Encoder(BaseFoundationEncoder):
             if i in target_set:
                 intermediates[i] = x
 
-        # Apply final norm to each collected output
+        # 应用 final norm to each collected 输出 / Apply final norm to each collected output
         if hasattr(bb, 'norm') and bb.norm is not None:
             for idx in intermediates:
                 intermediates[idx] = bb.norm(intermediates[idx])
@@ -231,7 +235,7 @@ class DINOv3Encoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self._get_intermediate_layers(
             x, self._block_indices,
         )

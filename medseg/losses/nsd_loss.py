@@ -1,4 +1,5 @@
 """Normalized Surface Dice Loss (continuous DT-based surrogate).
+    Normalized Surface Dice 损失。
 
 NSD is a *metric* (Nikolov et al., 2018): the fraction of GT/pred surface
 points whose distance to the other surface is within a user-defined
@@ -61,7 +62,8 @@ def _np_dt(mask: np.ndarray) -> np.ndarray:
 
 
 def _surface_from_mask(mask: torch.Tensor) -> torch.Tensor:
-    """Soft surface map of a (B, H, W) probability tensor via abs-grad."""
+    """Soft surface 映射 of a ( B, H, W ) probability 张量 via abs-grad。
+        Soft surface map of a (B, H, W) probability tensor via abs-grad."""
     dx = torch.zeros_like(mask)
     dy = torch.zeros_like(mask)
     dx[..., :, 1:] = (mask[..., :, 1:] - mask[..., :, :-1]).abs()
@@ -70,12 +72,13 @@ def _surface_from_mask(mask: torch.Tensor) -> torch.Tensor:
 
 
 def _dt_to_surface(mask_bool: torch.Tensor) -> torch.Tensor:
-    """DT to the surface of a binary GT mask, computed on CPU."""
+    """DT to the surface of a 二值的 GT 掩码, computed on CPU。
+        DT to the surface of a binary GT mask, computed on CPU."""
     arr = mask_bool.detach().cpu().numpy()
     out = np.zeros_like(arr, dtype=np.float32)
     for b in range(arr.shape[0]):
         m = arr[b]
-        # surface = boundary pixels of mask (xor with 1-pixel erosion)
+        # surface = 边界 pixels of 掩码 ( xor with 1-pixel erosion ) / surface = boundary pixels of mask (xor with 1-pixel erosion)
         if m.any() and not m.all():
             shifted_x = np.zeros_like(m)
             shifted_x[:, 1:] = m[:, :-1]
@@ -91,6 +94,7 @@ def _dt_to_surface(mask_bool: torch.Tensor) -> torch.Tensor:
 @LOSS_REGISTRY.register("nsd")
 class NSDLoss(nn.Module):
     """Differentiable NSD-style surface loss.
+        Differentiable NSD-style surface 损失。
 
     Args:
         tolerance: distance (in pixels) within which surface mismatches

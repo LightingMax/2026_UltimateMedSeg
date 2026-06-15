@@ -1,4 +1,5 @@
 """VMKLA-UNet encoder.
+    VMKLA-UNet 编码器。
 
 Stride-4 patch-embed stem followed by 4 hierarchical stages of Mamba-style
 SSM + KAN linear-attention blocks. Stages 0/1/2 are each followed by a
@@ -20,7 +21,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
-    """Try a download/load, falling back to unverified SSL, then random init."""
+    """Try a download / 加载, falling back to unverified SSL, then random init。
+        Try a download/load, falling back to unverified SSL, then random init."""
     import ssl
     import warnings
     try:
@@ -38,7 +40,8 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 
 class _KANLinearAttention(nn.Module):
-    """KAN-inspired linear attention for skip-feature refinement."""
+    """KAN-inspired linear attention for 跳跃连接。
+        KAN-inspired linear attention for skip-feature refinement."""
 
     def __init__(self, dim, num_basis=5):
         super().__init__()
@@ -59,7 +62,8 @@ class _KANLinearAttention(nn.Module):
 
 
 class _MambaKANBlock(nn.Module):
-    """Block combining a lightweight SSM-style gate with KAN linear attention."""
+    """块 combining a 轻量级 SSM-style gate with KAN linear 注意力。
+        Block combining a lightweight SSM-style gate with KAN linear attention."""
 
     def __init__(self, dim, d_state=16):
         super().__init__()
@@ -91,6 +95,7 @@ class _MambaKANBlock(nn.Module):
 @ENCODER_REGISTRY.register("vmkla")
 class VMKLAUNetEncoder(nn.Module):
     """VMKLA-UNet encoder.
+        VMKLA-UNet 编码器。
 
     Architecture:
         Conv 4x4 stride-4 stem -> stage_0 (depth=2, C=embed_dim)
@@ -133,7 +138,7 @@ class VMKLAUNetEncoder(nn.Module):
         self.dims = tuple(dims)
         self.out_channels: List[int] = list(dims)
 
-        # 1x1 channel adapter when the user feeds non-RGB inputs.
+        # 1x1 通道 适配器 when the user feeds non-RGB inputs / 1x1 channel adapter when the user feeds non-RGB inputs.
         if in_channels != 3:
             self.input_stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_in = 3
@@ -141,7 +146,7 @@ class VMKLAUNetEncoder(nn.Module):
             self.input_stem = nn.Identity()
             stem_in = in_channels
 
-        # Stride-4 patch-embed stem.
+        # 步长 - 4 patch-embed 主干 / Stride-4 patch-embed stem.
         self.stem = nn.Sequential(
             nn.Conv2d(stem_in, dims[0], kernel_size=4, stride=4, bias=False),
             nn.BatchNorm2d(dims[0]),
@@ -159,7 +164,7 @@ class VMKLAUNetEncoder(nn.Module):
         if pretrained:
             _load_with_ssl_fallback(self._maybe_load_pretrained, pretrained_path)
 
-    # ---- Pretrained loading -------------------------------------------------
+    # - - - - 预训练 loading - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Pretrained loading -------------------------------------------------
 
     def _maybe_load_pretrained(self, pretrained_path: Optional[str] = None, **_):
         import warnings

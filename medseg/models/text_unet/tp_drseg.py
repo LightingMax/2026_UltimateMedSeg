@@ -1,8 +1,9 @@
 # TP-DRSeg (AAAI 2025)
-# Reference: https://github.com/HUANGLIZI/TP-DRSeg
+# 参考: https: / / github. com / HUANGLIZI / TP-DRSeg / Reference: https://github.com/HUANGLIZI/TP-DRSeg
 # Paper: https://arxiv.org/abs/2312.17191
 # Implemented from paper formulas; not a copy of the official repo.
 """TP-DRSeg: Text-Prompted Dual-Branch Region Selection for 2D Medical Segmentation.
+    TP-DRSeg: Text-Prompted Dual-Branch 区域 Selection for 2D 医学的 分割。
 
 Li et al., "TP-DRSeg: Improving Zero-Shot Panoptic Segmentation with
 Text-Point Prompted Dual-branch Region Selection", AAAI 2025.
@@ -33,7 +34,8 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 class _ResNetEncoder(nn.Module):
-    """ResNet-50 encoder producing 4-scale features (C1/8, C2/16, C3/32, C4/32)."""
+    """ResNet-50 编码器。
+        ResNet-50 encoder producing 4-scale features (C1/8, C2/16, C3/32, C4/32)."""
 
     def __init__(self, in_channels: int = 3, pretrained: bool = True):
         super().__init__()
@@ -60,6 +62,7 @@ class _ResNetEncoder(nn.Module):
 
 class TPDRSeg(nn.Module):
     """TP-DRSeg: Text-Prompted Dual-branch Region Selection.
+        TP-DRSeg: Text-Prompted Dual-branch 区域 Selection。
 
     Args:
         in_channels: input image channels (default 3).
@@ -90,10 +93,10 @@ class TPDRSeg(nn.Module):
         self.tau_coarse = tau_coarse
         self.proj_dim = proj_dim
 
-        # Visual encoder
+        # Visual 编码器 / Visual encoder
         self.encoder = _ResNetEncoder(in_channels, pretrained=pretrained_backbone)
 
-        # Text encoder (frozen CLIP)
+        # Text 编码器 / Text encoder (frozen CLIP)
         from transformers import CLIPModel
         clip = hf_from_pretrained(CLIPModel, clip_name)
         self.text_encoder = clip.text_model
@@ -101,21 +104,21 @@ class TPDRSeg(nn.Module):
             p.requires_grad = False
         self.text_proj = nn.Linear(self.text_encoder.config.hidden_size, proj_dim)
 
-        # Coarse branch: GAP on F4 → class scores
+        # Coarse 分支: GAP on F4 → class scores / Coarse branch: GAP on F4 → class scores
         self.coarse_proj = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(1),
             nn.Linear(2048, proj_dim),
         )
 
-        # Fine branch: pixel-level projection from F3
+        # Fine 分支: pixel-level projection from F3 / Fine branch: pixel-level projection from F3
         self.fine_proj = nn.Sequential(
             nn.Conv2d(1024, proj_dim, 1),
             nn.BatchNorm2d(proj_dim),
             nn.ReLU(inplace=True),
         )
 
-        # Segmentation head
+        # 分割 头部 / Segmentation head
         self.seg_head = nn.Conv2d(proj_dim, num_classes, 1)
 
     def _encode_text(self, text):
@@ -143,7 +146,7 @@ class TPDRSeg(nn.Module):
 
         with torch.no_grad():
             out = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask)
-            # Use pooled output (CLS token)
+            # Use pooled 输出 ( CLS 标记 ) / Use pooled output (CLS token)
             pooled = out.pooler_output  # (B, hidden)
         return self.text_proj(pooled)  # (B, proj_dim)
 
@@ -156,29 +159,29 @@ class TPDRSeg(nn.Module):
         feats = self.encoder(image)
         f3, f4 = feats[2], feats[3]  # /16, /32
 
-        # Text embedding
+        # Text 嵌入 / Text embedding
         t_emb = self._encode_text(text)  # (B, proj_dim)
 
-        # Coarse branch: image-text similarity → coarse mask
+        # Coarse 分支: image-text similarity → coarse 掩码 / Coarse branch: image-text similarity → coarse mask
         img_global = self.coarse_proj(f4)  # (B, proj_dim)
         coarse_score = (img_global * t_emb).sum(dim=-1, keepdim=True)  # (B, 1)
-        # Expand to spatial: broadcast coarse activation
+        # Expand to 空间的: broadcast coarse 激活 / Expand to spatial: broadcast coarse activation
         coarse_map = torch.sigmoid(coarse_score).unsqueeze(-1).unsqueeze(-1)  # (B,1,1,1)
 
-        # Fine branch: pixel-text similarity
+        # Fine 分支: pixel-text similarity / Fine branch: pixel-text similarity
         f_proj = self.fine_proj(f3)  # (B, proj_dim, H/16, W/16)
         # Pixel-text dot product
         t_spatial = t_emb.unsqueeze(-1).unsqueeze(-1)  # (B, proj_dim, 1, 1)
         sim_map = (f_proj * t_spatial).sum(dim=1, keepdim=True)  # (B, 1, H/16, W/16)
 
-        # Region selection: mask fine branch by coarse activation
+        # 区域 selection: 掩码 fine 分支 by coarse 激活 / Region selection: mask fine branch by coarse activation
         # (paper Eq. 5: S_fine = S * R_coarse)
         r_coarse = (coarse_map > self.tau_coarse).float()
         sim_masked = sim_map * r_coarse
 
-        # Segmentation head on the masked feature
+        # 分割 头部 on the masked 特征 / Segmentation head on the masked feature
         out = self.seg_head(f_proj * r_coarse)  # (B, num_classes, H/16, W/16)
 
-        # Upsample to input resolution
+        # 上采样 to 输入 分辨率 / Upsample to input resolution
         out = F.interpolate(out, size=(H, W), mode='bilinear', align_corners=False)
         return out

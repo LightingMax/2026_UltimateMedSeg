@@ -1,4 +1,5 @@
 """Lawin Decoder - Large Window Attention decoder.
+    Lawin Decoder - Large Window Attention 解码器。
 Reference: Yan et al. "Lawin Transformer: Improving Semantic Segmentation Transformer
            with Multi-Scale Representations via Large Window Attention"
 Ported from: https://github.com/yan-hao-tian/lawin
@@ -19,7 +20,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class MLP(nn.Module):
-    """Linear Embedding - matches SegFormer/Lawin MLP class."""
+    """Linear 嵌入 - matches SegFormer / Lawin MLP class。
+        Linear Embedding - matches SegFormer/Lawin MLP class."""
     def __init__(self, input_dim=2048, embed_dim=768):
         super().__init__()
         self.proj = nn.Linear(input_dim, embed_dim)
@@ -31,7 +33,8 @@ class MLP(nn.Module):
 
 
 class PatchEmbed(nn.Module):
-    """Patch embedding via adaptive pooling (for context downsampling)."""
+    """图块 嵌入 via 自适应的 池化 ( for context 下采样 )。
+        Patch embedding via adaptive pooling (for context downsampling)."""
     def __init__(self, in_channels, embed_dim, patch_size):
         super().__init__()
         self.proj = nn.Sequential(
@@ -46,6 +49,7 @@ class PatchEmbed(nn.Module):
 
 class LawinAttn(nn.Module):
     """Large Window Attention module - faithful to original.
+        Large 窗口 注意力 模块 - 忠实 to original。
 
     Uses query patches and multi-scale context for cross-attention.
     """
@@ -77,7 +81,7 @@ class LawinAttn(nn.Module):
         theta_x = self.theta(query).reshape(B, self.head, -1, pH * pW)  # B, head, C', qN
         phi_x = self.phi(context).reshape(B, self.head, -1, cH * cW)  # B, head, C', cN
 
-        # Attention: theta^T @ phi -> softmax -> g
+        # 注意力: theta ^ T @ phi - > softmax - > g / Attention: theta^T @ phi -> softmax -> g
         pairwise = torch.matmul(theta_x.permute(0, 1, 3, 2), phi_x)  # B, head, qN, cN
         if self.use_scale:
             pairwise = pairwise / (theta_x.shape[2] ** 0.5)
@@ -92,6 +96,7 @@ class LawinAttn(nn.Module):
 @DECODER_REGISTRY.register("lawin")
 class LawinDecoder(nn.Module):
     """Lawin decoder - faithful port of LawinHead.
+        Lawin 解码器。
 
     Architecture:
     1. MLP projection on c2, c3, c4 -> embed_dim, upsample to c2 resolution, fuse
@@ -108,8 +113,8 @@ class LawinDecoder(nn.Module):
         super().__init__()
         all_channels = list(encoder_channels) + [bottleneck_channels]
 
-        # Need at least 4 levels for faithful Lawin (c1, c2, c3, c4)
-        # If fewer, pad with the last channel
+        # Need at least 4 levels for 忠实 Lawin ( c1, c2, c3, c4 ) / Need at least 4 levels for faithful Lawin (c1, c2, c3, c4)
+        # If fewer, pad with the last 通道 / If fewer, pad with the last channel
         while len(all_channels) < 4:
             all_channels = [all_channels[0]] + all_channels
 
@@ -124,7 +129,7 @@ class LawinDecoder(nn.Module):
         for ch in mid_channels + [c_deep]:
             self.linear_layers.append(MLP(input_dim=ch, embed_dim=embed_dim))
 
-        # Linear fuse: concat projected c2..c4 -> fused_channels
+        # Linear 融合: concat projected c2.. c4 - > fused _ 通道 / Linear fuse: concat projected c2..c4 -> fused_channels
         fused_channels = 512
         n_mid = len(mid_channels) + 1  # number of projected features
         self.linear_fuse = nn.Sequential(
@@ -133,17 +138,17 @@ class LawinDecoder(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # Lawin attention at 3 scales
+        # Lawin 注意力 at 3 scales / Lawin attention at 3 scales
         self.lawin_8 = LawinAttn(fused_channels, reduction=reduction, head=64, patch_size=patch_size)
         self.lawin_4 = LawinAttn(fused_channels, reduction=reduction, head=16, patch_size=patch_size)
         self.lawin_2 = LawinAttn(fused_channels, reduction=reduction, head=4, patch_size=patch_size)
 
-        # Context downsampling
+        # Context 下采样 / Context downsampling
         self.ds_8 = PatchEmbed(fused_channels, fused_channels, patch_size)
         self.ds_4 = PatchEmbed(fused_channels, fused_channels, patch_size)
         self.ds_2 = PatchEmbed(fused_channels, fused_channels, patch_size)
 
-        # Short path + image pool
+        # Short path + 图像 pool / Short path + image pool
         self.short_path = nn.Sequential(
             nn.Conv2d(fused_channels, fused_channels, 1, bias=False),
             nn.BatchNorm2d(fused_channels),
@@ -156,14 +161,14 @@ class LawinDecoder(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # Cat: short_path + image_pool + 3 lawin outputs
+        # Cat: short _ path + 图像 _ pool + 3 lawin outputs / Cat: short_path + image_pool + 3 lawin outputs
         self.cat_conv = nn.Sequential(
             nn.Conv2d(fused_channels * 5, fused_channels, 1, bias=False),
             nn.BatchNorm2d(fused_channels),
             nn.ReLU(inplace=True),
         )
 
-        # Low-level fusion with c1
+        # Low-level 融合 with c1 / Low-level fusion with c1
         c1_embed = 48  # matches original
         self.linear_c1 = MLP(input_dim=c1_ch, embed_dim=c1_embed)
         self.low_level_fuse = nn.Sequential(
@@ -179,16 +184,18 @@ class LawinDecoder(nn.Module):
         return self._out_channels
 
     def _get_patches(self, x, patch_size):
-        """Unfold feature map into non-overlapping patches."""
+        """Unfold 特征图 into non-overlapping 图块。
+            Unfold feature map into non-overlapping patches."""
         B, C, H, W = x.shape
         nH, nW = H // patch_size, W // patch_size
-        # Reshape to patches: (B*nH*nW, C, pH, pW)
+        # 重塑 to 图块: ( B * nH * nW, C, pH, pW ) / Reshape to patches: (B*nH*nW, C, pH, pW)
         x = x.reshape(B, C, nH, patch_size, nW, patch_size)
         x = x.permute(0, 2, 4, 1, 3, 5).reshape(B * nH * nW, C, patch_size, patch_size)
         return x, nH, nW
 
     def _merge_patches(self, x, nH, nW, patch_size):
-        """Fold patches back to feature map."""
+        """Fold 图块 back to 特征图。
+            Fold patches back to feature map."""
         BnHnW, C, pH, pW = x.shape
         B = BnHnW // (nH * nW)
         x = x.reshape(B, nH, nW, C, pH, pW)
@@ -196,18 +203,19 @@ class LawinDecoder(nn.Module):
         return x
 
     def _get_context(self, x, patch_size, r, ds_module):
-        """Get context for Lawin attention at scale r."""
+        """Get context for Lawin 注意力 at scale r。
+            Get context for Lawin attention at scale r."""
         B, C, H, W = x.shape
         nH, nW = H // patch_size, W // patch_size
-        # Unfold with larger window (r * patch_size) and stride patch_size
+        # Unfold with larger 窗口 ( r * 图块 _ 大小 ) and 步长 图块 _ 大小 / Unfold with larger window (r * patch_size) and stride patch_size
         pad = int((r - 1) / 2 * patch_size)
         x_padded = F.pad(x, [pad, pad, pad, pad], mode='reflect')
-        # Use unfold to extract overlapping patches
+        # Use unfold to 提取 overlapping 图块 / Use unfold to extract overlapping patches
         ctx = F.unfold(x_padded, kernel_size=patch_size * r, stride=patch_size)
         # ctx: (B, C*pH*pW, nH*nW)
         ctx = ctx.reshape(B, C, patch_size * r, patch_size * r, nH * nW)
         ctx = ctx.permute(0, 4, 1, 2, 3).reshape(B * nH * nW, C, patch_size * r, patch_size * r)
-        # Downsample context to patch_size
+        # 下采样 context to 图块 _ 大小 / Downsample context to patch_size
         ctx = ds_module(ctx)
         return ctx
 
@@ -221,7 +229,7 @@ class LawinDecoder(nn.Module):
         c1 = all_features[0]
         mid_and_deep = all_features[1:]  # c2..c4
 
-        # Target resolution: c2 (second highest)
+        # 目标 分辨率: c2 ( second highest ) / Target resolution: c2 (second highest)
         n = mid_and_deep[0].shape[0]
         target_h, target_w = mid_and_deep[0].shape[2:]
 
@@ -234,10 +242,10 @@ class LawinDecoder(nn.Module):
                 _c = F.interpolate(_c, size=(target_h, target_w), mode='bilinear', align_corners=False)
             projected.append(_c)
 
-        # Fuse c2..c4 projections
+        # 融合 c2.. c4 projections / Fuse c2..c4 projections
         _c = self.linear_fuse(torch.cat(projected, dim=1))  # (B, 512, H, W)
 
-        # Ensure spatial dims are divisible by patch_size
+        # Ensure 空间的 dims are divisible by 图块 _ 大小 / Ensure spatial dims are divisible by patch_size
         _, _, h, w = _c.shape
         ps = self.patch_size
         pad_h = (ps - h % ps) % ps
@@ -246,15 +254,15 @@ class LawinDecoder(nn.Module):
             _c = F.pad(_c, [0, pad_w, 0, pad_h], mode='reflect')
         _, _, h_pad, w_pad = _c.shape
 
-        # Lawin attention spatial pyramid
+        # Lawin 注意力 空间的 金字塔 / Lawin attention spatial pyramid
         output = [self.short_path(_c)]
         output.append(F.interpolate(self.image_pool(_c), size=(h_pad, w_pad),
                                      mode='bilinear', align_corners=False))
 
-        # Get query patches
+        # Get query 图块 / Get query patches
         query, nH, nW = self._get_patches(_c, ps)
 
-        # Multi-scale Lawin attention
+        # Multi-scale Lawin 注意力 / Multi-scale Lawin attention
         for r, lawin, ds in [(8, self.lawin_8, self.ds_8),
                               (4, self.lawin_4, self.ds_4),
                               (2, self.lawin_2, self.ds_2)]:
@@ -266,11 +274,11 @@ class LawinDecoder(nn.Module):
         # Cat all outputs
         x = self.cat_conv(torch.cat(output, dim=1))
 
-        # Remove padding if added
+        # Remove 填充 if added / Remove padding if added
         if pad_h > 0 or pad_w > 0:
             x = x[:, :, :h, :w]
 
-        # Low-level fusion with c1
+        # Low-level 融合 with c1 / Low-level fusion with c1
         _c1 = self.linear_c1(c1)
         _c1 = _c1.permute(0, 2, 1).reshape(n, -1, c1.shape[2], c1.shape[3])
 

@@ -1,4 +1,5 @@
 """Rad-DINO foundation-model encoder (DPT-style multi-block pyramid).
+    Rad-DINO foundation-model 编码器。
 
 Rad-DINO 放射科基础模型编码器，使用 DPT 风格的多 block 特征金字塔。
 
@@ -27,7 +28,7 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, load_hf_vit
 
 
-# Primary weight source: HuggingFace Hub (microsoft/rad-dino, Dinov2Model).
+# Primary 权重 来源: HuggingFace Hub ( microsoft / rad-dino, Dinov2Model ) / Primary weight source: HuggingFace Hub (microsoft/rad-dino, Dinov2Model).
 PRIMARY_BACKBONE_NAME = "microsoft/rad-dino"
 
 
@@ -71,7 +72,7 @@ class RadDINOEncoder(BaseFoundationEncoder):
                          inference_only=inference_only, **kwargs)
 
         # ------------------------------------------------------------------
-        # Backbone -- DINOv2 ViT-B/14 via transformers.
+        # 骨干网络 - - DINOv2 ViT-B / 14 via transformers / Backbone -- DINOv2 ViT-B/14 via transformers.
         # ------------------------------------------------------------------
         self._backbone_name = PRIMARY_BACKBONE_NAME
         if pretrained:
@@ -89,7 +90,7 @@ class RadDINOEncoder(BaseFoundationEncoder):
             )
 
         # ------------------------------------------------------------------
-        # Backbone introspection.
+        # 骨干网络 introspection / Backbone introspection.
         # ------------------------------------------------------------------
         self.patch_size = int(self.backbone.patch_embed.patch_size)
         self._pad_multiple = self.patch_size * 8
@@ -100,7 +101,7 @@ class RadDINOEncoder(BaseFoundationEncoder):
 
         # ------------------------------------------------------------------
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         # ------------------------------------------------------------------
         self.dpt = DPTHead(
             embed_dim=dim,
@@ -131,13 +132,13 @@ class RadDINOEncoder(BaseFoundationEncoder):
         return x, (H, W), (Hp, Wp)
 
     # ----------------------------------------------------------------------
-    # Forward
+    # 前向传播 / Forward
     # ----------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         x_pad, (H, W), (Hp, Wp) = self._pad_input(x)
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x_pad, n=self._block_indices,
         )

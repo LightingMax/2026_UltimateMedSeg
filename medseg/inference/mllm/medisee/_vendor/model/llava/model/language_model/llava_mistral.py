@@ -31,7 +31,7 @@ class LlavaMistralForCausalLM(MistralForCausalLM, LlavaMetaForCausalLM):
 
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
-        # Initialize weights and apply final processing
+        # 初始化 权重 and 应用 final processing / Initialize weights and apply final processing
         self.post_init()
 
     def get_model(self):
@@ -74,7 +74,7 @@ class LlavaMistralForCausalLM(MistralForCausalLM, LlavaMetaForCausalLM):
         ) = self.prepare_inputs_labels_for_multimodal(
             input_ids, attention_mask, past_key_values, labels, images
         )
-        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
+        # 解码 outputs consists of ( dec _ 特征, 层 _ state, dec _ hidden, dec _ attn ) / decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
 
         outputs = self.model(
             input_ids=input_ids,
@@ -92,14 +92,14 @@ class LlavaMistralForCausalLM(MistralForCausalLM, LlavaMetaForCausalLM):
 
         loss = None
         if labels is not None:
-            # Shift so that tokens < n predict n
+            # Shift so that 标记 < n 预测 n / Shift so that tokens < n predict n
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
-            # Flatten the tokens
+            # 展平 the 标记 / Flatten the tokens
             loss_fct = CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.config.vocab_size)
             shift_labels = shift_labels.view(-1)
-            # Enable model/pipeline parallelism
+            # Enable 模型 / pipeline parallelism / Enable model/pipeline parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
 

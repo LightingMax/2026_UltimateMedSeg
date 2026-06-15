@@ -1,4 +1,5 @@
 """DINOv2 foundation-model encoder (DPT-style multi-block pyramid).
+    DINOv2 foundation-model 编码器。
 
 DINOv2 基础模型编码器，使用 DPT 风格的多 block 特征金字塔。
 
@@ -48,7 +49,7 @@ class DINOv2Encoder(BaseFoundationEncoder):
 
     PATCH_SIZE = 14
     PAD_MULTIPLE = 14 * 4  # 需要被 patch_size * 4 整除以保证金字塔尺寸
-                            # Must be divisible by patch_size * 4 for pyramid sizes
+                            # Must be divisible by 图块 _ 大小 * 4 for 金字塔 sizes / Must be divisible by patch_size * 4 for pyramid sizes
 
     def __init__(self, in_channels: int = 3, img_size: int = 224,
                  pretrained: bool = True, pretrained_path: Optional[str] = None,
@@ -95,7 +96,7 @@ class DINOv2Encoder(BaseFoundationEncoder):
         self._num_blocks = len(self.backbone.blocks)
 
         # DPT head: 从 4 个不同深度的 block 构建真正多尺度金字塔
-        # DPT head: build genuine multi-scale pyramid from 4 different-depth blocks
+        # DPT 头部: build genuine 多尺度 金字塔 from 4 different-depth blocks / DPT head: build genuine multi-scale pyramid from 4 different-depth blocks
         self.dpt = DPTHead(
             embed_dim=dim,
             num_prefix_tokens=self._num_prefix_tokens,
@@ -124,7 +125,7 @@ class DINOv2Encoder(BaseFoundationEncoder):
         x_pad, (H, W), (Hp, Wp) = self._pad_input(x)
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x_pad, n=self._block_indices
         )

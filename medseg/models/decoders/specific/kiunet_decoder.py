@@ -1,4 +1,5 @@
 """KiU-Net Decoder – representative dual-branch (under-/over-complete) decoder.
+    KiU-Net Decoder – representative dual-branch (under-/over-complete) 解码器。
 
 Inspired by KiU-Net (Valanarasu et al., MICCAI 2020 / TMI 2021) which pairs a
 classic U-Net (down-sampling) branch with a Ki-Net (up-sampling, over-complete)
@@ -28,6 +29,7 @@ from medseg.registry import DECODER_REGISTRY
 
 class _DualBranchStage(nn.Module):
     """A single KiU-Net decoder stage.
+        A single KiU-Net 解码器。
 
     Takes the current decoder tensor (``in_ch`` channels) and a target skip
     spatial size, producing the two branch tensors (each ``skip_ch`` channels)
@@ -36,13 +38,13 @@ class _DualBranchStage(nn.Module):
 
     def __init__(self, in_ch: int, skip_ch: int):
         super().__init__()
-        # Up-branch: Conv -> BN -> ReLU; bilinear-upsample done in forward.
+        # Up-branch: Conv - > BN - > ReLU; bilinear-upsample done in 前向传播 / Up-branch: Conv -> BN -> ReLU; bilinear-upsample done in forward.
         self.up_proj = nn.Sequential(
             nn.Conv2d(in_ch, skip_ch, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(skip_ch),
             nn.ReLU(inplace=True),
         )
-        # Down-branch: Conv -> BN -> ReLU; max-pool done in forward.
+        # Down-branch: Conv - > BN - > ReLU; max-pool done in 前向传播 / Down-branch: Conv -> BN -> ReLU; max-pool done in forward.
         self.down_proj = nn.Sequential(
             nn.Conv2d(in_ch, skip_ch, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(skip_ch),
@@ -51,13 +53,13 @@ class _DualBranchStage(nn.Module):
         self.down_pool = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
 
     def forward(self, x: torch.Tensor, skip_size):
-        # Up-branch: bilinear upsample to skip spatial size.
+        # Up-branch: bilinear upsample to 跳跃连接 / Up-branch: bilinear upsample to skip spatial size.
         up = self.up_proj(x)
         if up.shape[2:] != skip_size:
             up = F.interpolate(up, size=skip_size, mode='bilinear',
                                align_corners=False)
         # Down-branch: max-pool (over-complete style going coarser first),
-        # then bring back up to the skip resolution so we can concat.
+        # then bring back up to the 跳跃连接 / then bring back up to the skip resolution so we can concat.
         down = self.down_proj(x)
         down = self.down_pool(down)
         if down.shape[2:] != skip_size:
@@ -69,6 +71,7 @@ class _DualBranchStage(nn.Module):
 @DECODER_REGISTRY.register("kiunet")
 class KiUNetDecoder(nn.Module):
     """KiU-Net style dual-branch decoder.
+        KiU-Net style dual-branch 解码器。
 
     Args:
         encoder_channels: Encoder skip channels (shallow -> deep). Matches the
@@ -86,7 +89,7 @@ class KiUNetDecoder(nn.Module):
             interpolates to the shallowest skip's spatial scale).
     """
 
-    # Framework hands skips externally; we call ``self.skip_connection``.
+    # Framework hands skips externally; we call ` ` self. 跳跃 _ connection ` ` / Framework hands skips externally; we call ``self.skip_connection``.
     has_internal_skip = False
 
     def __init__(self, encoder_channels: List[int], bottleneck_channels: int,
@@ -103,9 +106,9 @@ class KiUNetDecoder(nn.Module):
 
         self.stages = nn.ModuleList()
         self.fuse_convs = nn.ModuleList()
-        # ``stage_in_channels`` lets us pick the right entry point when the
-        # framework supplies fewer skips than encoder_channels (e.g. the
-        # deepest "encoder channel" is actually the bottleneck level).
+        # ` ` 阶段 _ in _ 通道 ` ` lets us pick the right entry point when the / ``stage_in_channels`` lets us pick the right entry point when the
+        # framework supplies fewer skips than 编码器 _ 通道 ( e. g. the / framework supplies fewer skips than encoder_channels (e.g. the
+        # deepest "encoder channel" is actually the 瓶颈层 / deepest "encoder channel" is actually the bottleneck level).
         self.stage_in_channels: List[int] = []
         self.stage_skip_channels: List[int] = []
 
@@ -115,8 +118,8 @@ class KiUNetDecoder(nn.Module):
             self.stage_skip_channels.append(skip_ch)
             self.stages.append(_DualBranchStage(in_ch, skip_ch))
 
-            # Fused channel count after concat(up, down) -> 2*skip_ch, then
-            # combined with the skip via ``skip_connection``.
+            # Fused 通道 count after concat ( up, down ) - > 2 * 跳跃 _ ch, then / Fused channel count after concat(up, down) -> 2*skip_ch, then
+            # combined with the 跳跃连接 / combined with the skip via ``skip_connection``.
             dual_ch = 2 * skip_ch
             if skip_connection is not None and hasattr(skip_connection,
                                                       "get_out_channels"):
@@ -132,11 +135,11 @@ class KiUNetDecoder(nn.Module):
             ))
             in_ch = skip_ch
 
-        # Per spec: out_channels = shallowest encoder channel.
+        # Per spec: out_channels = shallowest 编码器 / Per spec: out_channels = shallowest encoder channel.
         self._out_channels = (encoder_channels[0] if encoder_channels
                               else bottleneck_channels)
 
-        # 3x3 conv at the top encoder scale (after final interpolation).
+        # 3x3 conv at the top 编码器 / 3x3 conv at the top encoder scale (after final interpolation).
         self.final_conv = nn.Sequential(
             nn.Conv2d(self._out_channels, self._out_channels, kernel_size=3,
                       padding=1, bias=False),
@@ -156,10 +159,10 @@ class KiUNetDecoder(nn.Module):
         if up.shape[2:] != skip.shape[2:]:
             up = F.interpolate(up, size=skip.shape[2:], mode='bilinear',
                                align_corners=False)
-        # Build a tensor with the channel count fuse_conv expects (constructed
-        # for the dual-branch path: 2*skip_ch (+ skip_ch from concat) or
-        # whatever ``skip_connection.get_out_channels`` told us). We mimic the
-        # dual branch by duplicating ``up`` for the down-branch slot.
+        # Build a 张量 with the 通道 count 融合 _ conv expects ( constructed / Build a tensor with the channel count fuse_conv expects (constructed
+        # for the dual-branch path: 2 * 跳跃 _ ch ( + 跳跃 _ ch from concat ) or / for the dual-branch path: 2*skip_ch (+ skip_ch from concat) or
+        # whatever ` ` 跳跃 _ connection. get _ out _ 通道 ` ` told us ). We mimic the / whatever ``skip_connection.get_out_channels`` told us). We mimic the
+        # dual 分支 by duplicating ` ` up ` ` for the down-branch slot / dual branch by duplicating ``up`` for the down-branch slot.
         dual = torch.cat([up, up], dim=1)
         if self.skip_connection is not None:
             fused = self.skip_connection(dual, skip)
@@ -174,12 +177,12 @@ class KiUNetDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # Skips are framework-supplied shallow -> deep; walk deep -> shallow.
+        # Skips are framework-supplied 浅层 - > 深度; walk 深度 - > 浅层 / Skips are framework-supplied shallow -> deep; walk deep -> shallow.
         skips = list(reversed(skip_features))
 
-        # Pair each skip with the matching stage. If the user constructed the
-        # decoder with one extra encoder_channel (the bottleneck level), we
-        # offset so the deepest skip lines up with the matching skip_ch stage.
+        # Pair each 跳跃连接 / Pair each skip with the matching stage. If the user constructed the
+        # decoder with one extra encoder_channel (the 瓶颈层 / decoder with one extra encoder_channel (the bottleneck level), we
+        # offset so the deepest 跳跃连接 / offset so the deepest skip lines up with the matching skip_ch stage.
         num_stages = len(self.stages)
         num_skips = len(skips)
         offset = max(0, num_stages - num_skips)
@@ -199,14 +202,14 @@ class KiUNetDecoder(nn.Module):
                 fused = torch.cat([dual, skip], dim=1)
             x = fuse_conv(fused)
 
-        # Final interpolation up to the shallowest encoder/skip scale.
+        # Final interpolation up to the shallowest 编码器 / Final interpolation up to the shallowest encoder/skip scale.
         if skips:
             top_size = (skips[-1].shape[2], skips[-1].shape[3])
             if x.shape[2:] != top_size:
                 x = F.interpolate(x, size=top_size, mode='bilinear',
                                   align_corners=False)
-        # Ensure channel count matches final_conv (it was built for
-        # ``self._out_channels``; rare mismatch when no skips are provided).
+        # Ensure 通道 count matches final _ conv ( it was built for / Ensure channel count matches final_conv (it was built for
+        # ` ` self. _ out _ 通道 ` `; rare mismatch when no skips are provided ) / ``self._out_channels``; rare mismatch when no skips are provided).
         expected = self.final_conv[0].in_channels
         if x.shape[1] != expected:
             adapt = nn.Conv2d(x.shape[1], expected, kernel_size=1,

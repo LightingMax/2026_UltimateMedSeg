@@ -1,4 +1,5 @@
 """MD-RWKV-UNet Encoder (standalone).
+    MD-RWKV-UNet 编码器。
 
 Extracted from :mod:`medseg.models.networks.rwkv.md_rwkv_unet` so the encoder can be
 re-used with arbitrary decoders / bottlenecks. Mirrors the official MD-RWKV
@@ -108,7 +109,7 @@ class _SE(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# DeformableShift (learnable spatial shift via grid_sample)
+# DeformableShift ( learnable 空间的 shift via grid _ 样本 ) / DeformableShift (learnable spatial shift via grid_sample)
 # ---------------------------------------------------------------------------
 
 class _DeformableShift(nn.Module):
@@ -195,7 +196,7 @@ class _VRWKV_SpatialMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SKAttention (Selective Kernel Attention)
+# SKAttention ( Selective 卷积核 注意力 ) / SKAttention (Selective Kernel Attention)
 # ---------------------------------------------------------------------------
 
 class _SKAttention(nn.Module):
@@ -236,7 +237,7 @@ class _SKAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# iR_RWKV (main encoder block: parallel SK + VRWKV branches)
+# iR_RWKV (main 编码器 / iR_RWKV (main encoder block: parallel SK + VRWKV branches)
 # ---------------------------------------------------------------------------
 
 class _iR_RWKV(nn.Module):
@@ -307,7 +308,7 @@ class _iR_RWKV(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MD-RWKV-UNet Encoder presets
+# MD-RWKV-UNet 编码器 / MD-RWKV-UNet Encoder presets
 # ---------------------------------------------------------------------------
 
 _VARIANT_PRESETS = {
@@ -345,6 +346,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 @ENCODER_REGISTRY.register("md_rwkv")
 class MDRWKVUNetEncoder(nn.Module):
     """MD-RWKV-UNet encoder (T / S / B variants).
+        MD-RWKV-UNet 编码器。
 
     Extracted from the official MD-RWKV-UNet (DeformableShift + SKAttention +
     iR_RWKV blocks). Returns 4 multi-scale skip features with the deepest
@@ -395,7 +397,7 @@ class MDRWKVUNetEncoder(nn.Module):
         self.stem_dim = stem_dim
         self.depths = depths
 
-        # Optional projection to 3 channels (encoder body is wired for 3-ch input).
+        # 可选 projection to 3 通道 ( 编码器 body is wired for 3-ch 输入 ) / Optional projection to 3 channels (encoder body is wired for 3-ch input).
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, 1, bias=False)
         else:
@@ -403,7 +405,7 @@ class MDRWKVUNetEncoder(nn.Module):
 
         dprs = [x.item() for x in torch.linspace(0, drop_path, sum(depths))]
 
-        # Stage 0: stem (no spatial attn, no SK, se_ratio=1)
+        # 阶段 0: 主干 ( no 空间的 attn, no SK, se _ 比率 = 1 ) / Stage 0: stem (no spatial attn, no SK, se_ratio=1)
         self.stage0 = nn.ModuleList([_iR_RWKV(
             3, stem_dim, norm_in=False, has_skip=False, exp_ratio=1,
             norm_layer=norm_layers[0], act_layer=act_layers[0], dw_ks=dw_kss[0],
@@ -436,7 +438,7 @@ class MDRWKVUNetEncoder(nn.Module):
 
         self.norm = _get_norm(norm_layers[-1])(embed_dims[-1])
 
-        # Channels exposed to the model builder: deepest LAST.
+        # 通道 暴露的 to the 模型 builder: deepest LAST / Channels exposed to the model builder: deepest LAST.
         self.out_channels: List[int] = list(embed_dims)
 
         self.apply(self._init_weights)
@@ -455,7 +457,7 @@ class MDRWKVUNetEncoder(nn.Module):
                 nn.init.ones_(m.weight)
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        # Auto-repeat 1-channel input when configured for 3 channels.
+        # Auto-repeat 1-channel 输入 when configured for 3 通道 / Auto-repeat 1-channel input when configured for 3 channels.
         if x.shape[1] == 1 and self.in_channels == 3:
             x = x.repeat(1, 3, 1, 1)
 
@@ -463,7 +465,7 @@ class MDRWKVUNetEncoder(nn.Module):
 
         for blk in self.stage0:
             x = blk(x)
-        # enc0 (stem output) is intentionally not exposed.
+        # enc0 ( 主干 输出 ) is intentionally not 暴露的 / enc0 (stem output) is intentionally not exposed.
 
         for blk in self.stage1:
             x = blk(x)
@@ -479,5 +481,5 @@ class MDRWKVUNetEncoder(nn.Module):
 
         for blk in self.stage4:
             x = blk(x)
-        # x is the deepest feature consumed by the bottleneck.
+        # x is the deepest feature consumed by the 瓶颈层 / x is the deepest feature consumed by the bottleneck.
         return [enc1, enc2, enc3, x]

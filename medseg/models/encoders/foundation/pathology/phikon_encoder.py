@@ -1,4 +1,5 @@
 """Phikon pathology foundation-model encoder.
+    Phikon pathology foundation-model 编码器。
 
 Reference: Filiot et al., "Scaling self-supervised learning for histopathology
 with masked image modeling" (Phikon, Owkin 2024).
@@ -37,6 +38,7 @@ PRIMARY_BACKBONE_NAME = _PRIMARY_HF_NAME
 @ENCODER_REGISTRY.register("phikon")
 class PhikonEncoder(BaseFoundationEncoder):
     """Phikon (pathology iBOT ViT-B/16) encoder with DPT-style multi-block pyramid.
+        Phikon (pathology iBOT ViT-B/16) 编码器。
 
     The backbone is an iBOT-pretrained ViT-Base/16 (``embed_dim=768``,
     ``patch_size=16``). Its final-layer patch tokens are reshaped to
@@ -69,7 +71,7 @@ class PhikonEncoder(BaseFoundationEncoder):
                          inference_only=inference_only, **kwargs)
 
         # ------------------------------------------------------------------
-        # Backbone (Phikon) — loaded via transformers ViTModel
+        # 骨干网络 ( Phikon ) — loaded via transformers ViTModel / Backbone (Phikon) — loaded via transformers ViTModel
         # ------------------------------------------------------------------
         if pretrained:
             self.backbone = load_hf_vit(
@@ -98,7 +100,7 @@ class PhikonEncoder(BaseFoundationEncoder):
         # DPT-style multi-block projector
         # ------------------------------------------------------------------
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -120,7 +122,7 @@ class PhikonEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

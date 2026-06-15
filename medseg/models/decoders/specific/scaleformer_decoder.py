@@ -1,4 +1,5 @@
 """ScaleFormer decoder module.
+    ScaleFormer 解码器。
 
 Extracted from networks/transformer/scaleformer_model.py for modular reuse.
 Faithful to the original ScaleFormer decoder: 4-stage UNet decoder with
@@ -46,6 +47,7 @@ class _SegmentationHead(nn.Sequential):
 @DECODER_REGISTRY.register("scaleformer")
 class ScaleFormerDecoder(nn.Module):
     """ScaleFormer 4-stage UNet decoder + segmentation head.
+        ScaleFormer 4-stage UNet 解码器。
 
     Standard interface: ``forward(bottleneck_feat, skip_features)``
     where skip_features = [sk1, sk2, sk3, sk4] (shallow→deep).
@@ -63,10 +65,10 @@ class ScaleFormerDecoder(nn.Module):
                  enc_ch=None,
                  **kwargs):
         super().__init__()
-        # Derive enc_ch from encoder_channels if not explicitly provided
+        # Derive enc _ ch from 编码器 _ 通道 if not explicitly provided / Derive enc_ch from encoder_channels if not explicitly provided
         if enc_ch is None:
             if encoder_channels is not None and len(encoder_channels) == 4:
-                # encoder_channels = [sk1, sk2, sk3, sk4], bottleneck is last
+                # encoder_channels = [sk1, sk2, sk3, sk4], 瓶颈层 / encoder_channels = [sk1, sk2, sk3, sk4], bottleneck is last
                 enc_ch = [bottleneck_channels] + list(reversed(encoder_channels))
             else:
                 enc_ch = [1024, 512, 256, 128, 64]
@@ -84,8 +86,8 @@ class ScaleFormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # skip_features: [sk1(64), sk2(128), sk3(256), sk4(512)] shallow→deep
-        # bottleneck_feat = sk5 (1024)
+        # 跳跃 _ 特征: [ sk1 ( 64 ), sk2 ( 128 ), sk3 ( 256 ), sk4 ( 512 ) ] 浅层 → 深度 / skip_features: [sk1(64), sk2(128), sk3(256), sk4(512)] shallow→deep
+        # 瓶颈层 _ feat = sk5 ( 1024 ) / bottleneck_feat = sk5 (1024)
         x = self.decoder1(bottleneck_feat, skip_features[-1])
         x = self.decoder2(x, skip_features[-2])
         x = self.decoder3(x, skip_features[-3])

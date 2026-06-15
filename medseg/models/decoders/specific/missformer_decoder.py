@@ -1,4 +1,5 @@
 """MISSFormer Decoder: faithful port from https://github.com/ZhifangDeng/MISSFormer
+    MISSFormer 解码器。
 
 Reference: Huang et al., "MISSFormer: An Effective Transformer for 2D Medical Image Segmentation"
 File: MISSFormer.py
@@ -21,7 +22,8 @@ from medseg.models.encoders.missformer_encoder import TransformerBlock
 
 
 class PatchExpand(nn.Module):
-    """Patch expanding layer for 2x upsampling (from original MISSFormer)."""
+    """图块 expanding 层 for 2x 上采样 ( from original MISSFormer )。
+        Patch expanding layer for 2x upsampling (from original MISSFormer)."""
 
     def __init__(self, input_resolution, dim, dim_scale=2, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -38,7 +40,7 @@ class PatchExpand(nn.Module):
         x = self.expand(x)
         B, L, C = x.shape
         if L != H * W:
-            # Infer actual H, W from token count (assume square)
+            # Infer actual H, W from 标记 count ( assume square ) / Infer actual H, W from token count (assume square)
             import math
             side = int(math.isqrt(L))
             if side * side == L:
@@ -56,7 +58,8 @@ class PatchExpand(nn.Module):
 
 
 class FinalPatchExpand_X4(nn.Module):
-    """Final 4x patch expanding for full resolution recovery."""
+    """Final 4x 图块 expanding for full 分辨率 recovery。
+        Final 4x patch expanding for full resolution recovery."""
 
     def __init__(self, input_resolution, dim, dim_scale=4, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -94,6 +97,7 @@ class FinalPatchExpand_X4(nn.Module):
 
 class MyDecoderLayer(nn.Module):
     """MISSFormer decoder layer: concat skip + linear + 2x TransformerBlock + PatchExpand.
+        MISSFormer 解码器。
 
     Faithful to original MyDecoderLayer from MISSFormer.py.
     """
@@ -152,6 +156,7 @@ class MyDecoderLayer(nn.Module):
 @DECODER_REGISTRY.register("missformer")
 class MISSFormerDecoder(nn.Module):
     """MISSFormer Transformer decoder.
+        MISSFormer Transformer 解码器。
 
     Faithful to the original MISSFormer decoder architecture.
     Architecture:
@@ -171,12 +176,12 @@ class MISSFormerDecoder(nn.Module):
                  **kwargs):
         super().__init__()
         # MISSFormer's internal heads/reduction_ratios are hard-coded for
-        # specific channel dims [64, 128, 320, 512]. Use these expected dims
-        # for the decoder layers and adapt incoming encoder features via
-        # per-stage 1x1 conv channel adapters.
+        # specific 通道 dims [ 64, 128, 320, 512 ]. Use these expected dims / specific channel dims [64, 128, 320, 512]. Use these expected dims
+        # for the decoder layers and adapt incoming 编码器 / for the decoder layers and adapt incoming encoder features via
+        # per-stage 1x1 conv 通道 adapters / per-stage 1x1 conv channel adapters.
         self._expected_dims = (64, 128, 320, 512)
 
-        # Per-stage 1x1 channel adapters (only built when encoder channels
+        # Per-stage 1x1 channel adapters (only built when 编码器 / Per-stage 1x1 channel adapters (only built when encoder channels
         # differ from internal expected dims).
         self._channel_adapters = nn.ModuleList()
         for actual_ch, exp_ch in zip(encoder_channels, self._expected_dims):
@@ -186,10 +191,10 @@ class MISSFormerDecoder(nn.Module):
             else:
                 self._channel_adapters.append(nn.Identity())
 
-        # Adapter for the bottleneck feature (uses the deepest expected dim).
+        # Adapter for the 瓶颈层 / Adapter for the bottleneck feature (uses the deepest expected dim).
         expected_bottleneck = self._expected_dims[len(encoder_channels) - 1] \
             if len(encoder_channels) <= len(self._expected_dims) else self._expected_dims[-1]
-        # If there's a dedicated bottleneck slot beyond skip dims, use 512.
+        # If there's a dedicated bottleneck slot beyond 跳跃连接 / If there's a dedicated bottleneck slot beyond skip dims, use 512.
         expected_bottleneck = 512
         if bottleneck_channels != expected_bottleneck:
             self._bottleneck_adapter = nn.Conv2d(
@@ -197,31 +202,31 @@ class MISSFormerDecoder(nn.Module):
         else:
             self._bottleneck_adapter = nn.Identity()
 
-        # Use expected dims (not raw encoder_channels) to build the rest of
-        # the decoder, so internal heads/reduction_ratios match.
+        # Use expected dims ( not raw 编码器 _ 通道 ) to build the rest of / Use expected dims (not raw encoder_channels) to build the rest of
+        # the 解码器 / the decoder, so internal heads/reduction_ratios match.
         adapted_encoder_channels = list(self._expected_dims[:len(encoder_channels)])
         bottleneck_channels = expected_bottleneck
 
-        # encoder_channels = [64, 128, 320] for skip features
-        # bottleneck_channels = 512
+        # encoder_channels = [64, 128, 320] for 跳跃连接 / encoder_channels = [64, 128, 320] for skip features
+        # 瓶颈层 _ 通道 = 512 / bottleneck_channels = 512
         dims = list(adapted_encoder_channels) + [bottleneck_channels]
         n_stages = len(dims)  # e.g. 4 stages
 
-        # Compute base feat size from img_size and number of stages
-        # Each stage downsamples by 2x from patch_embed stride, so total is 4 * 2^(n-1)
+        # 计算 base feat 大小 from img _ 大小 and 数量 阶段 / Compute base feat size from img_size and number of stages
+        # Each 阶段 downsamples by 2x from 图块 _ embed 步长, so total is 4 * 2 ^ ( n - 1 ) / Each stage downsamples by 2x from patch_embed stride, so total is 4 * 2^(n-1)
         d_base = img_size // (4 * 2 ** (n_stages - 1))
         if d_base < 1:
             d_base = 1
 
-        # Decoder heads and reduction ratios (mirror encoder)
+        # Decoder heads and reduction ratios (mirror 编码器 / Decoder heads and reduction ratios (mirror encoder)
         heads = [1, 2, 5, 8][:n_stages]
         reduction_ratios = [8, 4, 2, 1][:n_stages]
 
-        # Build decoder layers (from deepest to shallowest)
+        # Build 解码器 / Build decoder layers (from deepest to shallowest)
         self.decoders = nn.ModuleList()
 
-        # decoder_N-1: just PatchExpand from bottleneck (no skip concat)
-        # The PatchExpand on bottleneck_channels gives bottleneck_channels // 2
+        # decoder_N-1: just PatchExpand from bottleneck (no 跳跃连接 / decoder_N-1: just PatchExpand from bottleneck (no skip concat)
+        # The PatchExpand on 瓶颈层 _ 通道 gives 瓶颈层 _ 通道 / / 2 / The PatchExpand on bottleneck_channels gives bottleneck_channels // 2
         pe_out = bottleneck_channels // 2
         first_pe = PatchExpand(
             input_resolution=(d_base, d_base),
@@ -229,7 +234,7 @@ class MISSFormerDecoder(nn.Module):
         self.first_expand = first_pe
         self.first_expand_out = pe_out
 
-        # Remaining decoder layers
+        # Remaining 解码器 / Remaining decoder layers
         prev_ch = pe_out
         for i in range(n_stages - 2, -1, -1):
             skip_ch = dims[i]
@@ -263,32 +268,32 @@ class MISSFormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor, skip_features: List[torch.Tensor]) -> torch.Tensor:
         import math as _math
-        # Apply per-stage channel adapters so internal decoder receives the
-        # expected channel dims [64, 128, 320, 512].
+        # Apply per-stage channel adapters so internal 解码器 / Apply per-stage channel adapters so internal decoder receives the
+        # expected 通道 dims [ 64, 128, 320, 512 ] / expected channel dims [64, 128, 320, 512].
         skip_features = [adapter(s) for adapter, s in zip(self._channel_adapters, skip_features)]
         bottleneck_feat = self._bottleneck_adapter(bottleneck_feat)
 
         B = bottleneck_feat.shape[0]
-        # Actual bottleneck spatial size (may differ from design-time d_base
-        # when the encoder has a different downsampling ratio, e.g. MedNeXt /8)
+        # Actual 瓶颈层 / Actual bottleneck spatial size (may differ from design-time d_base
+        # when the 编码器 / when the encoder has a different downsampling ratio, e.g. MedNeXt /8)
         bh, bw = bottleneck_feat.shape[2], bottleneck_feat.shape[3]
 
-        # Convert bottleneck from (B, C, H, W) to (B, L, C)
+        # Convert 瓶颈层 / Convert bottleneck from (B, C, H, W) to (B, L, C)
         x = bottleneck_feat.flatten(2).transpose(1, 2)
 
-        # First expand: PatchExpand on bottleneck
+        # First expand: PatchExpand on 瓶颈层 / First expand: PatchExpand on bottleneck
         x = self.first_expand(x, dynamic_hw=(bh, bw))
         cur_h, cur_w = bh * 2, bw * 2  # PatchExpand doubles spatial
 
-        # Process decoder layers with skip connections
+        # Process 解码器 / Process decoder layers with skip connections
         for i, dec_layer in enumerate(self.decoders):
             skip_idx = len(skip_features) - 1 - i
             if 0 <= skip_idx < len(skip_features):
                 skip = skip_features[skip_idx]
-                # Convert skip to (B, H, W, C) format expected by MyDecoderLayer
+                # Convert 跳跃连接 / Convert skip to (B, H, W, C) format expected by MyDecoderLayer
                 skip_bhwc = skip.permute(0, 2, 3, 1)  # (B, H, W, C)
                 x = dec_layer(x, skip_bhwc)
-                # After PatchExpand with skip's h,w as input, output is 2*h, 2*w
+                # After PatchExpand with 跳跃连接 / After PatchExpand with skip's h,w as input, output is 2*h, 2*w
                 cur_h = skip.shape[2] * 2
                 cur_w = skip.shape[3] * 2
             else:
@@ -306,7 +311,7 @@ class MISSFormerDecoder(nn.Module):
             W_out = cur_w
         x = x.view(B, H_out, W_out, -1).permute(0, 3, 1, 2).contiguous()
 
-        # Upsample to original input size if needed
+        # 上采样 to original 输入 大小 if needed / Upsample to original input size if needed
         if H_out != self.img_size or W_out != self.img_size:
             x = torch.nn.functional.interpolate(
                 x, size=(self.img_size, self.img_size),

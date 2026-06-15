@@ -1,4 +1,4 @@
-"""Ophthalmology foundation encoders."""
+"""眼科学基础编码器 / Ophthalmology foundation encoders."""
 import sys as _sys
 for _stem in ('flair_encoder', 'retfound_encoder', 'retfound_dinov2_encoder', 'ophmae_encoder'):
     try:

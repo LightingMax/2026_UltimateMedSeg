@@ -1,4 +1,5 @@
 """Boundary Loss.
+    Boundary 损失。
 
 Faithful reimplementation of:
     Kervadec et al., "Boundary loss for highly unbalanced segmentation",
@@ -39,6 +40,7 @@ from medseg.registry import LOSS_REGISTRY
 
 def _one_hot2dist(seg_onehot: np.ndarray) -> np.ndarray:
     """Compute signed distance maps from a one-hot mask.
+        计算 signed distance 映射 from a one-hot 掩码。
 
     Args:
         seg_onehot: (K, H, W) bool/0-1 numpy array.
@@ -100,7 +102,8 @@ def _fallback_sdm(seg_onehot: np.ndarray) -> np.ndarray:
 
 
 def _compute_sdm_batch(target: torch.Tensor, num_classes: int) -> torch.Tensor:
-    """target: (B, H, W) long.  Returns (B, K, H, W) float SDM tensor on CPU."""
+    """目标: ( B, H, W ) long. 返回 ( B, K, H, W ) float SDM 张量 on CPU。
+        target: (B, H, W) long.  Returns (B, K, H, W) float SDM tensor on CPU."""
     target_np = target.detach().cpu().numpy().astype(np.int64)
     B, H, W = target_np.shape
     sdm = np.zeros((B, num_classes, H, W), dtype=np.float32)
@@ -116,6 +119,7 @@ def _compute_sdm_batch(target: torch.Tensor, num_classes: int) -> torch.Tensor:
 @LOSS_REGISTRY.register("boundary")
 class BoundaryLoss(nn.Module):
     """Boundary loss (Kervadec et al., MIDL 2019).
+        Boundary 损失。
 
     Args:
         idc: class indices included in the loss (default: all foreground
@@ -134,7 +138,8 @@ class BoundaryLoss(nn.Module):
         self.ignore_index = ignore_index
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """pred: (B, C, H, W) logits.  target: (B, H, W) long."""
+        """pred: ( B, C, H, W ) logits. 目标: ( B, H, W ) long。
+            pred: (B, C, H, W) logits.  target: (B, H, W) long."""
         num_classes = pred.shape[1]
         probs = F.softmax(pred, dim=1)
 

@@ -1,4 +1,5 @@
-"""Feature Refinement skip connection with CBAM."""
+"""Feature Refinement 跳跃连接。
+    Feature Refinement skip connection with CBAM."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -7,10 +8,11 @@ from medseg.registry import SKIP_REGISTRY
 
 
 class CBAM(nn.Module):
-    """Convolutional Block Attention Module."""
+    """卷积的 块 注意力 模块。
+        Convolutional Block Attention Module."""
     def __init__(self, channels, reduction=16, kernel_size=7):
         super().__init__()
-        # Channel attention
+        # 通道 注意力 / Channel attention
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.max_pool = nn.AdaptiveMaxPool2d(1)
         mid = max(channels // reduction, 1)
@@ -19,19 +21,19 @@ class CBAM(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(mid, channels, 1, bias=False),
         )
-        # Spatial attention
+        # 空间的 注意力 / Spatial attention
         self.spatial = nn.Sequential(
             nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False),
             nn.Sigmoid(),
         )
 
     def forward(self, x):
-        # Channel attention
+        # 通道 注意力 / Channel attention
         avg_out = self.fc(self.avg_pool(x))
         max_out = self.fc(self.max_pool(x))
         ca = torch.sigmoid(avg_out + max_out)
         x = x * ca
-        # Spatial attention
+        # 空间的 注意力 / Spatial attention
         avg_s = torch.mean(x, dim=1, keepdim=True)
         max_s, _ = torch.max(x, dim=1, keepdim=True)
         sa = self.spatial(torch.cat([avg_s, max_s], dim=1))
@@ -40,7 +42,8 @@ class CBAM(nn.Module):
 
 @SKIP_REGISTRY.register("feature_refine")
 class FeatureRefineSkip(nn.Module):
-    """Feature refinement skip with CBAM attention on skip features."""
+    """Feature refinement skip with CBAM attention on 跳跃连接。
+        Feature refinement skip with CBAM attention on skip features."""
     def __init__(self, reduction=16, **kwargs):
         super().__init__()
         self.reduction = reduction

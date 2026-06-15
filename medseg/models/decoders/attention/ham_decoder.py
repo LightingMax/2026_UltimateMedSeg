@@ -1,4 +1,5 @@
 """HAM (Hamburger) Decoder - faithfully ported from SegNeXt.
+    HAM (Hamburger) 解码器。
 Reference: https://github.com/Visual-Attention-Network/SegNeXt/blob/main/mmseg/models/decode_heads/ham_head.py
 
 Uses NMF (Non-negative Matrix Factorization) for global context modeling.
@@ -14,7 +15,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class NMF2D(nn.Module):
-    """NMF-based matrix decomposition - faithful port from SegNeXt."""
+    """NMF-based 矩阵 decomposition - 忠实 移植 from SegNeXt。
+        NMF-based matrix decomposition - faithful port from SegNeXt."""
     def __init__(self, S=1, D=512, R=64, train_steps=6, eval_steps=7):
         super().__init__()
         self.S = S
@@ -78,7 +80,8 @@ class NMF2D(nn.Module):
 
 
 class Hamburger(nn.Module):
-    """Hamburger module - faithful port from SegNeXt."""
+    """Hamburger 模块 - 忠实 移植 from SegNeXt。
+        Hamburger module - faithful port from SegNeXt."""
     def __init__(self, ham_channels=512, S=1, R=64, train_steps=6, eval_steps=7):
         super().__init__()
         self.ham_in = nn.Sequential(
@@ -103,6 +106,7 @@ class Hamburger(nn.Module):
 @DECODER_REGISTRY.register("ham")
 class HAMDecoder(nn.Module):
     """LightHamHead decoder - faithful port from SegNeXt.
+        LightHamHead 解码器。
 
     Takes ALL multi-scale features, resizes to highest resolution, concatenates,
     squeezes, applies Hamburger (NMF), then aligns.
@@ -117,7 +121,7 @@ class HAMDecoder(nn.Module):
         super().__init__()
         all_channels = list(encoder_channels) + [bottleneck_channels]
 
-        # squeeze: reduce concatenated channels to ham_channels
+        # squeeze: reduce concatenated 通道 to ham _ 通道 / squeeze: reduce concatenated channels to ham_channels
         self.squeeze = nn.Sequential(
             nn.Conv2d(sum(all_channels), ham_channels, 1, bias=False),
             nn.BatchNorm2d(ham_channels),
@@ -126,7 +130,7 @@ class HAMDecoder(nn.Module):
 
         self.hamburger = Hamburger(ham_channels, R=nmf_R)
 
-        # align: reduce to output dimension
+        # align: reduce to 输出 维度 / align: reduce to output dimension
         self.align = nn.Sequential(
             nn.Conv2d(ham_channels, embed_dim, 1, bias=False),
             nn.BatchNorm2d(embed_dim),
@@ -142,7 +146,7 @@ class HAMDecoder(nn.Module):
         all_features = list(skip_features) + [bottleneck_feat]
         target_size = all_features[0].shape[2:]
 
-        # Resize all to highest resolution
+        # Resize all to highest 分辨率 / Resize all to highest resolution
         resized = []
         for feat in all_features:
             if feat.shape[2:] != target_size:

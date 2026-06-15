@@ -1,4 +1,4 @@
-# 第 04 讲：训练与评估
+﻿# 第 04 讲：训练与评估
 
 [上一讲：数据](03_data_CN.md) | [English](04_training.md)
 
@@ -216,7 +216,7 @@ tensorboard --logdir output/
 
 ---
 
-## 4. UltimateMedSeg 实操
+## 4. APRIL-MedSeg 实操
 
 ### 4.1 完整训练工作流
 

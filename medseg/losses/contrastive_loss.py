@@ -1,4 +1,5 @@
 """Pixel-wise Contrastive Loss for semantic segmentation.
+    Pixel-wise Contrastive 损失。
 
 Faithful reimplementation of the supervised pixel-wise contrastive loss
 (SupContrast / ContrastiveSeg) from:
@@ -36,7 +37,8 @@ from medseg.registry import LOSS_REGISTRY
 
 @LOSS_REGISTRY.register("contrastive")
 class ContrastiveLoss(nn.Module):
-    """Supervised pixel-wise contrastive loss."""
+    """Supervised pixel-wise contrastive 损失。
+        Supervised pixel-wise contrastive loss."""
 
     def __init__(
         self,
@@ -112,7 +114,7 @@ class ContrastiveLoss(nn.Module):
         if anchor_idx.numel() == 0:
             return pred.new_zeros(())
 
-        # Cap the negative pool size per anchor for memory safety.
+        # Cap the negative pool 大小 per anchor for memory safety / Cap the negative pool size per anchor for memory safety.
         if labels.numel() > self.max_negatives:
             n_full = labels.numel()
             perm = torch.randperm(n_full, device=labels.device)
@@ -131,12 +133,12 @@ class ContrastiveLoss(nn.Module):
             if anchor_idx.numel() == 0:
                 return pred.new_zeros(())
 
-        # Similarity matrix between anchors and the full pool.
+        # Similarity 矩阵 between anchors and the full pool / Similarity matrix between anchors and the full pool.
         anchor_feats = feats[anchor_idx]                              # (A, F)
         anchor_labels = labels[anchor_idx]                            # (A,)
         logits = anchor_feats @ feats.t() / self.temperature           # (A, N)
 
-        # Positive mask (same class, exclude self).
+        # Positive 掩码 ( same class, exclude self ) / Positive mask (same class, exclude self).
         pos_mask = (anchor_labels.unsqueeze(1) == labels.unsqueeze(0)).float()
         # Zero-out self-similarity.
         N = labels.numel()

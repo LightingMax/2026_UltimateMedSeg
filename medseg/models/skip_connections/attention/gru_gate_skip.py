@@ -1,4 +1,5 @@
-"""GRU-style gated skip connection."""
+"""GRU-style gated 跳跃连接。
+    GRU-style gated skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("gru_gate")
 class GRUGateSkip(nn.Module):
     """GRU-style gated skip connection.
+        GRU-style gated 跳跃连接。
 
     Treat the decoder feature as the previous hidden state and the skip
     feature as the new input. Compute update / reset gates and a candidate
@@ -27,7 +29,7 @@ class GRUGateSkip(nn.Module):
 
     def __init__(self, **kwargs):
         super().__init__()
-        # Lazily-built submodules keyed by (decoder_ch, skip_ch)
+        # Lazily-built submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazily-built submodules keyed by (decoder_ch, skip_ch)
         self._dec_projs = nn.ModuleDict()
         self._skip_projs = nn.ModuleDict()
         self._z_convs = nn.ModuleDict()
@@ -65,7 +67,7 @@ class GRUGateSkip(nn.Module):
         self._out_projs[key] = out_proj.to(device)
 
     def forward(self, decoder_feat, skip_feat):
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[-2:] != decoder_feat.shape[-2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[-2:],

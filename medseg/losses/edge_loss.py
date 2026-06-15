@@ -1,4 +1,5 @@
 """Edge-aware Loss.
+    Edge-aware 损失。
 
 This file implements an edge-weighted cross-entropy loss commonly used as
 an auxiliary objective in medical image segmentation (e.g. ET-Net, ScribFormer).
@@ -28,6 +29,7 @@ from medseg.registry import LOSS_REGISTRY
 @LOSS_REGISTRY.register("edge")
 class EdgeLoss(nn.Module):
     """Edge-weighted cross-entropy loss.
+        Edge-weighted cross-entropy 损失。
 
     Args:
         edge_weight: weight applied to pixels lying on the GT boundary
@@ -56,12 +58,13 @@ class EdgeLoss(nn.Module):
         self.register_buffer("sobel_kernel", kernel)
 
     def _edge_map(self, target: torch.Tensor, num_classes: int) -> torch.Tensor:
-        """Per-pixel edge map in [0, 1] derived from a one-hot GT."""
+        """Per-pixel 边缘 映射 in [ 0, 1 ] derived from a one-hot GT。
+            Per-pixel edge map in [0, 1] derived from a one-hot GT."""
         with torch.no_grad():
             oh = F.one_hot(target.clamp_min(0), num_classes).permute(0, 3, 1, 2).float()
             B, C, H, W = oh.shape
             sobel = self.sobel_kernel.to(target.device)
-            # apply Sobel per class, then take L2 magnitude and max across classes.
+            # 应用 Sobel per class, then take L2 magnitude and max across classes / apply Sobel per class, then take L2 magnitude and max across classes.
             grad = F.conv2d(
                 oh.reshape(B * C, 1, H, W), sobel, padding=1
             )  # (B*C, 2, H, W)

@@ -42,9 +42,9 @@ from pycocotools import mask
 
 class REFER:
     def __init__(self, data_root, dataset="refcoco", splitBy="unc"):
-        # provide data_root folder which contains refclef, refcoco, refcoco+ and refcocog
-        # also provide dataset name and splitBy information
-        # e.g., dataset = 'refcoco', splitBy = 'unc'
+        # provide 数据 _ root folder which contains refclef, refcoco, refcoco + and refcocog / provide data_root folder which contains refclef, refcoco, refcoco+ and refcocog
+        # also provide 数据集 name and splitBy information / also provide dataset name and splitBy information
+        # e. g., 数据集 = ' refcoco ', splitBy = ' unc ' / e.g., dataset = 'refcoco', splitBy = 'unc'
         print("loading dataset %s into memory..." % dataset)
         self.ROOT_DIR = osp.abspath(osp.dirname(__file__))
         self.DATA_DIR = osp.join(data_root, dataset)
@@ -58,7 +58,7 @@ class REFER:
 
         self.dataset = dataset
 
-        # load refs from data/dataset/refs(dataset).json
+        # 加载 refs from 数据 / 数据集 / refs ( 数据集 ). json / load refs from data/dataset/refs(dataset).json
         tic = time.time()
 
         ref_file = osp.join(self.DATA_DIR, "refs(" + splitBy + ").p")
@@ -67,7 +67,7 @@ class REFER:
         self.data["dataset"] = dataset
         self.data["refs"] = pickle.load(open(ref_file, "rb"))
 
-        # load annotations from data/dataset/instances.json
+        # 加载 annotations from 数据 / 数据集 / instances. json / load annotations from data/dataset/instances.json
         instances_file = osp.join(self.DATA_DIR, "instances.json")
         instances = json.load(open(instances_file, "rb"))
         self.data["images"] = instances["images"]
@@ -82,16 +82,16 @@ class REFER:
         # create sets of mapping
         # 1)  Refs: 	 	{ref_id: ref}
         # 2)  Anns: 	 	{ann_id: ann}
-        # 3)  Imgs:		 	{image_id: image}
+        # 3 ) Imgs: { 图像 _ id: 图像 } / 3)  Imgs:		 	{image_id: image}
         # 4)  Cats: 	 	{category_id: category_name}
         # 5)  Sents:     	{sent_id: sent}
-        # 6)  imgToRefs: 	{image_id: refs}
-        # 7)  imgToAnns: 	{image_id: anns}
+        # 6 ) imgToRefs: { 图像 _ id: refs } / 6)  imgToRefs: 	{image_id: refs}
+        # 7 ) imgToAnns: { 图像 _ id: anns } / 7)  imgToAnns: 	{image_id: anns}
         # 8)  refToAnn:  	{ref_id: ann}
         # 9)  annToRef:  	{ann_id: ref}
         # 10) catToRefs: 	{category_id: refs}
         # 11) sentToRef: 	{sent_id: ref}
-        # 12) sentToTokens: {sent_id: tokens}
+        # 12 ) sentToTokens: { sent _ id: 标记 } / 12) sentToTokens: {sent_id: tokens}
         print("creating index...")
         # fetch info from instances
         Anns, Imgs, Cats, imgToAnns = {}, {}, {}, {}
@@ -245,7 +245,7 @@ class REFER:
 
     def showRef(self, ref, seg_box="seg"):
         ax = plt.gca()
-        # show image
+        # show 图像 / show image
         image = self.Imgs[ref["image_id"]]
         I = io.imread(osp.join(self.IMAGE_DIR, image["file_name"]))
         ax.imshow(I)
@@ -282,7 +282,7 @@ class REFER:
                 )
                 ax.add_collection(p)  # thin red polygon
             else:
-                # mask used for refclef
+                # 掩码 used for refclef / mask used for refclef
                 rle = ann["segmentation"]
                 m = mask.decode(rle)
                 img = np.ones((m.shape[0], m.shape[1], 3))
@@ -306,7 +306,7 @@ class REFER:
             ax.add_patch(box_plot)
 
     def getMask(self, ref):
-        # return mask, area and mask-center
+        # 返回 掩码, area and mask-center / return mask, area and mask-center
         ann = self.refToAnn[ref["ref_id"]]
         image = self.Imgs[ref["image_id"]]
         if type(ann["segmentation"][0]) == list:  # polygon
@@ -318,42 +318,42 @@ class REFER:
             m, axis=2
         )  # sometimes there are multiple binary map (corresponding to multiple segs)
         m = m.astype(np.uint8)  # convert to np.uint8
-        # compute area
+        # 计算 area / compute area
         area = sum(mask.area(rle))  # should be close to ann['area']
         return {"mask": m, "area": area}
         # # position
         # position_x = np.mean(np.where(m==1)[1]) # [1] means columns (matlab style) -> x (c style)
         # position_y = np.mean(np.where(m==1)[0]) # [0] means rows (matlab style)    -> y (c style)
         # # mass position (if there were multiple regions, we use the largest one.)
-        # label_m = label(m, connectivity=m.ndim)
-        # regions = regionprops(label_m)
+        # 标签 _ m = 标签 ( m, connectivity = m. ndim ) / label_m = label(m, connectivity=m.ndim)
+        # regions = regionprops ( 标签 _ m ) / regions = regionprops(label_m)
         # if len(regions) > 0:
-        # 	largest_id = np.argmax(np.array([props.filled_area for props in regions]))
+        # largest _ id = np. argmax ( np. 数组 ( [ props. filled _ area for props in regions ] ) ) / largest_id = np.argmax(np.array([props.filled_area for props in regions]))
         # 	largest_props = regions[largest_id]
         # 	mass_y, mass_x = largest_props.centroid
         # else:
         # 	mass_x, mass_y = position_x, position_y
-        # # if centroid is not in mask, we find the closest point to it from mask
+        # # if centroid is not in 掩码, we find the closest point to it from 掩码 / # if centroid is not in mask, we find the closest point to it from mask
         # if m[mass_y, mass_x] != 1:
-        # 	print('Finding closes mask point ...')
-        # 	kernel = np.ones((10, 10),np.uint8)
-        # 	me = cv2.erode(m, kernel, iterations = 1)
+        # print ( ' Finding closes 掩码 point... ' ) / print('Finding closes mask point ...')
+        # 卷积核 = np. ones ( ( 10, 10 ), np. uint8 ) / kernel = np.ones((10, 10),np.uint8)
+        # me = cv2. erode ( m, 卷积核, iterations = 1 ) / me = cv2.erode(m, kernel, iterations = 1)
         # 	points = zip(np.where(me == 1)[0].tolist(), np.where(me == 1)[1].tolist())  # row, col style
-        # 	points = np.array(points)
+        # points = np. 数组 ( points ) / points = np.array(points)
         # 	dist   = np.sum((points - (mass_y, mass_x))**2, axis=1)
         # 	id     = np.argsort(dist)[0]
         # 	mass_y, mass_x = points[id]
-        # 	# return
-        # return {'mask': m, 'area': area, 'position_x': position_x, 'position_y': position_y, 'mass_x': mass_x, 'mass_y': mass_y}
-        # # show image and mask
-        # I = io.imread(osp.join(self.IMAGE_DIR, image['file_name']))
+        # # 返回 / # return
+        # 返回 { ' 掩码 ': m, ' area ': area, ' position _ x ': position _ x, ' position _ y ': position _ y, ' mass _ x ': mass _ x, ' mass _ y ': mass _ y } / return {'mask': m, 'area': area, 'position_x': position_x, 'position_y': position_y, 'mass_x': mass_x, 'mass_y': mass_y}
+        # # show 图像 and 掩码 / # show image and mask
+        # I = io. imread ( osp. join ( self. 图像 _ DIR, 图像 [ ' file _ name ' ] ) ) / I = io.imread(osp.join(self.IMAGE_DIR, image['file_name']))
         # plt.figure()
         # plt.imshow(I)
         # ax = plt.gca()
-        # img = np.ones( (m.shape[0], m.shape[1], 3) )
-        # color_mask = np.array([2.0,166.0,101.0])/255
+        # img = np. ones ( ( m. 形状 [ 0 ], m. 形状 [ 1 ], 3 ) ) / img = np.ones( (m.shape[0], m.shape[1], 3) )
+        # 颜色 _ 掩码 = np. 数组 ( [ 2. 0, 166. 0, 101. 0 ] ) / 255 / color_mask = np.array([2.0,166.0,101.0])/255
         # for i in range(3):
-        #     img[:,:,i] = color_mask[i]
+        # img [:,:, i ] = 颜色 _ 掩码 [ i ] / img[:,:,i] = color_mask[i]
         # ax.imshow(np.dstack( (img, m*0.5) ))
         # plt.show()
 

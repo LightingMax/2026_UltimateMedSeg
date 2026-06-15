@@ -1,4 +1,5 @@
 """STU-Net 2D – Scalable Transferable U-Net (MICCAI 2024).
+    STU-Net 2D – 可扩展的 Transferable U-Net ( MICCAI 2024 )。
 
 A self-contained 2D port of the official 3D STU-Net by Huang et al.
 (``uni-medical/STU-Net``). STU-Net replaces nnU-Net's plain conv blocks
@@ -46,7 +47,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# Residual block (2D adaptation of the official BasicResBlock).
+# 残差 块 ( 2D adaptation of the official BasicResBlock ) / Residual block (2D adaptation of the official BasicResBlock).
 # ---------------------------------------------------------------------------
 class _BasicResBlock(nn.Module):
     """Two 3x3 convs with IN + LeakyReLU and an identity / 1x1 shortcut.
@@ -95,7 +96,8 @@ class _BasicResBlock(nn.Module):
 
 
 class _ResStage(nn.Module):
-    """A stack of ``depth`` BasicResBlocks; the first carries the stride."""
+    """A stack of ` ` 深度 ` ` BasicResBlocks; the first carries the 步长。
+        A stack of ``depth`` BasicResBlocks; the first carries the stride."""
 
     def __init__(self, in_ch: int, out_ch: int, depth: int = 2, stride: int = 1):
         super().__init__()
@@ -109,10 +111,11 @@ class _ResStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Network
+# 网络 / Network
 # ---------------------------------------------------------------------------
 class STUNet(nn.Module):
     """STU-Net 2D segmentation network.
+        STU-Net 2D 分割 网络。
 
     Args:
         in_channels: input image channels.
@@ -143,10 +146,10 @@ class STUNet(nn.Module):
         self.num_classes = num_classes
         self.img_size = img_size
         self.num_stages = num_stages
-        # Total downsampling factor – pad inputs to a multiple of this.
+        # Total 下采样 factor – pad inputs to a multiple of this / Total downsampling factor – pad inputs to a multiple of this.
         self.size_divisor = 2 ** (num_stages - 1)
 
-        # Per-stage feature widths.
+        # Per-stage 特征 widths / Per-stage feature widths.
         feats: List[int] = [
             min(base_features * (2 ** i), max_features) for i in range(num_stages)
         ]
@@ -163,7 +166,7 @@ class STUNet(nn.Module):
             prev_c = feats[s]
 
         # ── Decoder ────────────────────────────────────────────────────────
-        # (num_stages - 1) up-steps; each does ConvTranspose2d -> concat -> ResStage.
+        # ( num _ 阶段 - 1 ) up-steps; each does ConvTranspose2d - > concat - > ResStage / (num_stages - 1) up-steps; each does ConvTranspose2d -> concat -> ResStage.
         self.upsamples = nn.ModuleList()
         self.decoders = nn.ModuleList()
         for s in range(num_stages - 1, 0, -1):
@@ -173,12 +176,12 @@ class STUNet(nn.Module):
             self.upsamples.append(
                 nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, bias=True)
             )
-            # After concat with the skip we have (out_c + skip_c) channels.
+            # After concat with the 跳跃连接 / After concat with the skip we have (out_c + skip_c) channels.
             self.decoders.append(
                 _ResStage(out_c + skip_c, out_c, depth=depth, stride=1)
             )
 
-        # Segmentation head – single 1x1 logit map at full resolution.
+        # 分割 头部 – single 1x1 logit 映射 at full 分辨率 / Segmentation head – single 1x1 logit map at full resolution.
         self.seg_head = nn.Conv2d(feats[0], num_classes, kernel_size=1, bias=True)
 
         self._init_weights()
@@ -197,21 +200,21 @@ class STUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         in_hw = x.shape[-2:]
 
-        # Pad to a multiple of size_divisor so all encoder strides line up.
+        # Pad to a multiple of size_divisor so all 编码器 / Pad to a multiple of size_divisor so all encoder strides line up.
         H, W = in_hw
         pad_h = (self.size_divisor - H % self.size_divisor) % self.size_divisor
         pad_w = (self.size_divisor - W % self.size_divisor) % self.size_divisor
         if pad_h or pad_w:
             x = F.pad(x, (0, pad_w, 0, pad_h))
 
-        # Encoder: store skip feature at every stage.
+        # Encoder: store 跳跃连接 / Encoder: store skip feature at every stage.
         skips = []
         h = x
         for enc in self.encoders:
             h = enc(h)
             skips.append(h)
 
-        # Decoder: start from the bottleneck and walk up, concatenating skips.
+        # Decoder: start from the 瓶颈层 / Decoder: start from the bottleneck and walk up, concatenating skips.
         h = skips[-1]
         for i, (up, dec) in enumerate(zip(self.upsamples, self.decoders)):
             skip = skips[self.num_stages - 2 - i]
@@ -224,7 +227,7 @@ class STUNet(nn.Module):
             h = dec(h)
 
         out = self.seg_head(h)
-        # Crop back to the original input size if we padded.
+        # Crop back to the original 输入 大小 if we padded / Crop back to the original input size if we padded.
         if out.shape[-2:] != in_hw:
             out = out[..., : in_hw[0], : in_hw[1]]
         return out

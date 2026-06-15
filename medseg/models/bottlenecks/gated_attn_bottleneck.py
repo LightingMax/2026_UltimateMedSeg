@@ -1,4 +1,5 @@
 """Gated Attention bottleneck.
+    Gated Attention 瓶颈层。
 
 Inspired by gated attention mechanisms from:
     - Ilse et al., "Attention-based Deep Multiple Instance Learning", ICML 2018.
@@ -15,7 +16,8 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 
 class GatedAttentionLayer(nn.Module):
-    """Gated spatial self-attention."""
+    """Gated 空间的 自注意力。
+        Gated spatial self-attention."""
 
     def __init__(self, channels, num_heads=4):
         super().__init__()
@@ -44,6 +46,7 @@ class GatedAttentionLayer(nn.Module):
 @BOTTLENECK_REGISTRY.register("gated_attn")
 class GatedAttnBottleneck(nn.Module):
     """Gated attention bottleneck with residual.
+        Gated attention 瓶颈层。
 
     Args:
         in_channels: Number of input/output channels.
@@ -52,7 +55,7 @@ class GatedAttnBottleneck(nn.Module):
 
     def __init__(self, in_channels, num_heads=4, **kwargs):
         super().__init__()
-        # Adjust num_heads if channels don't divide evenly
+        # Adjust num _ heads if 通道 don't divide evenly / Adjust num_heads if channels don't divide evenly
         while num_heads > 1 and in_channels % num_heads != 0:
             num_heads //= 2
         self.ga = GatedAttentionLayer(in_channels, num_heads)

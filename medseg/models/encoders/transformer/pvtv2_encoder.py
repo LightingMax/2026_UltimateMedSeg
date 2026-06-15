@@ -1,4 +1,5 @@
 """PVTv2 encoder.
+    PVTv2 编码器。
 
 Pyramid Vision Transformer v2 (PVTv2-B2) backbone exposed as a multi-scale
 feature extractor via ``timm.create_model(..., features_only=True)``. Designed
@@ -39,6 +40,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 @ENCODER_REGISTRY.register("pvtv2")
 class PVTv2Encoder(nn.Module):
     """PVTv2-B2 encoder producing 4 multi-scale features.
+        PVTv2-B2 编码器。
 
     out_channels = [64, 128, 320, 512]
     Forward returns a list with the deepest (lowest resolution) feature LAST.
@@ -54,8 +56,8 @@ class PVTv2Encoder(nn.Module):
         super().__init__()
         self.img_size = img_size
 
-        # PVTv2 in timm accepts in_chans; we still keep a 1x1 stem path in case
-        # an extension ever requires strict RGB. For now we forward in_channels
+        # PVTv2 in timm accepts in _ chans; we still keep a 1x1 主干 path in case / PVTv2 in timm accepts in_chans; we still keep a 1x1 stem path in case
+        # an extension ever requires strict RGB. For now we 前向传播 in _ 通道 / an extension ever requires strict RGB. For now we forward in_channels
         # directly to timm when possible.
         self.stem = None
         backbone_in_chans = in_channels
@@ -68,8 +70,8 @@ class PVTv2Encoder(nn.Module):
                 in_chans=backbone_in_chans,
             )
         except Exception:
-            # Fallback: build the backbone strictly as RGB and prepend a 1x1 stem
-            # mapping arbitrary in_channels -> 3.
+            # Fallback: build the 骨干网络 strictly as RGB and prepend a 1x1 主干 / Fallback: build the backbone strictly as RGB and prepend a 1x1 stem
+            # mapping arbitrary in _ 通道 - > 3 / mapping arbitrary in_channels -> 3.
             self.stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             self.model = _load_with_ssl_fallback(
                 timm.create_model,
@@ -79,7 +81,7 @@ class PVTv2Encoder(nn.Module):
                 in_chans=3,
             )
 
-        # Expose feature channel info.
+        # Expose 特征 通道 info / Expose feature channel info.
         self.out_channels: List[int] = list(self.model.feature_info.channels())
         self._out_strides: List[int] = list(self.model.feature_info.reduction())
 
@@ -89,7 +91,7 @@ class PVTv2Encoder(nn.Module):
         features = self.model(x)
         out: List[torch.Tensor] = []
         for i, f in enumerate(features):
-            # Some timm transformer backbones return BHWC; normalize to BCHW.
+            # Some timm Transformer backbones 返回 BHWC; 归一化 to BCHW / Some timm transformer backbones return BHWC; normalize to BCHW.
             if f.ndim == 4:
                 expected_c = self.out_channels[i]
                 if f.shape[1] != expected_c and f.shape[-1] == expected_c:

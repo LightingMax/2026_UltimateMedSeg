@@ -1,208 +1,269 @@
-# Chapter 07: Foundation Models
+﻿# Chapter 07: Foundation Models
 
-[中文文档](07_foundation_CN.md)
-
-Foundation models are large-scale pre-trained vision transformers that provide rich, transferable features. UltimateMedSeg integrates **35 foundation model encoders** across **9 medical modalities**, all using the **DPT (Dense Prediction Transformer) head** for multi-scale feature extraction.
+[Previous: Decoders](06_decoders.md) | [中文文档](07_foundation_CN.md) | [Next: Advanced Paradigms](08_paradigms.md)
 
 ---
 
-## Architecture: DPT Head
+## 1. Background and Motivation
 
-All foundation ViTs use a **DPT head** instead of naive FPN:
+Training a deep segmentation model from scratch requires large annotated datasets — pixel-level masks that are expensive and time-consuming to create, especially in medical imaging where expert radiologists must label each image.
 
-```
-Pre-trained ViT
-  ├─ block_3  ──→ DPT stage 1 (1/4)
-  ├─ block_7  ──→ DPT stage 2 (1/8)
-  ├─ block_11 ──→ DPT stage 3 (1/16)
-  └─ block_15 ──→ DPT stage 4 (1/32)
-```
+**Foundation models** offer a radical alternative: pre-train a large Vision Transformer on millions of images *without human annotations*, then transfer the learned features to downstream medical tasks with minimal labeled data.
 
-Each stage extracts features from a specific depth block, then fuses them through reassemble + fusion layers. This produces richer multi-scale features than simply reshaping CLS tokens.
+Three theoretical foundations explain why this works:
 
----
+- **Transfer learning theory**: Features learned on a broad data distribution generalize to narrow downstream tasks.
+- **Scaling laws**: Model quality improves predictably with data volume, model size, and compute.
+- **Self-supervised learning**: Cleverly designed pretext tasks force the model to learn semantically meaningful representations without labels.
 
-## Medical Modalities — 9 Categories
-
-### 1. General (5 models)
-
-Pre-trained on large-scale natural image datasets:
-
-| Model | Pre-training | Use Case |
-|-------|-------------|----------|
-| `dinov2_base/large/giant` | DINOv2 (ImageNet) | General transfer |
-| `dinov3_base` | DINOv3 | Latest self-supervised |
-| `dino_base` | DINO | Earlier self-supervised |
-| `clip_vit_base` | CLIP (text-image) | Zero-shot capability |
-| `sam_vit_base/huge` | SAM (segmentation) | Segmentation transfer |
-
-```yaml
-encoder:
-  name: dinov2_base
-  pretrained: true    # auto-downloads weights
-```
-
-### 2. Pathology (5 models)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `phikon` / `phikon_v2` | iBOT (histology) | Histopathology |
-| `uni` | DINOv2 (pathology) | Universal pathology |
-| `plip` | CLIP (pathology) | Pathology text-image |
-| `musk` | Multi-modal (pathology) | Multi-scale pathology |
-
-```yaml
-encoder:
-  name: phikon_v2
-  pretrained: true
-```
-
-### 3. Radiology (3 models)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `rad_dino` | DINO (radiology) | General radiology |
-| `omnirad` | Multi-modal (radiology) | Multi-task radiology |
-| `medsiglip` | SigLIP (medical) | Medical text-image |
-
-### 4. Ophthalmology (4 models)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `retfound_dinov2` | MAE+DINOv2 (retinal) | Retinal disease |
-| `retfound` | MAE (retinal) | Retinal imaging |
-| `flair` | CLIP (retinal) | Retinal text-image |
-| `ophmae` | MAE (ophthalmology) | Eye imaging |
-
-### 5. Dermatology (3 models)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `dermclip` | CLIP (dermoscopy) | Skin lesion |
-| `monet` | Self-supervised (skin) | Skin segmentation |
-| `panderm` | Multi-modal (skin) | Comprehensive dermatology |
-
-### 6. Multimodal Medical (3 models)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `biomedclip` | CLIP (biomedical) | General biomedical |
-| `medclip` | CLIP (medical) | Medical text-image |
-| `keep` | Multi-modal (medical) | Knowledge-enhanced |
-
-### 7. MLLM Vision (8 models)
-
-Large vision-language models that provide rich visual understanding:
-
-| Model | Base | Specialty |
-|-------|------|-----------|
-| `qwen2_5_vl` | Qwen2.5-VL | Latest VL model |
-| `qwen3_vl` | Qwen3-VL | Next-gen VL |
-| `medgemma` | MedGemma | Medical VL |
-| `llava_med` | LLaVA-Med | Medical conversation |
-| `huatuogpt` | HuatuoGPT | Chinese medical |
-| `healthgpt` | HealthGPT | Health domain |
-| `hulumed` | HuLuMed | Medical VL |
-| `lingshu` | LingShu | Traditional Chinese medicine |
-
-### 8. Ultrasound (3 models)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `ultradino` | DINO (ultrasound) | Ultrasound features |
-| `ultrafedfm` | Federated (ultrasound) | Privacy-preserving |
-| `us_fmae` | MAE (ultrasound) | Ultrasound MAE |
-
-### 9. Endoscopy (1 model)
-
-| Model | Pre-training | Specialty |
-|-------|-------------|-----------|
-| `endovit` | Self-supervised (endoscopy) | GI endoscopy |
+This chapter explains the theoretical mechanisms behind foundation models, how they are adapted for medical segmentation, and how fine-tuning strategies control the transfer learning trade-off.
 
 ---
 
-## Fine-Tuning Strategies
+## 2. Core Concepts
 
-### Full Fine-Tuning
+### 2.1 Self-Supervised Learning Paradigms
 
-```yaml
-encoder:
-  name: dinov2_base
-  pretrained: true
-  freeze: false     # train all encoder params
+Self-supervised learning (SSL) creates supervision signals from the data itself — no human labels required. The model must predict a *hidden part* of its input, forcing it to understand the underlying structure.
+
+**Contrastive learning** (DINO, CLIP): Given two augmented views of the same image, the model learns to pull their representations together while pushing apart representations of different images:
+
+$$\mathcal{L}_{\text{contrast}} = -\log \frac{\exp(\text{sim}(z_i, z_j^+) / \tau)}{\sum_{k} \exp(\text{sim}(z_i, z_k) / \tau)}$$
+
+where $\tau$ is the temperature parameter controlling the sharpness of the similarity distribution, and $\text{sim}(\cdot,\cdot)$ is typically cosine similarity.
+
+| Method | Views | Key Innovation |
+|--------|-------|----------------|
+| DINO | Multi-crop of same image | Student-teacher self-distillation, no negative pairs |
+| CLIP | Image + text | Cross-modal alignment (vision ↔ language) |
+| DINOv2 | Multi-crop of same image | Scaling to 142M images, improved features |
+
+**Masked image modeling** (MAE, DINOv2): Randomly mask 50-75% of image patches, then reconstruct the masked content:
+
+$$\mathcal{L}_{\text{recon}} = \frac{1}{|M|} \sum_{i \in M} \| x_i - f_\theta(x_{\setminus M})_i \|^2$$
+
+where $M$ is the set of masked positions and $f_\theta$ is the encoder-decoder that processes the visible patches $x_{\setminus M}$ to predict the masked ones.
+
+**Why masking works**: To predict a missing patch, the model must understand *what* surrounds it (context) and *what* typically fills that position (semantics). This forces learning of high-level representations far beyond simple texture matching.
+
+### 2.2 Why Transfer Learning Works
+
+The fundamental insight is that **low-level and mid-level visual features are shared across domains**. Edges, textures, shapes, and spatial relationships appear in both natural images and medical scans.
+
+**Feature hierarchy transfer**:
+
+```
+Pre-trained on natural images (ImageNet / DINOv2)
+  Layer 1-4:   Edges, gradients, textures     ← Directly transferable
+  Layer 5-8:   Patterns, local shapes          ← Partially transferable
+  Layer 9-12:  Object parts, semantics          ← Domain-specific, needs fine-tuning
+
+Fine-tuned on medical images
+  Layer 1-4:   Frozen (reuse generic features)
+  Layer 5-8:   Partially adapted
+  Layer 9-12:  Fully adapted to medical domain
 ```
 
-### Frozen Encoder + Trainable Decoder
+**The domain gap problem**: Natural images and medical images differ in texture distribution, color palette, and object structure. A foundation model pre-trained only on ImageNet may miss medical-specific features (e.g., tissue micro-structure, lesion morphology). This motivates **domain-specific pre-training** — training foundation models on large medical image collections.
 
-```yaml
-encoder:
-  name: dinov2_base
-  pretrained: true
-  freeze: true      # freeze encoder, train decoder only
+### 2.3 DPT Architecture — Multi-Scale from Monocular ViT
+
+A standard Vision Transformer processes all patches through identical layers, producing a single-scale feature map. This is problematic for segmentation, which requires multi-scale features.
+
+The **Dense Prediction Transformer (DPT)** solves this by extracting features from *intermediate blocks* of the ViT and fusing them through specialized layers:
+
+```
+Pre-trained ViT (12 or 24 blocks)
+  │
+  ├─ block_3  ──→ Reassemble ──→ Fusion ──→ Stage 1 (1/4 res)
+  ├─ block_7  ──→ Reassemble ──→ Fusion ──→ Stage 2 (1/8 res)
+  ├─ block_11 ──→ Reassemble ──→ Fusion ──→ Stage 3 (1/16 res)
+  └─ block_15 ──→ Reassemble ──→ Fusion ──→ Stage 4 (1/32 res)
 ```
 
-### Partial Fine-Tuning (last N blocks)
+**Reassemble layers** reshape 1D token sequences into 2D feature maps at the target resolution. They handle the dimension mismatch between ViT's constant-width tokens and the varying spatial sizes needed for multi-scale features.
 
-```yaml
-encoder:
-  name: dinov2_base
-  pretrained: true
-  freeze: true
-  params:
-    unfreeze_last_n: 4    # only train last 4 blocks
-```
+**Fusion layers** aggregate information across scales using residual convolutions, similar to FPN but operating on features from a single network depth rather than a hierarchical backbone.
+
+**Why not FPN?** Standard FPN assumes a hierarchical encoder (ResNet stages with different spatial sizes). ViT produces uniform-resolution tokens. DPT's reassemble+fusion design specifically addresses this structural mismatch.
+
+### 2.4 Domain-Specific Pre-Training
+
+General foundation models (DINOv2, CLIP) are pre-trained on natural images. Medical-specific models close the domain gap by pre-training on large medical image collections:
+
+| Domain | Models | Pre-training Data | Why It Helps |
+|--------|--------|-------------------|--------------|
+| General | DINOv2, DINO | ImageNet, web images | Broad visual features |
+| Pathology | Phikon, UNI | Histology slides (100K+ WSIs) | Tissue micro-structure |
+| Retinal | RETFound | 1.6M retinal images | Fundus/OCT patterns |
+| Radiology | Rad-DINO | Chest X-rays, CT scans | Anatomical structure |
+| Dermatology | PanDerm | 100K+ skin images | Lesion morphology |
+| Ultrasound | UltraDINO | Ultrasound images | Speckle patterns, echogenicity |
+
+**The transfer learning hierarchy**:
+
+1. **Best match**: Domain-specific model on same modality (e.g., Phikon for pathology)
+2. **Good match**: Domain-specific model on similar modality (e.g., Rad-DINO for CT)
+3. **General**: DINOv2 or CLIP (works surprisingly well despite domain gap)
+
+### 2.5 Fine-Tuning Theory
+
+After selecting a foundation model, the key decision is **how much of the model to train** on the downstream task. This involves a fundamental trade-off between preserving pre-trained features and adapting to the target domain.
+
+**Full fine-tuning** ($\theta_{\text{all}}$ trainable):
+
+$$\theta^* = \arg\min_\theta \mathcal{L}_{\text{task}}(f_\theta(x), y)$$
+
+Best accuracy when domain gap is large, but risks **catastrophic forgetting** — the model may overwrite useful pre-trained features with task-specific noise, especially with small datasets.
+
+**Frozen encoder** (only decoder $\theta_{\text{dec}}$ trainable):
+
+$$\theta_{\text{dec}}^* = \arg\min_{\theta_{\text{dec}}} \mathcal{L}_{\text{task}}(g_{\theta_{\text{dec}}}(f_{\theta_{\text{frozen}}}(x)), y)$$
+
+Preserves all pre-trained knowledge, but limits adaptation. Works best when the domain gap is small.
+
+**Partial fine-tuning** (last $N$ blocks trainable):
+
+A compromise — early layers (generic features) stay frozen, while later layers (semantic features) adapt:
+
+$$\theta^* = \{\theta_{\text{block}_{L-N+1}}, ..., \theta_{\text{block}_L}, \theta_{\text{dec}}\}$$
+
+**Layer-wise learning rate decay**: Instead of binary freeze/train, apply decreasing learning rates from top to bottom:
+
+$$\eta_l = \eta_{\text{base}} \cdot \gamma^{L-l}$$
+
+where $\gamma \in (0, 1)$ is the decay factor and $l$ is the layer index. Deeper layers (closer to input) receive smaller updates, preserving generic features.
+
+**LoRA** (Low-Rank Adaptation): Instead of updating the full weight matrix $W$, learn a low-rank update:
+
+$$W' = W + \Delta W = W + BA, \quad B \in \mathbb{R}^{d \times r}, A \in \mathbb{R}^{r \times k}, r \ll \min(d,k)$$
+
+This reduces trainable parameters by 90%+ while allowing full-model adaptation. Originally developed for LLMs, LoRA is increasingly used for ViT fine-tuning.
 
 ---
 
-## Weight Management
+## 3. Method Details
 
-Foundation model weights are **automatically downloaded** on first use:
+### 3.1 Medical Modalities — 9 Categories
 
-```bash
-# List downloadable weights
-python -m medseg.utils.weight_downloader list
+APRIL-MedSeg covers 35 foundation models across 9 medical modalities:
 
-# Download specific weights
-python -m medseg.utils.weight_downloader download dinov2_base
+| Modality | Models | Key Application |
+|----------|--------|----------------|
+| General | DINOv2, DINO, CLIP, SAM | Cross-domain transfer |
+| Pathology | Phikon, UNI, PLIP, MUSK | Histology, WSI analysis |
+| Radiology | Rad-DINO, OmniRad, MedSigLIP | X-ray, CT, MRI |
+| Ophthalmology | RETFound, FLAIR, OphMAE | Retinal disease detection |
+| Dermatology | DermCLIP, MoNet, PanDerm | Skin lesion segmentation |
+| Multimodal | BiomedCLIP, MedCLIP, KEEP | General biomedical |
+| MLLM Vision | Qwen-VL, MedGemma, LLaVA-Med | Vision-language reasoning |
+| Ultrasound | UltraDINO, UltraFedFM, US-FMAE | Ultrasound analysis |
+| Endoscopy | EndoViT | GI tract imaging |
 
-# Check cache
-python -m medseg.utils.weight_downloader check
+### 3.2 Foundation Encoder Output
+
+All foundation encoders produce multi-scale features through the DPT head, compatible with any decoder:
+
+```python
+# Foundation encoder output (example: DINOv2-Base, 12 blocks)
+features = encoder(x)
+# features[0]: (B, 256, H/4, W/4)    ← from block 3
+# features[1]: (B, 256, H/8, W/8)    ← from block 7
+# features[2]: (B, 256, H/16, W/16)  ← from block 11
+# features[3]: (B, 256, H/32, W/32)  ← from block 15 (bottleneck)
 ```
 
-Cached at `~/.cache/ultimatemedseg/weights/`.
+The DPT head ensures consistent channel dimensions across stages, so the decoder doesn't need to know which foundation model is used.
 
 ---
 
-## Comparing Foundation vs. Standard Encoders
-
-```bash
-# Foundation model benchmark (9 modalities × 35 encoders)
-bash scripts/experiments/run_foundation_benchmark.sh
-```
+## 4. Hands-On with APRIL-MedSeg
 
 ```yaml
-# Compare: DINOv2 vs ResNet50
-# DINOv2
+# General foundation model (DINOv2)
 model:
-  encoder: { name: dinov2_base, pretrained: true }
+  encoder: { name: dinov2_base, pretrained: true, freeze: true }
   decoder: { name: unet }
 
-# ResNet50
+# Pathology-specific (Phikon v2)
 model:
-  encoder: { name: timm_resnet50, pretrained: true }
+  encoder: { name: phikon_v2, pretrained: true, freeze: false }
+  decoder: { name: cascade, params: { num_stages: 4 } }
+
+# Partial fine-tuning (last 4 blocks)
+model:
+  encoder:
+    name: dinov2_base
+    pretrained: true
+    freeze: true
+    params: { unfreeze_last_n: 4 }
+  decoder: { name: unet }
+
+# Retinal-specific (RETFound)
+model:
+  encoder: { name: retfound_dinov2, pretrained: true }
   decoder: { name: unet }
 ```
 
 ---
 
-## Summary
+## 5. Recommended Experiments
 
-| Scenario | Recommended Foundation Encoder |
-|----------|-------------------------------|
-| General medical | `dinov2_base` |
-| Pathology / histology | `phikon_v2` or `uni` |
-| Retinal / ophthalmology | `retfound_dinov2` |
-| Dermatology | `panderm` |
-| Radiology / CXR | `rad_dino` |
-| Ultrasound | `ultradino` |
-| Multi-modal | `biomedclip` |
+### Experiment 1: Foundation vs. Standard Encoder
+
+Same decoder (UNet), same dataset, compare encoder types:
+
+| Encoder | Type | Trainable Params | Expected Dice |
+|---------|------|-----------------|---------------|
+| `timm_resnet50` | Standard CNN | ~25M | Baseline |
+| `dinov2_base` (frozen) | Foundation | ~2M (decoder only) | +3-6% |
+| `dinov2_base` (full) | Foundation | ~88M | +4-8% |
+
+### Experiment 2: Frozen vs. Fine-Tuned
+
+Same foundation encoder, different fine-tuning strategies:
+
+| Strategy | Trainable Params | Training Speed | Best When |
+|----------|-----------------|---------------|-----------|
+| `freeze: true` | ~2M | Fast | Domain gap is small |
+| `unfreeze_last_n: 4` | ~20M | Medium | Moderate domain gap |
+| `freeze: false` | ~88M | Slow | Large domain gap, sufficient data |
+
+### Experiment 3: Domain-Specific vs. General
+
+On a pathology dataset, compare:
+
+| Encoder | Pre-training Domain | Expected Performance |
+|---------|-------------------|---------------------|
+| `dinov2_base` | General (ImageNet) | Good baseline |
+| `phikon_v2` | Pathology (histology) | Best (domain match) |
+| `retfound_dinov2` | Retinal | Lower (domain mismatch) |
+
+---
+
+## 6. Further Reading
+
+### Key Papers
+
+| Paper | Year | Venue | Key Contribution |
+|-------|------|-------|-----------------|
+| [DINO](https://arxiv.org/abs/2104.14294) | 2021 | ICCV | Self-distillation without negative pairs |
+| [DINOv2](https://arxiv.org/abs/2304.07193) | 2023 | - | Scaling SSL to 142M images |
+| [MAE](https://arxiv.org/abs/2111.06377) | 2022 | CVPR | Masked autoencoders are scalable visual learners |
+| [CLIP](https://arxiv.org/abs/2103.00020) | 2021 | ICML | Vision-language contrastive pre-training |
+| [DPT](https://arxiv.org/abs/2103.13413) | 2021 | ICCV | Dense Prediction Transformer architecture |
+| [SAM](https://arxiv.org/abs/2304.02643) | 2023 | - | Segment Anything — promptable segmentation |
+| [Phikon](https://arxiv.org/abs/2307.10873) | 2023 | - | Histopathology foundation model |
+| [UNI](https://arxiv.org/abs/2308.15474) | 2024 | Nature Medicine | Universal pathology foundation model |
+| [RETFound](https://arxiv.org/abs/2301.07786) | 2023 | - | Retinal foundation model from 1.6M images |
+| [LoRA](https://arxiv.org/abs/2106.09685) | 2022 | ICLR | Low-rank adaptation of large models |
+
+### Related Documentation
+
+- [Foundation Encoders](../models/encoders.md#foundation-models) -- All 35 foundation encoders across 9 modalities
+- [Weight Management](../models/encoders.md#weight-management) -- Auto-download and cache system
+- [DPT Head](../models/encoders.md#dpt-head) -- Dense Prediction Transformer architecture details
+
+---
+
+[Previous: Decoders](06_decoders.md) | [Next: Advanced Paradigms](08_paradigms.md)

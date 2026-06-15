@@ -1,4 +1,5 @@
 """Cascade EMCAD Decoder – full cascade variant with channel + spatial attention.
+    Cascade EMCAD 解码器。
 
 Combines the CASCADE (Cascaded Attention Decoding, WACV 2023) staged refinement
 idea with the EMCAD (Efficient Multi-scale Convolutional Attention Decoding,
@@ -44,7 +45,8 @@ class _DepthwiseConv(nn.Module):
 
 
 class _ChannelAttention(nn.Module):
-    """CBAM-style channel attention (avg + max pool, shared MLP)."""
+    """CBAM-style 通道 注意力 ( avg + max pool, shared MLP )。
+        CBAM-style channel attention (avg + max pool, shared MLP)."""
 
     def __init__(self, in_planes: int, ratio: int = 16):
         super().__init__()
@@ -65,7 +67,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """CBAM-style spatial attention (avg + max along channel)."""
+    """CBAM-style 空间的 注意力 ( avg + max along 通道 )。
+        CBAM-style spatial attention (avg + max along channel)."""
 
     def __init__(self, kernel_size: int = 7):
         super().__init__()
@@ -82,7 +85,8 @@ class _SpatialAttention(nn.Module):
 
 
 class _CascadeStage(nn.Module):
-    """One cascade stage: upsample, skip-concat, depthwise conv, CA, SA, 3x3 fuse."""
+    """One cascade stage: upsample, 跳跃连接。
+        One cascade stage: upsample, skip-concat, depthwise conv, CA, SA, 3x3 fuse."""
 
     def __init__(self, in_ch: int, skip_ch: int, out_ch: int):
         super().__init__()
@@ -111,6 +115,7 @@ class _CascadeStage(nn.Module):
 @DECODER_REGISTRY.register("cascade_emcad")
 class CascadeEMCADDecoder(nn.Module):
     """EMCAD-style cascade decoder with channel + spatial attention per stage.
+        EMCAD-style cascade 解码器。
 
     Three-stage cascade walking the bottleneck back up at /16 -> /8 -> /4.
     Each stage performs: bilinear upsample -> concat with skip -> depthwise
@@ -138,7 +143,7 @@ class CascadeEMCADDecoder(nn.Module):
                  **kwargs):
         super().__init__()
         self.img_size = img_size
-        # External skip_connection intentionally ignored – kept on the instance
+        # External 跳跃 _ connection intentionally ignored – kept on the 实例 / External skip_connection intentionally ignored – kept on the instance
         # purely so introspection tools can see it was supplied.
         self.skip_connection = skip_connection
 
@@ -147,11 +152,11 @@ class CascadeEMCADDecoder(nn.Module):
                              "CascadeEMCADDecoder")
 
         num_stages = min(self.NUM_STAGES, len(encoder_channels))
-        # Use the shallowest ``num_stages`` encoder channels – the deepest
-        # encoder stage typically coincides with the bottleneck and is not a
-        # skip target here.
+        # Use the shallowest ``num_stages`` 编码器 / Use the shallowest ``num_stages`` encoder channels – the deepest
+        # encoder stage typically coincides with the 瓶颈层 / encoder stage typically coincides with the bottleneck and is not a
+        # 跳跃 目标 here / skip target here.
         skip_chs_shallow_to_deep = list(encoder_channels[:num_stages])
-        # Cascade walks deep -> shallow.
+        # Cascade walks 深度 - > 浅层 / Cascade walks deep -> shallow.
         skip_chs = list(reversed(skip_chs_shallow_to_deep))
 
         self.stages = nn.ModuleList()
@@ -162,7 +167,7 @@ class CascadeEMCADDecoder(nn.Module):
                                              out_ch=out_ch))
             in_ch = out_ch
 
-        # Final feature channel count BEFORE the segmentation head.
+        # Final 特征 通道 count BEFORE the 分割 头部 / Final feature channel count BEFORE the segmentation head.
         self._out_channels = skip_chs_shallow_to_deep[0]
         self._num_stages = num_stages
 
@@ -178,8 +183,8 @@ class CascadeEMCADDecoder(nn.Module):
                 f"skip features, got {len(skip_features)}"
             )
 
-        # ``skip_features`` arrive shallow -> deep.  Take the matching slice
-        # and walk deep -> shallow in lockstep with the stages.
+        # ` ` 跳跃 _ 特征 ` ` arrive 浅层 - > 深度. Take the matching slice / ``skip_features`` arrive shallow -> deep.  Take the matching slice
+        # and walk 深度 - > 浅层 in lockstep with the 阶段 / and walk deep -> shallow in lockstep with the stages.
         used_skips = skip_features[:self._num_stages]
         skips_deep_to_shallow = list(reversed(used_skips))
 

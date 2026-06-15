@@ -1,4 +1,5 @@
 """MedT – self-contained port from github.com/jeya-maria-jose/Medical-Transformer.
+    MedT – self-contained 移植 from github. com / jeya-maria-jose / Medical-Transformer。
 
 Standard interface:
     model = MedT(in_channels=3, num_classes=2, img_size=224)
@@ -14,10 +15,11 @@ import torch.nn.functional as F
 
 # ── qkv_transform (from utils.py, just an nn.Conv1d alias) ──────────────────
 class qkv_transform(nn.Conv1d):
-    """Conv1d alias for axial attention qkv projection."""
+    """Conv1d alias for axial 注意力 qkv projection。
+        Conv1d alias for axial attention qkv projection."""
 
 
-# ── Axial Attention modules ──────────────────────────────────────────────────
+# ─ ─ Axial 注意力 modules ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Axial Attention modules ──────────────────────────────────────────────────
 def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride,
                      bias=False)
@@ -342,7 +344,7 @@ class _medt_net(nn.Module):
                                   kernel_size=3, stride=1, padding=1)
         self.adjust = nn.Conv2d(int(128 * s), num_classes,
                                 kernel_size=1, stride=1, padding=0)
-        # patch branch
+        # 图块 分支 / patch branch
         self.conv1_p = nn.Conv2d(imgchan, self.inplanes, kernel_size=7,
                                  stride=2, padding=3, bias=False)
         self.conv2_p = nn.Conv2d(self.inplanes, 128, kernel_size=3,
@@ -354,7 +356,7 @@ class _medt_net(nn.Module):
         self.bn3_p = norm_layer(self.inplanes)
         self.relu_p = nn.ReLU(inplace=True)
         img_size_p = img_size // 4
-        # Compute spatial dims and cap kernel sizes for patch branch
+        # 计算 空间的 dims and cap 卷积核 sizes for 图块 分支 / Compute spatial dims and cap kernel sizes for patch branch
         sp = img_size_p // 2  # spatial after conv1_p (stride=2)
         ks1 = min(img_size_p // 2, sp)
         sp2 = sp // 2  # after layer2_p stride=2
@@ -388,7 +390,7 @@ class _medt_net(nn.Module):
                                     kernel_size=3, stride=1, padding=1)
         self.decoderf = nn.Conv2d(int(128 * s), int(128 * s),
                                   kernel_size=3, stride=1, padding=1)
-        # Store patch_size for dynamic patch extraction
+        # Store 图块 _ 大小 for 动态的 图块 extraction / Store patch_size for dynamic patch extraction
         self._patch_size = img_size // 4
 
     def _make_layer(self, block, planes, blocks, kernel_size=56, stride=1,
@@ -421,7 +423,7 @@ class _medt_net(nn.Module):
 
     def forward(self, x):
         xin = x.clone()
-        # Global branch
+        # 全局的 分支 / Global branch
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.relu(self.bn2(self.conv2(x)))
         x = self.relu(self.bn3(self.conv3(x)))
@@ -432,7 +434,7 @@ class _medt_net(nn.Module):
         x = torch.add(x, x1)
         x = F.relu(F.interpolate(self.decoder5(x), scale_factor=(2, 2),
                                  mode='bilinear'))
-        # Local (patch) branch
+        # 局部的 ( 图块 ) 分支 / Local (patch) branch
         x_loc = x.clone()
         ps = self._patch_size
         for i in range(0, 4):
@@ -473,6 +475,7 @@ class _medt_net(nn.Module):
 
 class MedT(nn.Module):
     """MedT wrapper with standard interface.
+        MedT 封装器 with 标准 interface。
 
     Args:
         in_channels (int): Number of input channels (default: 3).

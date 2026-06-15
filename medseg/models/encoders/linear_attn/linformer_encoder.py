@@ -1,4 +1,5 @@
 """Linformer encoder.
+    Linformer 编码器。
 
 Hierarchical 4-stage encoder using Linformer (Wang 2020) low-rank linear
 self-attention. Extracted from
@@ -40,7 +41,8 @@ from medseg.registry import ENCODER_REGISTRY
 # ---------------------------------------------------------------------------
 
 def _seq_project(x_seq: torch.Tensor, k: int) -> torch.Tensor:
-    """Project (B, N, D) -> (B, k_eff, D) by 1D adaptive average pooling."""
+    """Project ( B, N, D ) - > ( B, k _ eff, D ) by 1D 自适应的 average 池化。
+        Project (B, N, D) -> (B, k_eff, D) by 1D adaptive average pooling."""
     B, N, D = x_seq.shape
     k_eff = min(k, N)
     if k_eff == N:
@@ -51,11 +53,12 @@ def _seq_project(x_seq: torch.Tensor, k: int) -> torch.Tensor:
 
 
 # ---------------------------------------------------------------------------
-# Linformer attention / MLP / block
+# Linformer 注意力 / MLP / 块 / Linformer attention / MLP / block
 # ---------------------------------------------------------------------------
 
 class _LinformerAttention(nn.Module):
-    """Linformer attention: project K,V along sequence dim from N to k_eff."""
+    """Linformer 注意力: project K, V along 序列 dim from N to k _ eff。
+        Linformer attention: project K,V along sequence dim from N to k_eff."""
 
     def __init__(self, dim, num_heads, k=256, qkv_bias=True,
                  attn_drop=0.0, proj_drop=0.0):
@@ -118,7 +121,8 @@ class _Mlp(nn.Module):
 
 
 class _LinformerBlock(nn.Module):
-    """Pre-norm transformer block with Linformer attention."""
+    """Pre-norm Transformer 块 with Linformer 注意力。
+        Pre-norm transformer block with Linformer attention."""
 
     def __init__(self, dim, num_heads, k=256, mlp_ratio=4.0,
                  drop=0.0, attn_drop=0.0):
@@ -137,7 +141,8 @@ class _LinformerBlock(nn.Module):
 
 
 class _Stage(nn.Module):
-    """Runs a stack of Linformer blocks on a 2D feature map."""
+    """Runs a stack of Linformer blocks on a 2D 特征图。
+        Runs a stack of Linformer blocks on a 2D feature map."""
 
     def __init__(self, dim, depth, num_heads, k=256, mlp_ratio=4.0,
                  drop=0.0, attn_drop=0.0):
@@ -189,12 +194,13 @@ class _Downsample(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder
+# 编码器 / Encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("linformer")
 class LinformerEncoder(nn.Module):
     """Hierarchical 4-stage Linformer encoder.
+        Hierarchical 4-stage Linformer 编码器。
 
     Args:
         in_channels: input image channels (1 grayscale, 3 RGB, etc.). When
@@ -221,7 +227,7 @@ class LinformerEncoder(nn.Module):
         self.img_size = img_size
         self.out_channels: List[int] = list(dims)
 
-        # Adapt non-3-channel inputs with a 1x1 conv stem
+        # Adapt non - 3-channel inputs with a 1x1 conv 主干 / Adapt non-3-channel inputs with a 1x1 conv stem
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1)
             stem_in = 3
@@ -229,11 +235,11 @@ class LinformerEncoder(nn.Module):
             self.input_proj = nn.Identity()
             stem_in = in_channels
 
-        # Patch embed (stride 4) -> dims[0]
+        # 图块 embed ( 步长 4 ) - > dims [ 0 ] / Patch embed (stride 4) -> dims[0]
         self.patch_embed = _PatchEmbed(stem_in, dims[0],
                                        stride=4, kernel_size=7)
 
-        # Encoder stages + 3 downsamples
+        # 编码器 阶段 + 3 downsamples / Encoder stages + 3 downsamples
         self.encoder_stages = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         for i in range(4):

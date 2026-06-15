@@ -1,4 +1,5 @@
 """MiniCPM-V grounding wrapper.
+    MiniCPM-V grounding 封装器。
 
 # Reference: https://github.com/OpenBMB/MiniCPM-V
 # Reference: https://huggingface.co/openbmb/MiniCPM-V-2_6
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class MiniCPMVGrounder(GenericVLGrounder):
-    """MiniCPM-V grounding wrapper (inference-only)."""
+    """MiniCPM-V grounding 封装器 ( inference-only )。
+        MiniCPM-V grounding wrapper (inference-only)."""
 
     COORD_SCALE = 1.0
 
@@ -72,7 +74,7 @@ class MiniCPMVGrounder(GenericVLGrounder):
             )
             logger.info(f"MiniCPM-V loaded: {self.model_id} on {self.device}")
         except Exception:
-            # Strict: no mock fallback on load failure. Re-raise the
+            # Strict: no mock fallback on 加载 failure. Re-raise the / Strict: no mock fallback on load failure. Re-raise the
             # original error so the caller sees what actually broke.
             raise
 

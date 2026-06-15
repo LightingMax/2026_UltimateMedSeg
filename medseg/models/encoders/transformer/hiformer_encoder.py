@@ -1,4 +1,5 @@
 """HiFormer Encoder: faithful port from https://github.com/amirhossein-kz/HiFormer
+    HiFormer 编码器。
 
 Reference: Heidari et al., "HiFormer: Hierarchical Multi-scale Representations
            Using Transformers for Medical Image Segmentation"
@@ -181,7 +182,8 @@ class PatchMerging(nn.Module):
 
 
 class SwinTransformer(nn.Module):
-    """Swin Transformer backbone for HiFormer."""
+    """Swin Transformer 骨干网络 for HiFormer。
+        Swin Transformer backbone for HiFormer."""
     def __init__(self, img_size=224, patch_size=4, embed_dim=96, depths=[2, 2, 6, 2],
                  num_heads=[3, 6, 12, 24], window_size=7, mlp_ratio=4., drop_path_rate=0.1):
         super().__init__()
@@ -210,10 +212,11 @@ class SwinTransformer(nn.Module):
 
 # ============= PyramidFeatures for HiFormer =============
 class PyramidFeatures(nn.Module):
-    """CNN + Swin Transformer multi-scale feature extraction."""
+    """CNN + Swin Transformer 多尺度特征 extraction。
+        CNN + Swin Transformer multi-scale feature extraction."""
     def __init__(self, config, img_size=224, in_chans=3):
         super().__init__()
-        # ResNet backbone (first 7 layers)
+        # ResNet 骨干网络 ( first 7 layers ) / ResNet backbone (first 7 layers)
         import torchvision.models as models
         model_name = config.cnn_backbone
         if model_name == 'resnet50':
@@ -222,7 +225,7 @@ class PyramidFeatures(nn.Module):
             resnet = models.resnet34(pretrained=config.cnn_pretrained if hasattr(config, 'cnn_pretrained') else True)
         self.resnet_layers = nn.Sequential(*list(resnet.children())[:7])
 
-        # Channel projection for CNN features
+        # 通道 projection for CNN 特征 / Channel projection for CNN features
         self.p1_ch = nn.Conv2d(config.cnn_pyramid_fm[0], config.swin_pyramid_fm[0], kernel_size=1)
         self.p2_ch = nn.Conv2d(config.cnn_pyramid_fm[1], config.swin_pyramid_fm[1], kernel_size=1)
         self.p3_ch = nn.Conv2d(config.cnn_pyramid_fm[2], config.swin_pyramid_fm[2], kernel_size=1)
@@ -233,7 +236,7 @@ class PyramidFeatures(nn.Module):
             depths=config.depths, num_heads=config.num_heads,
             window_size=config.window_size)
 
-        # Patch merging layers
+        # 图块 merging layers / Patch merging layers
         patches_resolution = img_size // 4
         self.p1_pm = PatchMerging((patches_resolution, patches_resolution), config.swin_pyramid_fm[0])
         self.p2_pm = PatchMerging((patches_resolution // 2, patches_resolution // 2), config.swin_pyramid_fm[1])
@@ -244,7 +247,7 @@ class PyramidFeatures(nn.Module):
         self.avgpool_2 = nn.AdaptiveAvgPool1d(1)
 
     def forward(self, x):
-        # CNN features
+        # CNN 特征 / CNN features
         cnn_features = []
         for i, layer in enumerate(self.resnet_layers):
             x_cnn = layer(x) if i == 0 else layer(cnn_features[-1] if cnn_features else x)
@@ -279,7 +282,8 @@ class Attention(nn.Module):
 
 
 class MultiScaleBlock(nn.Module):
-    """Cross-attention block for dual-level fusion (DLF)."""
+    """Cross-attention 块 for dual-level 融合 ( DLF )。
+        Cross-attention block for dual-level fusion (DLF)."""
     def __init__(self, dim, num_heads, mlp_ratio=4., drop=0., attn_drop=0., drop_path=0.):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
@@ -319,6 +323,7 @@ class ConvUpsample(nn.Module):
 @ENCODER_REGISTRY.register("hiformer")
 class HiFormerEncoder(nn.Module):
     """HiFormer Encoder: CNN + Swin Transformer hybrid.
+        HiFormer 编码器。
     Faithful to https://github.com/amirhossein-kz/HiFormer
     """
 
@@ -334,7 +339,7 @@ class HiFormerEncoder(nn.Module):
         super().__init__()
         import torchvision.models as models
 
-        # HiFormer-S config (default)
+        # HiFormer-S 配置 ( 默认值 ) / HiFormer-S config (default)
         if variant == 'B':
             cnn_backbone = 'resnet50'
             cnn_pyramid_fm = [256, 512, 1024]
@@ -354,7 +359,7 @@ class HiFormerEncoder(nn.Module):
             depths = [1, 1, 0]
             num_heads_val = [3, 3]
 
-        # CNN backbone
+        # CNN 骨干网络 / CNN backbone
         if cnn_backbone == 'resnet50':
             resnet = models.resnet50(pretrained=pretrained)
         else:

@@ -1,4 +1,5 @@
 """LV-UNet: Lightweight VanillaNet-style UNet for Medical Image Segmentation.
+    LV-UNet: 轻量级 VanillaNet-style UNet for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/juntaoJianggavin/LV-UNet  (BIBM 2024)
@@ -16,11 +17,12 @@ from medseg.utils.timm_compat import trunc_normal_
 
 
 # ---------------------------------------------------------------------------
-# Series-informed activation (from VanillaNet / LV-UNet)
+# Series-informed 激活 ( from VanillaNet / LV-UNet ) / Series-informed activation (from VanillaNet / LV-UNet)
 # ---------------------------------------------------------------------------
 
 class SeriesActivation(nn.ReLU):
     """Series-informed activation: ReLU followed by depthwise conv + BN.
+        Series-informed 激活: ReLU followed by depthwise conv + BN。
 
     In deploy mode, BN is fused into the conv weights for faster inference.
     """
@@ -59,11 +61,12 @@ class SeriesActivation(nn.ReLU):
 
 
 # ---------------------------------------------------------------------------
-# VanillaNet-style Block and UpBlock (from LV-UNet)
+# VanillaNet-style 块 and UpBlock ( from LV-UNet ) / VanillaNet-style Block and UpBlock (from LV-UNet)
 # ---------------------------------------------------------------------------
 
 class Block(nn.Module):
-    """VanillaNet-style downsampling block: Conv1x1→BN→LeakyReLU→Conv1x1→BN→MaxPool→activation."""
+    """VanillaNet-style 下采样 块: Conv1x1 → BN → LeakyReLU → Conv1x1 → BN → MaxPool → 激活。
+        VanillaNet-style downsampling block: Conv1x1→BN→LeakyReLU→Conv1x1→BN→MaxPool→activation."""
     def __init__(self, dim, dim_out, act_num=3, stride=2, deploy=False):
         super().__init__()
         self.act_learn = 0
@@ -120,7 +123,8 @@ class Block(nn.Module):
 
 
 class UpBlock(nn.Module):
-    """VanillaNet-style upsampling block: Conv1x1→BN→LeakyReLU→Conv1x1→BN→Upsample→activation."""
+    """VanillaNet-style 上采样 块: Conv1x1 → BN → LeakyReLU → Conv1x1 → BN → 上采样 → 激活。
+        VanillaNet-style upsampling block: Conv1x1→BN→LeakyReLU→Conv1x1→BN→Upsample→activation."""
     def __init__(self, dim, dim_out, act_num=3, factor=2, deploy=False):
         super().__init__()
         self.act_learn = 0
@@ -183,6 +187,7 @@ class UpBlock(nn.Module):
 
 class LVUNet(nn.Module):
     """LV-UNet: MobileNetV3-Large encoder + VanillaNet-style decoder.
+        LV-UNet: MobileNetV3-Large 编码器。
 
     Architecture:
       - Encoder: MobileNetV3-Large pretrained features (3 stages)
@@ -216,7 +221,7 @@ class LVUNet(nn.Module):
         self.deploy = deploy
         self.deep_supervision = deep_supervision
 
-        # --- MobileNetV3-Large encoder ---
+        # --- MobileNetV3-Large 编码器 / --- MobileNetV3-Large encoder ---
         try:
             from torchvision import models
         except ImportError as e:
@@ -243,35 +248,35 @@ class LVUNet(nn.Module):
             mobile.features[6], mobile.features[7],
             mobile.features[8], mobile.features[9])
 
-        # --- VanillaNet mid stages (downsample) ---
+        # - - - VanillaNet mid 阶段 ( 下采样 ) - - - / --- VanillaNet mid stages (downsample) ---
         self.stages = nn.ModuleList()
         for i in range(len(strides)):
             self.stages.append(Block(
                 dims[i], dims[i + 1], act_num=act_num,
                 stride=strides[i], deploy=deploy))
 
-        # --- Decoder up_stages1 (mirror mid stages) ---
+        # --- 解码器 / --- Decoder up_stages1 (mirror mid stages) ---
         self.up_stages1 = nn.ModuleList()
         for i in range(len(strides)):
             self.up_stages1.append(UpBlock(
                 dims[3 - i], dims[2 - i], act_num=act_num,
                 factor=strides[2 - i], deploy=deploy))
 
-        # --- Decoder up_stages2 (mirror encoder stages) ---
+        # --- Decoder up_stages2 (mirror 编码器 / --- Decoder up_stages2 (mirror encoder stages) ---
         self.up_stages2 = nn.ModuleList()
         for i in range(3):
             self.up_stages2.append(UpBlock(
                 dims2[i], dims2[i + 1], act_num=act_num,
                 factor=2, deploy=deploy))
 
-        # --- Final head ---
+        # - - - Final 头部 - - - / --- Final head ---
         self.depth = len(strides)
         self.final = nn.ModuleList()
         self.final.append(UpBlock(
             dims2[-1], dims2[-1], act_num=act_num, factor=2, deploy=deploy))
         self.final.append(nn.Conv2d(dims2[-1], num_classes, 1))
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(dims[2 - i], num_classes, 1) for i in range(self.depth)
@@ -282,20 +287,20 @@ class LVUNet(nn.Module):
     def forward(self, x):
         input_size = x.shape[2:]
 
-        # MobileNetV3 encoder
+        # MobileNetV3 编码器 / MobileNetV3 encoder
         x = self.firstconv(x)
         e1 = self.encoder1(x)
         e2 = self.encoder2(e1)
         e3 = self.encoder3(e2)
 
-        # VanillaNet mid stages (downsample)
+        # VanillaNet mid 阶段 ( 下采样 ) / VanillaNet mid stages (downsample)
         encoder_feats = []
         feat = e3
         for i in range(self.depth):
             encoder_feats.append(feat)
             feat = self.stages[i](feat)
 
-        # Decoder up_stages1 (with skip from mid stages)
+        # Decoder up_stages1 (with 跳跃连接 / Decoder up_stages1 (with skip from mid stages)
         ds_intermediates = []
         for i in range(self.depth):
             feat = self.up_stages1[i](feat)
@@ -307,7 +312,7 @@ class LVUNet(nn.Module):
             if self.training and self.deep_supervision:
                 ds_intermediates.append(feat)
 
-        # Decoder up_stages2 (with skip from encoder)
+        # Decoder up_stages2 (with skip from 编码器 / Decoder up_stages2 (with skip from encoder)
         feat = self.up_stages2[0](feat)
         if feat.shape[2:] != e2.shape[2:]:
             feat = F.interpolate(feat, size=e2.shape[2:],
@@ -332,7 +337,7 @@ class LVUNet(nn.Module):
         for module in self.final:
             feat = module(feat)
 
-        # Ensure output matches input size
+        # Ensure 输出 matches 输入 大小 / Ensure output matches input size
         if feat.shape[2:] != input_size:
             feat = F.interpolate(feat, size=input_size,
                                  mode='bilinear', align_corners=False)
@@ -350,7 +355,8 @@ class LVUNet(nn.Module):
         return feat
 
     def change_act(self, m):
-        """Set leaky ReLU slope for deep training technique."""
+        """Set leaky ReLU slope for 深度 训练 technique。
+            Set leaky ReLU slope for deep training technique."""
         for i in range(self.depth):
             self.stages[i].act_learn = m
             self.up_stages1[i].act_learn = m
@@ -360,7 +366,8 @@ class LVUNet(nn.Module):
             self.final[0].act_learn = m
 
     def switch_to_deploy(self):
-        """Fuse BN into conv weights for faster inference."""
+        """融合 BN into conv 权重 for faster 推理。
+            Fuse BN into conv weights for faster inference."""
         for i in range(self.depth):
             self.stages[i].switch_to_deploy()
             self.up_stages1[i].switch_to_deploy()

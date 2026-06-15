@@ -1,4 +1,5 @@
 """AutoSAM (2024) — auto-prompted SAM segmentation network.
+    AutoSAM ( 2024 ) — auto-prompted SAM 分割 网络。
 
 Reference:
     Tal Shaharabany et al., "AutoSAM: Adapting SAM to Medical Images by
@@ -29,7 +30,7 @@ from __future__ import annotations
 
 import os
 
-# Bound HF Hub timeouts so an offline / blocked environment can't stall model
+# Bound HF Hub timeouts so an offline / blocked environment can't stall 模型 / Bound HF Hub timeouts so an offline / blocked environment can't stall model
 # construction. Must be set before timm imports huggingface_hub internally.
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "5")
@@ -44,10 +45,11 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# Image encoder: SAM-style ViT-B/16 via timm.
+# Image 编码器 / Image encoder: SAM-style ViT-B/16 via timm.
 # ---------------------------------------------------------------------------
 def _build_vit_encoder(img_size: int, in_channels: int, pretrained: bool):
     """Build timm's ``vit_base_patch16_224`` at the requested ``img_size``.
+        Build timm's ` ` vit _ base _ patch16 _ 224 ` ` at the requested ` ` img _ 大小 ` `。
 
     The encoder is *strict-size*: it expects inputs of exactly
     ``(img_size, img_size)``. The caller is responsible for padding / cropping
@@ -69,10 +71,11 @@ def _build_vit_encoder(img_size: int, in_channels: int, pretrained: bool):
 
 
 # ---------------------------------------------------------------------------
-# Prompt encoder: image-conditioned learned prompt embedding.
+# Prompt 编码器 / Prompt encoder: image-conditioned learned prompt embedding.
 # ---------------------------------------------------------------------------
 class _AutoPromptEncoder(nn.Module):
     """Small CNN: 3 conv stages (in_ch -> 32 -> 64 -> 128) + GAP + Linear -> embed_dim.
+        Small CNN: 3 conv 阶段 ( in _ ch - > 32 - > 64 - > 128 ) + GAP + Linear - > embed _ dim。
 
     Produces one prompt token of shape ``(B, embed_dim)`` conditioned on the
     full input image — i.e. the model "prompts itself" instead of relying on
@@ -108,10 +111,11 @@ class _AutoPromptEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Mask decoder: cross-attention + 4-stage ConvTranspose upsampler.
+# Mask 解码器 / Mask decoder: cross-attention + 4-stage ConvTranspose upsampler.
 # ---------------------------------------------------------------------------
 class _UpBlock(nn.Module):
-    """ConvTranspose2d (stride 2, kernel 2) + BatchNorm2d + GELU."""
+    """ConvTranspose2d ( 步长 2, 卷积核 2 ) + BatchNorm2d + GELU。
+        ConvTranspose2d (stride 2, kernel 2) + BatchNorm2d + GELU."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -125,6 +129,7 @@ class _UpBlock(nn.Module):
 
 class _AutoSAMMaskDecoder(nn.Module):
     """Cross-attend the learned prompt token to the /16 image feature map and
+        Cross-attend the learned prompt 标记 to the / 16 图像 特征图 and。
     upsample through four 2x ConvTranspose stages.
 
     Cross attention: the prompt token serves as the query and the flattened
@@ -162,7 +167,7 @@ class _AutoSAMMaskDecoder(nn.Module):
         kv = self.norm_kv(tokens)                               # (B, N, C)
 
         attended, _ = self.cross_attn(q, kv, kv)                # (B, 1, C)
-        # Broadcast the attended prompt over every spatial token (residual).
+        # Broadcast the attended prompt over every 空间的 标记 ( 残差 ) / Broadcast the attended prompt over every spatial token (residual).
         tokens = self.norm_out(tokens + attended)               # (B, N, C)
 
         feat = tokens.transpose(1, 2).reshape(B, C, Hp, Wp).contiguous()
@@ -175,10 +180,11 @@ class _AutoSAMMaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class AutoSAM(SAMBase):
     """AutoSAM — auto-prompted SAM segmentation network.
+        AutoSAM — auto-prompted SAM 分割 网络。
 
     The canonical SAM submodule names (``image_encoder``, ``prompt_encoder``,
     ``mask_decoder``) are preserved so that :class:`SAMBase`'s freeze
@@ -217,7 +223,7 @@ class AutoSAM(SAMBase):
             inference_only=inference_only,
         )
 
-        # 1) Image encoder — timm vit_base_patch16_224, strict-size at img_size.
+        # 1) Image 编码器 / 1) Image encoder — timm vit_base_patch16_224, strict-size at img_size.
         self.image_encoder = _build_vit_encoder(
             img_size=img_size,
             in_channels=in_channels,
@@ -227,17 +233,17 @@ class AutoSAM(SAMBase):
             getattr(self.image_encoder, "num_prefix_tokens", 1)
         )
 
-        # 2) Prompt encoder — image-conditioned learned prompt embedding.
+        # 2) Prompt 编码器 / 2) Prompt encoder — image-conditioned learned prompt embedding.
         self.prompt_encoder = _AutoPromptEncoder(
             in_channels=in_channels, embed_dim=self.EMBED_DIM,
         )
 
-        # 3) Mask decoder — cross-attention + four 2x ConvTranspose stages.
+        # 3) Mask 解码器 / 3) Mask decoder — cross-attention + four 2x ConvTranspose stages.
         self.mask_decoder = _AutoSAMMaskDecoder(
             embed_dim=self.EMBED_DIM, num_classes=num_classes,
         )
 
-        # Optional local checkpoint override.
+        # 可选 局部的 检查点 覆盖 / Optional local checkpoint override.
         if pretrained_path:
             try:
                 state = torch.load(pretrained_path, map_location="cpu")
@@ -264,6 +270,7 @@ class AutoSAM(SAMBase):
     # ------------------------------------------------------------------
     def _fit_to_encoder(self, x: torch.Tensor):
         """Pad (or resize) ``x`` so spatial dims equal ``self.img_size``.
+            Pad ( or resize ) ` ` x ` ` so 空间的 dims equal ` ` self. img _ 大小 ` `。
 
         timm's ``vit_base_patch16_224`` is strict-size with respect to the
         ``img_size`` it was constructed with. We zero-pad inputs that are
@@ -279,7 +286,7 @@ class AutoSAM(SAMBase):
             pad_w = S - W
             x = F.pad(x, (0, pad_w, 0, pad_h))
             return x, ("pad", H, W)
-        # At least one dim exceeds img_size: bilinear-resize to (S, S).
+        # At least one dim exceeds img _ 大小: bilinear-resize to ( S, S ) / At least one dim exceeds img_size: bilinear-resize to (S, S).
         x = F.interpolate(x, size=(S, S), mode="bilinear", align_corners=False)
         return x, ("resize", H, W)
 
@@ -288,7 +295,7 @@ class AutoSAM(SAMBase):
         if mode == "none":
             return logits
         if mode == "pad":
-            # Logits are at the padded resolution: crop the bottom-right pad.
+            # Logits are at the padded 分辨率: crop the bottom-right pad / Logits are at the padded resolution: crop the bottom-right pad.
             return logits[..., :H, :W]
         # mode == "resize"
         if logits.shape[-2:] != (H, W):
@@ -298,7 +305,8 @@ class AutoSAM(SAMBase):
         return logits
 
     def _encode_image(self, x: torch.Tensor) -> torch.Tensor:
-        """Run the ViT and reshape patch tokens to (B, C, H/16, W/16)."""
+        """Run the ViT and 重塑 图块 标记 to ( B, C, H / 16, W / 16 )。
+            Run the ViT and reshape patch tokens to (B, C, H/16, W/16)."""
         B, _, H, W = x.shape
         tokens = self.image_encoder.forward_features(x)
         if tokens.dim() == 4:
@@ -315,25 +323,25 @@ class AutoSAM(SAMBase):
         return tokens.transpose(1, 2).reshape(B, self.EMBED_DIM, Hp, Wp).contiguous()
 
     # ------------------------------------------------------------------
-    # Forward
+    # 前向传播 / Forward
     # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H, W = x.shape[-2:]
 
-        # Strict-size backbone: pad / resize to (img_size, img_size).
+        # Strict-size 骨干网络: pad / resize to ( img _ 大小, img _ 大小 ) / Strict-size backbone: pad / resize to (img_size, img_size).
         x_enc, info = self._fit_to_encoder(x)
 
-        # Image-conditioned prompt token (uses the encoder-aligned input so
-        # the prompt sees what the encoder sees).
+        # Image-conditioned prompt token (uses the 编码器 / Image-conditioned prompt token (uses the encoder-aligned input so
+        # the prompt sees what the 编码器 / the prompt sees what the encoder sees).
         prompt = self.prompt_encoder(x_enc)               # (B, EMBED_DIM)
 
-        # ViT features at /16.
+        # ViT 特征 at / 16 / ViT features at /16.
         feat = self._encode_image(x_enc)                  # (B, 768, S/16, S/16)
 
-        # Cross-attend prompt to image and upsample to encoder resolution.
+        # Cross-attend prompt to image and upsample to 编码器 / Cross-attend prompt to image and upsample to encoder resolution.
         logits = self.mask_decoder(feat, prompt)          # (B, num_classes, S, S)
 
-        # Safety: defensively match encoder spatial size before restoring.
+        # Safety: defensively match 编码器 / Safety: defensively match encoder spatial size before restoring.
         if logits.shape[-2:] != x_enc.shape[-2:]:
             logits = F.interpolate(
                 logits, size=x_enc.shape[-2:],

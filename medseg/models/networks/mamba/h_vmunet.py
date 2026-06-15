@@ -1,4 +1,5 @@
 """H-vmunet: High-order Vision Mamba UNet for Medical Image Segmentation.
+    H-vmunet: High-order Vision Mamba UNet for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/wurenkai/H-vmunet  (Neurocomputing 2025, 135+ stars)
@@ -25,11 +26,12 @@ from medseg.models.encoders.vmunet_encoder import SS2D
 
 
 # ---------------------------------------------------------------------------
-# LayerNorm (channels_first / channels_last)
+# LayerNorm ( 通道 _ first / 通道 _ last ) / LayerNorm (channels_first / channels_last)
 # ---------------------------------------------------------------------------
 
 class LayerNorm(nn.Module):
-    """LayerNorm supporting both channels_last (B,H,W,C) and channels_first (B,C,H,W)."""
+    """LayerNorm supporting both 通道 _ last ( B, H, W, C ) and 通道 _ first ( B, C, H, W )。
+        LayerNorm supporting both channels_last (B,H,W,C) and channels_first (B,C,H,W)."""
     def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(normalized_shape))
@@ -50,11 +52,12 @@ class LayerNorm(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Local_SS2D: local depthwise conv + SS2D branch
+# 局部的 _ SS2D: 局部的 depthwise conv + SS2D 分支 / Local_SS2D: local depthwise conv + SS2D branch
 # ---------------------------------------------------------------------------
 
 class Local_SS2D(nn.Module):
-    """Local branch: depthwise conv + SS2D on split channels."""
+    """局部的 分支: depthwise conv + SS2D on split 通道。
+        Local branch: depthwise conv + SS2D on split channels."""
     def __init__(self, dim, h=14, w=8):
         super().__init__()
         self.dw = nn.Conv2d(dim // 2, dim // 2, kernel_size=3, padding=1,
@@ -82,6 +85,7 @@ class Local_SS2D(nn.Module):
 
 class H_SS2D(nn.Module):
     """High-order SS2D: splits channels into multiple orders,
+        High-order SS2D: splits 通道 into multiple orders。
     applies pointwise conv multiplication + SS2D at each order level.
 
     Args:
@@ -144,11 +148,12 @@ class H_SS2D(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# H_VSS Block
+# H _ VSS 块 / H_VSS Block
 # ---------------------------------------------------------------------------
 
 class HVSSBlock(nn.Module):
-    """H-VSS Block: LayerNorm→H_SS2D + LayerScale → LayerNorm→FFN(4x) + LayerScale."""
+    """H-VSS 块: LayerNorm → H _ SS2D + LayerScale → LayerNorm → FFN ( 4x ) + LayerScale。
+        H-VSS Block: LayerNorm→H_SS2D + LayerScale → LayerNorm→FFN(4x) + LayerScale."""
     def __init__(self, dim, drop_path=0., layer_scale_init_value=1e-6,
                  h_ss2d_cls=None):
         super().__init__()
@@ -189,11 +194,12 @@ class HVSSBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SC_Att_Bridge: Spatial-Channel Attention Bridge
+# SC _ Att _ Bridge: Spatial-Channel 注意力 Bridge / SC_Att_Bridge: Spatial-Channel Attention Bridge
 # ---------------------------------------------------------------------------
 
 class Channel_Att_Bridge(nn.Module):
-    """Channel attention bridge across encoder features."""
+    """Channel attention bridge across 编码器。
+        Channel attention bridge across encoder features."""
     def __init__(self, c_list):
         super().__init__()
         c_list_sum = sum(c_list) - c_list[-1]
@@ -216,7 +222,8 @@ class Channel_Att_Bridge(nn.Module):
 
 
 class Spatial_Att_Bridge(nn.Module):
-    """Spatial attention bridge with shared conv."""
+    """空间的 注意力 bridge with shared conv。
+        Spatial attention bridge with shared conv."""
     def __init__(self):
         super().__init__()
         self.shared_conv2d = nn.Sequential(
@@ -234,7 +241,8 @@ class Spatial_Att_Bridge(nn.Module):
 
 
 class SC_Att_Bridge(nn.Module):
-    """Spatial-Channel Attention Bridge: combines channel + spatial attention."""
+    """Spatial-Channel 注意力 Bridge: 组合 通道 + 空间的 注意力。
+        Spatial-Channel Attention Bridge: combines channel + spatial attention."""
     def __init__(self, c_list):
         super().__init__()
         self.catt = Channel_Att_Bridge(c_list)
@@ -252,7 +260,7 @@ class SC_Att_Bridge(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# HVMUNet: main model
+# HVMUNet: main 模型 / HVMUNet: main model
 # ---------------------------------------------------------------------------
 
 class HVMUNet(nn.Module):
@@ -286,7 +294,7 @@ class HVMUNet(nn.Module):
 
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
 
-        # H_SS2D configs for 4 block stages (order 2,3,4,5)
+        # H _ SS2D configs for 4 块 阶段 ( order 2, 3, 4, 5 ) / H_SS2D configs for 4 block stages (order 2,3,4,5)
         h_ss2d_configs = [
             partial(H_SS2D, order=2, s=1 / 3, gflayer=Local_SS2D),
             partial(H_SS2D, order=3, s=1 / 3, gflayer=Local_SS2D),
@@ -294,7 +302,7 @@ class HVMUNet(nn.Module):
             partial(H_SS2D, order=5, s=1 / 3, gflayer=Local_SS2D),
         ]
 
-        # Encoder
+        # 编码器 / Encoder
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
 
@@ -322,7 +330,7 @@ class HVMUNet(nn.Module):
         if bridge:
             self.scab = SC_Att_Bridge(c_list)
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder1 = nn.Sequential(
             *[HVSSBlock(c_list[5], drop_path=dp_rates[sum(depths[:3])],
                         h_ss2d_cls=h_ss2d_configs[3]) for _ in range(depths[3])],
@@ -359,7 +367,7 @@ class HVMUNet(nn.Module):
 
         self.final = nn.Conv2d(c_list[0], num_classes, kernel_size=1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c_list[4], num_classes, 1),

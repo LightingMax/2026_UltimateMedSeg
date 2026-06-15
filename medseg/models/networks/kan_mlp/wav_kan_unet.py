@@ -1,4 +1,5 @@
 """Wav-KAN UNet -- UNet backbone with Wav-KAN (wavelet-basis KAN) blocks.
+    Wav-KAN UNet - - UNet 骨干网络 with Wav-KAN ( wavelet-basis KAN ) blocks。
 
 Self-contained port combining:
   - U-KAN architecture layout (CUHK-AIM-Group/U-KAN, AAAI 2025) extended to
@@ -60,11 +61,12 @@ _WAVELETS: Dict[str, Callable[[torch.Tensor], torch.Tensor]] = {
 
 
 # ---------------------------------------------------------------------------
-# Wav-KAN linear layer
+# Wav-KAN linear 层 / Wav-KAN linear layer
 # ---------------------------------------------------------------------------
 
 class _WavKANLinear(nn.Module):
     """Wavelet-basis KAN linear layer.
+        Wavelet-basis KAN linear 层。
 
     Maps an input tensor of shape ``(..., in_features)`` to one of shape
     ``(..., out_features)`` using the formula
@@ -98,7 +100,7 @@ class _WavKANLinear(nn.Module):
         self._psi = _WAVELETS[wavelet]
         self.out_chunk = max(1, int(out_chunk))
 
-        # Learnable per (out, in) parameters of the wavelet basis.
+        # Learnable per ( out, in ) 参数 of the wavelet basis / Learnable per (out, in) parameters of the wavelet basis.
         self.scale = nn.Parameter(torch.ones(out_features, in_features))
         self.translation = nn.Parameter(torch.zeros(out_features, in_features))
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
@@ -146,7 +148,8 @@ class _WavKANLinear(nn.Module):
 # ---------------------------------------------------------------------------
 
 class _DWConv(nn.Module):
-    """Depth-wise 3x3 conv operating on tokenized (B, N, C) features."""
+    """Depth-wise 3x3 conv operating on tokenized ( B, N, C ) 特征。
+        Depth-wise 3x3 conv operating on tokenized (B, N, C) features."""
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -160,7 +163,8 @@ class _DWConv(nn.Module):
 
 
 class _WavKANBlock(nn.Module):
-    """LayerNorm -> Wav-KAN linear -> depth-wise conv (residual)."""
+    """LayerNorm - > Wav-KAN linear - > depth-wise conv ( 残差 )。
+        LayerNorm -> Wav-KAN linear -> depth-wise conv (residual)."""
 
     def __init__(self, dim: int, wavelet: str = "mexican_hat",
                  drop: float = 0.0) -> None:
@@ -182,7 +186,8 @@ class _WavKANBlock(nn.Module):
 
 
 class _PatchEmbed(nn.Module):
-    """Overlapping patch embedding: Conv stride-2 downsample then norm."""
+    """Overlapping 图块 嵌入: Conv 步长 - 2 下采样 then norm。
+        Overlapping patch embedding: Conv stride-2 downsample then norm."""
 
     def __init__(self, in_chans: int, embed_dim: int,
                  patch_size: int = 3, stride: int = 2) -> None:
@@ -202,7 +207,8 @@ class _PatchEmbed(nn.Module):
 
 
 class _ConvLayer(nn.Module):
-    """Standard double conv block: Conv3x3-BN-ReLU x 2."""
+    """标准 double conv 块: Conv3x3-BN-ReLU x 2。
+        Standard double conv block: Conv3x3-BN-ReLU x 2."""
 
     def __init__(self, in_ch: int, out_ch: int) -> None:
         super().__init__()
@@ -220,7 +226,8 @@ class _ConvLayer(nn.Module):
 
 
 class _UpBlock(nn.Module):
-    """ConvTranspose2d 2x upsample then refining conv."""
+    """ConvTranspose2d 2x 上采样 then refining conv。
+        ConvTranspose2d 2x upsample then refining conv."""
 
     def __init__(self, in_ch: int, out_ch: int) -> None:
         super().__init__()
@@ -237,7 +244,8 @@ class _UpBlock(nn.Module):
 
 
 class _ConvRefine(nn.Module):
-    """Refining block used by the bottom-most decoder stage (no upsample)."""
+    """Refining block used by the bottom-most 解码器。
+        Refining block used by the bottom-most decoder stage (no upsample)."""
 
     def __init__(self, in_ch: int, out_ch: int) -> None:
         super().__init__()
@@ -257,6 +265,7 @@ class _ConvRefine(nn.Module):
 
 class WavKANUNet(nn.Module):
     """Wav-KAN UNet for medical image segmentation.
+        Wav-KAN UNet for 医学的 图像 分割。
 
     Args:
         in_channels:  Input image channels (default 3).
@@ -287,12 +296,12 @@ class WavKANUNet(nn.Module):
         self.img_size = img_size
         self.num_classes = num_classes
 
-        # ---- Encoder: 3 conv stages (downsample via max-pool in forward) ----
+        # ---- 编码器 / ---- Encoder: 3 conv stages (downsample via max-pool in forward) ----
         self.encoder1 = _ConvLayer(in_channels, dims[0])  # /1 then /2
         self.encoder2 = _ConvLayer(dims[0], dims[1])      # /2 then /4
         self.encoder3 = _ConvLayer(dims[1], dims[2])      # /4 then /8
 
-        # ---- Encoder: 2 Wav-KAN stages (stride-2 patch embed each) ----
+        # ---- 编码器 / ---- Encoder: 2 Wav-KAN stages (stride-2 patch embed each) ----
         self.patch_embed4 = _PatchEmbed(dims[2], dims[3], patch_size=3, stride=2)
         self.patch_embed5 = _PatchEmbed(dims[3], dims[4], patch_size=3, stride=2)
         self.block4 = _WavKANBlock(dims[3], wavelet=wavelet, drop=drop_rate)
@@ -300,8 +309,8 @@ class WavKANUNet(nn.Module):
         self.norm4 = nn.LayerNorm(dims[3])
         self.norm5 = nn.LayerNorm(dims[4])
 
-        # ---- Decoder: ConvTranspose2d 2x upsample at each level ----
-        # The two deepest decoder positions get a Wav-KAN block.
+        # ---- 解码器 / ---- Decoder: ConvTranspose2d 2x upsample at each level ----
+        # The two deepest 解码器 / The two deepest decoder positions get a Wav-KAN block.
         self.decoder1 = _UpBlock(dims[4], dims[3])  # /32 -> /16, 512 -> 256
         self.decoder2 = _UpBlock(dims[3], dims[2])  # /16 -> /8,  256 -> 128
         self.decoder3 = _UpBlock(dims[2], dims[1])  # /8  -> /4,  128 -> 64
@@ -351,7 +360,7 @@ class WavKANUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, _, H_in, W_in = x.shape
 
-        # ---- Encoder: convolutional stages ----
+        # ---- 编码器 / ---- Encoder: convolutional stages ----
         out = F.relu(F.max_pool2d(self.encoder1(x), 2, 2))
         t1 = out                                # dim[0], /2
         out = F.relu(F.max_pool2d(self.encoder2(out), 2, 2))
@@ -359,20 +368,20 @@ class WavKANUNet(nn.Module):
         out = F.relu(F.max_pool2d(self.encoder3(out), 2, 2))
         t3 = out                                # dim[2], /8
 
-        # ---- Encoder: Wav-KAN stage 4 ----
+        # ---- 编码器 / ---- Encoder: Wav-KAN stage 4 ----
         out, H, W = self.patch_embed4(out)      # dim[3], /16
         out = self.block4(out, H, W)
         out = self.norm4(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         t4 = out                                # dim[3], /16
 
-        # ---- Encoder: Wav-KAN bottleneck (stage 5) ----
+        # ---- 编码器 / ---- Encoder: Wav-KAN bottleneck (stage 5) ----
         out, H, W = self.patch_embed5(out)      # dim[4], /32
         out = self.block5(out, H, W)
         out = self.norm5(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
 
-        # ---- Decoder: Wav-KAN level 4 ----
+        # ---- 解码器 / ---- Decoder: Wav-KAN level 4 ----
         out = self.decoder1(out)                # /32 -> /16, dim[3]
         out = out + self._match_spatial(t4, out)
         _, _, H, W = out.shape
@@ -381,7 +390,7 @@ class WavKANUNet(nn.Module):
         out = self.dnorm1(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
 
-        # ---- Decoder: Wav-KAN level 3 ----
+        # ---- 解码器 / ---- Decoder: Wav-KAN level 3 ----
         out = self.decoder2(out)                # /16 -> /8, dim[2]
         out = out + self._match_spatial(t3, out)
         _, _, H, W = out.shape
@@ -390,7 +399,7 @@ class WavKANUNet(nn.Module):
         out = self.dnorm2(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
 
-        # ---- Decoder: convolutional levels ----
+        # ---- 解码器 / ---- Decoder: convolutional levels ----
         out = self.decoder3(out)                # /8 -> /4, dim[1]
         out = out + self._match_spatial(t2, out)
         out = self.decoder4(out)                # /4 -> /2, dim[0]

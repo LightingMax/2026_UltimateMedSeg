@@ -84,14 +84,14 @@ def load_grefcoco_json(
         record["width"] = img_dict["width"]
         image_id = record["image_id"] = img_dict["id"]
 
-        # Check that information of image, ann and ref match each other
-        # This fails only when the data parsing logic or the annotation file is buggy.
+        # Check that information of 图像, ann and ref match each other / Check that information of image, ann and ref match each other
+        # This fails only when the 数据 parsing logic or the annotation file is buggy / This fails only when the data parsing logic or the annotation file is buggy.
         assert ref_dict["image_id"] == image_id
         assert ref_dict["split"] == split
         if not isinstance(ref_dict["ann_id"], list):
             ref_dict["ann_id"] = [ref_dict["ann_id"]]
 
-        # No target samples
+        # No 目标 样本 / No target samples
         if None in anno_dicts:
             assert anno_dicts == [None]
             assert ref_dict["ann_id"] == [-1]
@@ -101,7 +101,7 @@ def load_grefcoco_json(
             obj["empty"] = True
             obj = [obj]
 
-        # Multi target samples
+        # Multi 目标 样本 / Multi target samples
         else:
             record["empty"] = False
             obj = []
@@ -142,7 +142,7 @@ def load_grefcoco_json(
 
         record["annotations"] = obj
 
-        # Process referring expressions
+        # 处理 referring expressions / Process referring expressions
         sents = ref_dict["sentences"]
         for sent in sents:
             ref_record = record.copy()
@@ -155,10 +155,10 @@ def load_grefcoco_json(
     #         else:
     #             MT_count += 1
 
-    # logger.info("NT samples: %d, MT samples: %d", NT_count, MT_count)
+    # logger. info ( " NT 样本: % d, MT 样本: % d ", NT _ count, MT _ count ) / logger.info("NT samples: %d, MT samples: %d", NT_count, MT_count)
 
     # Debug mode
-    # return dataset_dicts[:100]
+    # 返回 数据集 _ dicts [: 100 ] / return dataset_dicts[:100]
 
     return dataset_dicts
 

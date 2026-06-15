@@ -1,4 +1,5 @@
-"""Compound Loss - combines multiple losses."""
+"""Compound 损失。
+    Compound Loss - combines multiple losses."""
 
 import torch.nn as nn
 from medseg.registry import LOSS_REGISTRY
@@ -7,6 +8,7 @@ from medseg.registry import LOSS_REGISTRY
 @LOSS_REGISTRY.register("compound")
 class CompoundLoss(nn.Module):
     """Compound loss: weighted combination of multiple registered losses.
+        Compound 损失。
 
     Usage in config:
         loss:

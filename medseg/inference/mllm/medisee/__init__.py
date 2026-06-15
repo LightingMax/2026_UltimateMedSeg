@@ -1,4 +1,5 @@
 """MediSee (ACM Multimedia 2025) — Reasoning-based Pixel-level Perception in Medical Images.
+    MediSee ( ACM Multimedia 2025 ) — Reasoning-based Pixel-level Perception in 医学的 图像。
 
 上游来源: https://github.com/Edisonhimself/MediSee  (commit @ main, vendor 时间 2026-04)
 

@@ -1,4 +1,5 @@
 """ResUNet++: An Advanced Architecture for Medical Image Segmentation.
+    ResUNet + +: An Advanced 架构 for 医学的 图像 分割。
 
 Reference:
     Jha et al., "ResUNet++: An Advanced Architecture for Medical Image
@@ -17,7 +18,8 @@ import torch.nn.functional as F
 
 
 class _ResidualConv(nn.Module):
-    """Residual conv block faithful to original ResUNet++."""
+    """残差 conv 块 忠实 to original ResUNet + +。
+        Residual conv block faithful to original ResUNet++."""
 
     def __init__(self, in_ch, out_ch, stride=1, padding=1):
         super().__init__()
@@ -39,7 +41,8 @@ class _ResidualConv(nn.Module):
 
 
 class _SqueezeExcite(nn.Module):
-    """Squeeze-and-Excitation block faithful to original."""
+    """Squeeze-and-Excitation 块 忠实 to original。
+        Squeeze-and-Excitation block faithful to original."""
 
     def __init__(self, channel, reduction=16):
         super().__init__()
@@ -59,7 +62,8 @@ class _SqueezeExcite(nn.Module):
 
 
 class _ASPP(nn.Module):
-    """Atrous Spatial Pyramid Pooling faithful to original."""
+    """Atrous 空间的 金字塔 池化 忠实 to original。
+        Atrous Spatial Pyramid Pooling faithful to original."""
 
     def __init__(self, in_ch, out_ch, rate=None):
         super().__init__()
@@ -81,7 +85,8 @@ class _ASPP(nn.Module):
 
 
 class _AttentionBlock(nn.Module):
-    """Attention block faithful to original ResUNet++."""
+    """注意力 块 忠实 to original ResUNet + +。
+        Attention block faithful to original ResUNet++."""
 
     def __init__(self, input_encoder, input_decoder, output_dim):
         super().__init__()
@@ -110,6 +115,7 @@ class _AttentionBlock(nn.Module):
 
 class ResUNetPP(nn.Module):
     """ResUNet++ with SE blocks, ASPP bottleneck, and attention-gated decoder.
+        ResUNet++ with SE blocks, ASPP bottleneck, and attention-gated 解码器。
 
     Args:
         in_channels: number of input channels.
@@ -121,7 +127,7 @@ class ResUNetPP(nn.Module):
         super().__init__()
         filters = [32, 64, 128, 256, 512]
 
-        # Encoder
+        # 编码器 / Encoder
         self.input_layer = nn.Sequential(
             nn.Conv2d(in_channels, filters[0], 3, padding=1),
             nn.BatchNorm2d(filters[0]),
@@ -141,10 +147,10 @@ class ResUNetPP(nn.Module):
         self.se3 = _SqueezeExcite(filters[2])
         self.res_conv3 = _ResidualConv(filters[2], filters[3], 2, 1)
 
-        # ASPP bottleneck
+        # ASPP 瓶颈层 / ASPP bottleneck
         self.aspp_bridge = _ASPP(filters[3], filters[4])
 
-        # Decoder with attention gates
+        # 解码 with 注意力 gates / Decoder with attention gates
         self.attn1 = _AttentionBlock(filters[2], filters[4], filters[4])
         self.upsample1 = nn.Upsample(scale_factor=2, mode='bilinear',
                                       align_corners=True)
@@ -160,16 +166,16 @@ class ResUNetPP(nn.Module):
                                       align_corners=True)
         self.up_res_conv3 = _ResidualConv(filters[2] + filters[0], filters[1], 1, 1)
 
-        # ASPP output
+        # ASPP 输出 / ASPP output
         self.aspp_out = _ASPP(filters[1], filters[0])
 
-        # Final output
+        # Final 输出 / Final output
         self.out_conv = nn.Conv2d(filters[0], num_classes, 1)
 
     def forward(self, x):
         inp_size = x.shape[2:]
 
-        # Encoder
+        # 编码器 / Encoder
         x1 = self.input_layer(x) + self.input_skip(x)
 
         x2 = self.se1(x1)
@@ -184,7 +190,7 @@ class ResUNetPP(nn.Module):
         # ASPP bridge
         x5 = self.aspp_bridge(x4)
 
-        # Decoder
+        # 解码 / Decoder
         x6 = self.attn1(x3, x5)
         x6 = self.upsample1(x6)
         x6 = torch.cat([x6, x3], dim=1)
@@ -200,11 +206,11 @@ class ResUNetPP(nn.Module):
         x8 = torch.cat([x8, x1], dim=1)
         x8 = self.up_res_conv3(x8)
 
-        # ASPP output + final conv
+        # ASPP 输出 + final conv / ASPP output + final conv
         x9 = self.aspp_out(x8)
         out = self.out_conv(x9)
 
-        # Upsample if needed
+        # 上采样 if needed / Upsample if needed
         if out.shape[-2:] != torch.Size(inp_size):
             out = F.interpolate(out, size=inp_size, mode='bilinear',
                                 align_corners=True)

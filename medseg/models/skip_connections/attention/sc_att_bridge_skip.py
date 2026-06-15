@@ -1,4 +1,5 @@
 """SC-Att-Bridge skip (per-pair adaptation of MALUNet's SC_Att_Bridge).
+    SC-Att-Bridge 跳跃连接。
 
 Original (MALUNet, BIBM 2022): operates on a LIST of encoder skip features at
 all scales — first applies per-feature spatial attention (7x7 conv on
@@ -26,6 +27,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("sc_att_bridge")
 class SCAttBridgeSkip(nn.Module):
     """Spatial-Channel Attention Bridge skip (per-pair).
+        Spatial-Channel Attention Bridge 跳跃连接。
 
     Topology (paraphrasing MALUNet's SCABridge for 2 features):
         residuals = [d, s]
@@ -41,7 +43,7 @@ class SCAttBridgeSkip(nn.Module):
 
     def __init__(self, split_att: str = "fc", **kwargs):
         super().__init__()
-        # 7x7 conv on channel-pooled features (shared across decoder & skip)
+        # 7x7 conv on channel-pooled features (shared across 解码器 / 7x7 conv on channel-pooled features (shared across decoder & skip)
         self.shared_spatial = nn.Sequential(
             nn.Conv2d(2, 1, kernel_size=7, stride=1, padding=9, dilation=3),
             nn.Sigmoid(),
@@ -53,13 +55,14 @@ class SCAttBridgeSkip(nn.Module):
         return decoder_ch + skip_ch
 
     def _channel_att(self, d_ch: int, s_ch: int, device):
-        """Build / fetch the cross-feature channel-attention head (lazy)."""
+        """Build / fetch the cross-feature channel-attention 头部 ( lazy )。
+            Build / fetch the cross-feature channel-attention head (lazy)."""
         key = (d_ch, s_ch, device)
         if key in self._channel_caches:
             return self._channel_caches[key]
 
         total = d_ch + s_ch
-        # 1D Conv across the 1-D "channel-as-spatial" axis of length 2 (two features pooled to 1×1)
+        # 1D Conv across the 1-D " channel-as-spatial " axis of length 2 ( two 特征 pooled to 1 × 1 ) / 1D Conv across the 1-D "channel-as-spatial" axis of length 2 (two features pooled to 1×1)
         get_all_att = nn.Conv1d(1, 1, kernel_size=3, padding=1, bias=False).to(device)
         if self.split_att == "fc":
             head_d = nn.Linear(total, d_ch).to(device)
@@ -74,7 +77,7 @@ class SCAttBridgeSkip(nn.Module):
             "head_s": head_s,
             "sigmoid": sigmoid,
         })
-        # Keep a reference so optimizer's .parameters() picks them up after a forward pass
+        # Keep a 参考 so optimizer's. 参数 ( ) picks them up after a 前向传播 pass / Keep a reference so optimizer's .parameters() picks them up after a forward pass
         setattr(self, f"_ch_{d_ch}_{s_ch}", mod)
         self._channel_caches[key] = mod
         return mod
@@ -85,7 +88,7 @@ class SCAttBridgeSkip(nn.Module):
         return self.shared_spatial(torch.cat([avg_out, max_out], dim=1))
 
     def forward(self, decoder_feat: torch.Tensor, skip_feat: torch.Tensor) -> torch.Tensor:
-        # Align spatial dims (decoder is usually upsampled to skip size by the framework,
+        # Align spatial dims (decoder is usually upsampled to 跳跃连接 / Align spatial dims (decoder is usually upsampled to skip size by the framework,
         # but guard anyway).
         if skip_feat.shape[2:] != decoder_feat.shape[2:]:
             skip_feat = F.interpolate(skip_feat, size=decoder_feat.shape[2:],
@@ -94,17 +97,17 @@ class SCAttBridgeSkip(nn.Module):
         d, s = decoder_feat, skip_feat
         residuals = [d, s]
 
-        # Spatial attention path
+        # 空间的 注意力 path / Spatial attention path
         s_att_d = self._spatial_att(d)
         s_att_s = self._spatial_att(s)
         feats = [s_att_d * d, s_att_s * s]
         r2 = list(feats)
         feats = [f + r for f, r in zip(feats, residuals)]
 
-        # Cross-feature channel attention
+        # Cross-feature 通道 注意力 / Cross-feature channel attention
         d_ch, s_ch = d.shape[1], s.shape[1]
         mod = self._channel_att(d_ch, s_ch, d.device)
-        # Pool both features to (B, C, 1, 1) then concat → (B, d+s, 1, 1)
+        # Pool both 特征 to ( B, C, 1, 1 ) then concat → ( B, d + s, 1, 1 ) / Pool both features to (B, C, 1, 1) then concat → (B, d+s, 1, 1)
         pooled = torch.cat(
             [F.adaptive_avg_pool2d(feats[0], 1), F.adaptive_avg_pool2d(feats[1], 1)],
             dim=1,

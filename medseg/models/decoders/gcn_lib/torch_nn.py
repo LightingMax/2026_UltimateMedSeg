@@ -1,4 +1,5 @@
 """Basic neural network layers for graph convolution.
+    基本 neural 网络 layers for graph 卷积。
 
 Source: https://github.com/SLDGroup/G-CASCADE (lib/gcn_lib/torch_nn.py)
 Adapted from ViG (Huawei, 2022).
@@ -10,7 +11,8 @@ from torch.nn import Sequential as Seq, Linear as Lin, Conv2d
 
 
 def act_layer(act, inplace=False, neg_slope=0.2, n_prelu=1):
-    """Get activation layer by name."""
+    """Get 激活 层 by name。
+        Get activation layer by name."""
     act = act.lower()
     if act == 'relu':
         return nn.ReLU(inplace)
@@ -27,7 +29,8 @@ def act_layer(act, inplace=False, neg_slope=0.2, n_prelu=1):
 
 
 def norm_layer(norm, nc):
-    """Get normalization layer by name."""
+    """Get 归一化 层 by name。
+        Get normalization layer by name."""
     norm = norm.lower()
     if norm == 'batch':
         return nn.BatchNorm2d(nc, affine=True)
@@ -38,7 +41,8 @@ def norm_layer(norm, nc):
 
 
 class BasicConv(Seq):
-    """Multi-layer conv sequence with optional norm/act/dropout."""
+    """Multi-layer conv 序列 with 可选 norm / act / 随机丢弃。
+        Multi-layer conv sequence with optional norm/act/dropout."""
 
     def __init__(self, channels, act='relu', norm=None, bias=True, drop=0.,
                  kernel_size=1, padding=0, groups=4):
@@ -68,6 +72,7 @@ class BasicConv(Seq):
 
 def batched_index_select(x, idx):
     """Fetch neighbor features from given neighbor indices.
+        Fetch neighbor 特征 from given neighbor indices。
 
     Args:
         x: (B, C, N, 1) input feature tensor.

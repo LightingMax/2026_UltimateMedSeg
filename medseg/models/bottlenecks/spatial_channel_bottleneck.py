@@ -1,4 +1,5 @@
 """Spatial-Channel Cross-Attention bottleneck.
+    Spatial-Channel Cross-Attention 瓶颈层。
 
 Combines a spatial attention branch (inspired by Spatial Transformer Networks)
 with a channel attention branch (SE-style), then fuses them through a 1×1
@@ -16,13 +17,14 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 
 class SpatialChannelAttention(nn.Module):
-    """Dual-branch spatial + channel attention with learned gating."""
+    """Dual-branch 空间的 + 通道 注意力 with learned gating。
+        Dual-branch spatial + channel attention with learned gating."""
 
     def __init__(self, in_channels, reduction=16):
         super().__init__()
         mid = max(in_channels // reduction, 4)
 
-        # Channel attention branch
+        # 通道 注意力 分支 / Channel attention branch
         self.ca = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
@@ -31,12 +33,12 @@ class SpatialChannelAttention(nn.Module):
             nn.Linear(mid, in_channels),
         )
 
-        # Spatial attention branch
+        # 空间的 注意力 分支 / Spatial attention branch
         self.sa = nn.Sequential(
             nn.Conv2d(2, 1, kernel_size=7, padding=3, bias=False),
         )
 
-        # Fusion gate
+        # 融合 gate / Fusion gate
         self.gate = nn.Sequential(
             nn.Conv2d(in_channels * 2, in_channels, 1, bias=False),
             nn.BatchNorm2d(in_channels),
@@ -44,11 +46,11 @@ class SpatialChannelAttention(nn.Module):
         )
 
     def forward(self, x):
-        # Channel attention
+        # 通道 注意力 / Channel attention
         ca_w = torch.sigmoid(self.ca(x)).unsqueeze(-1).unsqueeze(-1)  # B,C,1,1
         ca_feat = x * ca_w
 
-        # Spatial attention
+        # 空间的 注意力 / Spatial attention
         avg_out = x.mean(dim=1, keepdim=True)    # B,1,H,W
         max_out, _ = x.max(dim=1, keepdim=True)  # B,1,H,W
         sa_w = torch.sigmoid(self.sa(torch.cat([avg_out, max_out], dim=1)))
@@ -62,6 +64,7 @@ class SpatialChannelAttention(nn.Module):
 @BOTTLENECK_REGISTRY.register("spatial_channel")
 class SpatialChannelBottleneck(nn.Module):
     """Spatial-Channel cross-attention bottleneck with residual.
+        Spatial-Channel cross-attention 瓶颈层。
 
     Args:
         in_channels: Number of input/output channels.

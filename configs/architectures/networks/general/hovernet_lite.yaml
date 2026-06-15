@@ -1,5 +1,9 @@
-# HoverNetLite
+# HoverNetLite - Lightweight HoVerNet for nuclei segmentation
+# HoverNetLite - 轻量级HoverNet细胞核分割网络
 # Domain: pathology
+# 领域: 病理学
+# Standalone architecture: hovernet_lite
+# 独立架构: hovernet_lite
 
 model:
   num_classes: 2

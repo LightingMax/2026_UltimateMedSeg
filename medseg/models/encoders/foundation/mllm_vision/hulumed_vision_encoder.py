@@ -1,4 +1,5 @@
 """HuLuMed (Hulu-Med) vision-tower encoder (foundation-model encoder).
+    HuLuMed (Hulu-Med) vision-tower encoder (foundation-model 编码器。
 
 Hulu-Med (ZJU AI4H, 2025) is an open-source medical multimodal-LLM whose
 vision tower is a SigLIP-style ViT (hidden_size=1152, patch=14, 27 layers
@@ -39,6 +40,7 @@ _NATIVE_IMG_SIZE = 384
 @ENCODER_REGISTRY.register("hulumed_vision")
 class HuLuMedVisionEncoder(BaseFoundationEncoder):
     """HuLuMed (SigLIP-SO400M-patch14) vision-tower encoder.
+        HuLuMed (SigLIP-SO400M-patch14) vision-tower 编码器。
 
     Extracts only the vision encoder of the HuLuMed medical MLLM and
     exposes a 4-stage DPT-style multi-block multi-scale feature pyramid for use
@@ -74,7 +76,7 @@ class HuLuMedVisionEncoder(BaseFoundationEncoder):
                     f"{type(e).__name__}: {e}. Provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Extract the vision tower from the full MLLM.
+            # 提取 the vision tower from the full MLLM / Extract the vision tower from the full MLLM.
             _visual = None
             for attr in ("vision_tower", "vision_model", "visual", "image_encoder"):
                 _visual = getattr(_full_model, attr, None)
@@ -84,7 +86,7 @@ class HuLuMedVisionEncoder(BaseFoundationEncoder):
                 raise RuntimeError(
                     f"Could not find vision tower in HuLuMed model from '{_src}'."
                 )
-            # Some wrappers nest the actual ViT under .trunk or .backbone.
+            # Some wrappers nest the actual ViT under. trunk or. 骨干网络 / Some wrappers nest the actual ViT under .trunk or .backbone.
             _vit = getattr(_visual, "trunk", None) or getattr(_visual, "backbone", _visual)
             if not hasattr(_vit, 'embed_dim'):
                 _vit.embed_dim = _EMBED_DIM
@@ -118,7 +120,7 @@ class HuLuMedVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -141,7 +143,7 @@ class HuLuMedVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

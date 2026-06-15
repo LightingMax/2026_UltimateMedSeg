@@ -1,4 +1,5 @@
-"""Endoscopy foundation encoders."""
+"""内窥镜 foundation encoders。
+    Endoscopy foundation encoders."""
 import sys as _sys
 for _stem in ('endo_vit_encoder',):
     try:

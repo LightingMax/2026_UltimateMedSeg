@@ -1,4 +1,5 @@
 """Generalised Wasserstein Dice Loss.
+    Generalised Wasserstein Dice 损失。
 
 Faithful reimplementation of:
     Fidon et al., "Generalised Wasserstein Dice Score for Imbalanced Multi-class
@@ -34,7 +35,8 @@ from medseg.registry import LOSS_REGISTRY
 
 @LOSS_REGISTRY.register("wasserstein_dice")
 class WassersteinDiceLoss(nn.Module):
-    """Generalised Wasserstein Dice loss (Fidon et al., 2017)."""
+    """Generalised Wasserstein Dice 损失。
+        Generalised Wasserstein Dice loss (Fidon et al., 2017)."""
 
     def __init__(
         self,
@@ -61,6 +63,7 @@ class WassersteinDiceLoss(nn.Module):
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """pred: (B, C, H, W) logits.  target: (B, H, W) long.
+            pred: ( B, C, H, W ) logits. 目标: ( B, H, W ) long。
 
         Implementation follows Fidon 2017 / MONAI's GeneralizedWassersteinDiceLoss:
             GWDS = 2 * TP / (2 * TP + FN + FP), with
@@ -74,7 +77,7 @@ class WassersteinDiceLoss(nn.Module):
 
         M = self._get_distance_matrix(C, pred.device, pred.dtype)
 
-        # M_t[b, l, h, w] = M[l, target[b, h, w]]
+        # M _ t [ b, l, h, w ] = M [ l, 目标 [ b, h, w ] ] / M_t[b, l, h, w] = M[l, target[b, h, w]]
         target_clamped = target.clamp_min(0)
         M_t = M[:, target_clamped]                        # (C, B, H, W)
         M_t = M_t.permute(1, 0, 2, 3).contiguous()        # (B, C, H, W)
@@ -82,7 +85,7 @@ class WassersteinDiceLoss(nn.Module):
         WD = (probs * M_t).sum(dim=1)                     # (B, H, W)
         V = M_t.max(dim=1).values                         # (B, H, W)
 
-        # Foreground / background masks (FG = target != 0).
+        # Foreground / background 掩码 ( FG = 目标! = 0 ) / Foreground / background masks (FG = target != 0).
         fg_mask = (target != 0).float()
         bg_mask = 1.0 - fg_mask
         if self.ignore_index is not None:

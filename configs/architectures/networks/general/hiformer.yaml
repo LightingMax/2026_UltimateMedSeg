@@ -1,6 +1,9 @@
 # HiFormer (Heidari et al., 2023)
+# HiFormer 分割网络
 # HiFormer (Heidari et al., 2023)
+# HiFormer 分割网络
 # Standalone architecture: hiformer
+# 独立架构: hiformer
 
 model:
   num_classes: 2

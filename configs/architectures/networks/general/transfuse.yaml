@@ -7,7 +7,8 @@ model:
   img_size: 256
   encoder:
     in_channels: 3
-  arch_params: {}
+  arch_params:
+    pretrained: true
 data:
   type: generic
   img_size: 256

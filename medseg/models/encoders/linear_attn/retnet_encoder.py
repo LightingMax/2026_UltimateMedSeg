@@ -1,4 +1,5 @@
 """RetNet encoder.
+    RetNet 编码器。
 
 Standalone hierarchical retention encoder extracted from
 ``medseg/networks/other/retnet_unet.py``. Implements the multi-scale
@@ -31,12 +32,13 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 # ---------------------------------------------------------------------------
-# Windowed multi-scale retention (parallel form)
+# Windowed 多尺度 retention ( 并行的 form ) / Windowed multi-scale retention (parallel form)
 # ---------------------------------------------------------------------------
 
 
 class _Retention(nn.Module):
-    """Multi-scale retention with per-head learnable decay scalar."""
+    """Multi-scale retention with per-head learnable decay 标量。
+        Multi-scale retention with per-head learnable decay scalar."""
 
     def __init__(self, dim, num_heads, window_size=8):
         super().__init__()
@@ -115,7 +117,7 @@ class _Retention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MLP + retention block
+# MLP + retention 块 / MLP + retention block
 # ---------------------------------------------------------------------------
 
 
@@ -146,12 +148,13 @@ class _RetBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Patch embedding + 2x down-sampling
+# 图块 嵌入 + 2x down-sampling / Patch embedding + 2x down-sampling
 # ---------------------------------------------------------------------------
 
 
 class _PatchEmbed(nn.Module):
-    """Stride-4 stem: 4x4 conv (stride 4) + LayerNorm."""
+    """步长 - 4 主干: 4x4 conv ( 步长 4 ) + LayerNorm。
+        Stride-4 stem: 4x4 conv (stride 4) + LayerNorm."""
 
     def __init__(self, in_channels, dim):
         super().__init__()
@@ -167,7 +170,8 @@ class _PatchEmbed(nn.Module):
 
 
 class _PatchMerging(nn.Module):
-    """2x downsample via 2x2 stride-2 conv + LayerNorm."""
+    """2x 下采样 via 2x2 步长 - 2 conv + LayerNorm。
+        2x downsample via 2x2 stride-2 conv + LayerNorm."""
 
     def __init__(self, in_dim, out_dim):
         super().__init__()
@@ -185,13 +189,14 @@ class _PatchMerging(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# RetNet encoder
+# RetNet 编码器 / RetNet encoder
 # ---------------------------------------------------------------------------
 
 
 @ENCODER_REGISTRY.register("retnet")
 class RetNetEncoder(nn.Module):
     """Hierarchical RetNet (multi-scale retention) encoder.
+        Hierarchical RetNet (multi-scale retention) 编码器。
 
     Parameters
     ----------
@@ -226,7 +231,7 @@ class RetNetEncoder(nn.Module):
         self.pretrained = pretrained
         self.out_channels: List[int] = list(dims)
 
-        # optional channel-adapter for in_channels != 3
+        # 可选 channel-adapter for in _ 通道! = 3 / optional channel-adapter for in_channels != 3
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1)
             stem_in = 3
@@ -234,10 +239,10 @@ class RetNetEncoder(nn.Module):
             self.input_proj = None
             stem_in = in_channels
 
-        # stem
+        # 主干 / stem
         self.patch_embed = _PatchEmbed(stem_in, dims[0])
 
-        # encoder stages + inter-stage downsamples
+        # 编码器 阶段 + inter-stage downsamples / encoder stages + inter-stage downsamples
         self.enc_stages = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         for i in range(len(dims)):
@@ -280,7 +285,7 @@ class RetNetEncoder(nn.Module):
         for i, stage in enumerate(self.enc_stages):
             for blk in stage:
                 x = blk(x, h, w)
-            # collect this stage's feature in BCHW form
+            # collect this stage's 特征 in BCHW form / collect this stage's feature in BCHW form
             C = x.shape[-1]
             feat = x.transpose(1, 2).contiguous().view(B, C, h, w)
             features.append(feat)

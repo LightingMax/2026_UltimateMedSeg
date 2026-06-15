@@ -1,4 +1,5 @@
 """Zig-RiR (Zigzag RWKV-in-RWKV) Encoder.
+    Zig-RiR (Zigzag RWKV-in-RWKV) 编码器。
 
 Faithful port of the **2D** model from the official repository:
     https://github.com/txchen-USTC/Zig-RiR  (file: Zig_RiR2d.py)
@@ -41,15 +42,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from medseg.registry import ENCODER_REGISTRY
-# WKV kernel dispatcher: JIT-compiles the official Vision-RWKV CUDA op when
-# available (with analytic backward) and otherwise falls back to a vectorised
+# WKV 卷积核 dispatcher: JIT-compiles the official Vision-RWKV CUDA op when / WKV kernel dispatcher: JIT-compiles the official Vision-RWKV CUDA op when
+# available ( with analytic 反向传播 ) and otherwise falls back to a vectorised / available (with analytic backward) and otherwise falls back to a vectorised
 # PyTorch implementation that PyTorch autograd differentiates automatically.
 from medseg.kernels.wkv import load_wkv_cuda, is_cuda_available, run_wkv
 from .rwkv_encoder import DropPath  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
-# WKV kernel dispatcher
+# WKV 卷积核 dispatcher / WKV kernel dispatcher
 # ---------------------------------------------------------------------------
 
 def _try_load_cuda_wkv(t_max: int = 8192):
@@ -118,7 +119,7 @@ def _bchw_to_bnc(x: torch.Tensor) -> torch.Tensor:
 
 
 # ---------------------------------------------------------------------------
-# VRWKV Spatial Mix (zigzag scan + recurrence=2)
+# VRWKV 空间的 Mix ( zigzag scan + recurrence = 2 ) / VRWKV Spatial Mix (zigzag scan + recurrence=2)
 # ---------------------------------------------------------------------------
 
 class VRWKV_SpatialMix(nn.Module):
@@ -196,7 +197,7 @@ class VRWKV_SpatialMix(nn.Module):
         x = _bnc_to_bchw(x, h, w)
         x = q_shift(x)
 
-        # zigzag flatten
+        # zigzag 展平 / zigzag flatten
         B, C, _, _ = x.shape
         x = x.reshape(B, C, h * w)
         x = x[..., zigzag_order]
@@ -232,8 +233,8 @@ class VRWKV_SpatialMix(nn.Module):
                 v = v.transpose(1, 2)
 
                 v = RUN_CUDA(B, T, C, self.spatial_decay[j] / T, self.spatial_first[j] / T, k, v)
-                # restore canonical shape; algebraically equivalent to upstream
-                # rearrange chain since (h, w) == (new_h, new_w) in token count.
+                # restore canonical 形状; algebraically equivalent to upstream / restore canonical shape; algebraically equivalent to upstream
+                # rearrange chain since ( h, w ) = = ( new _ h, new _ w ) in 标记 count / rearrange chain since (h, w) == (new_h, new_w) in token count.
                 k = k.reshape(B, T, C)
                 v = v.reshape(B, T, C)
 
@@ -246,7 +247,7 @@ class VRWKV_SpatialMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VRWKV Channel Mix
+# VRWKV 通道 Mix / VRWKV Channel Mix
 # ---------------------------------------------------------------------------
 
 class VRWKV_ChannelMix(nn.Module):
@@ -279,11 +280,12 @@ class VRWKV_ChannelMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# RWKV-in-RWKV Block (the core of Zig-RiR)
+# RWKV-in-RWKV 块 ( the core of Zig-RiR ) / RWKV-in-RWKV Block (the core of Zig-RiR)
 # ---------------------------------------------------------------------------
 
 class Block(nn.Module):
     """Outer (sentence) + Inner (word) nested RWKV block.
+        Outer ( sentence ) + Inner ( word ) 嵌套的 RWKV 块。
 
     Matches Zig_RiR2d.py:Block. When ``inner_dim <= 0`` the block degenerates
     to outer-only (used for blocks beyond the first/second one in each stage).
@@ -330,7 +332,7 @@ class Block(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Patch merging for sentences and words
+# 图块 merging for sentences and words / Patch merging for sentences and words
 # ---------------------------------------------------------------------------
 
 class PatchMerging2D_sentence(nn.Module):
@@ -384,7 +386,7 @@ class PatchMerging2D_word(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stem
+# 主干 / Stem
 # ---------------------------------------------------------------------------
 
 class Stem(nn.Module):
@@ -437,7 +439,7 @@ class Stem(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stage
+# 阶段 / Stage
 # ---------------------------------------------------------------------------
 
 class Stage(nn.Module):
@@ -470,7 +472,7 @@ class Stage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Per-stage upsample head
+# Per-stage 上采样 头部 / Per-stage upsample head
 # ---------------------------------------------------------------------------
 
 class UpsampleBlock(nn.Module):
@@ -498,7 +500,7 @@ class UpsampleBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# 4-stage hierarchical encoder
+# 4-stage hierarchical 编码器 / 4-stage hierarchical encoder
 # ---------------------------------------------------------------------------
 
 class PyramidRiR_enc(nn.Module):
@@ -581,7 +583,7 @@ class PyramidRiR_enc(nn.Module):
                 outer_tokens, H_out, W_out = self.sentence_merges[i - 1](outer_tokens, H_out, W_out)
             inner_tokens, outer_tokens = self.stages[i](inner_tokens, outer_tokens, H_out, W_out, H_in, W_in)
             b, l, m = outer_tokens.shape
-            # outer_tokens grid may be non-square when img_size is not a power-of-2 multiple;
+            # outer _ 标记 grid may be non-square when img _ 大小 is not a power-of - 2 multiple / outer_tokens grid may be non-square when img_size is not a power-of-2 multiple;
             # use the tracked H_out / W_out instead of int(sqrt(l)) for correctness.
             mid_out = outer_tokens.reshape(b, H_out, W_out, m).permute(0, 3, 1, 2)
             mid_out = self.up_blocks[i](mid_out)
@@ -593,12 +595,13 @@ class PyramidRiR_enc(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Project-side wrapper: register under "rir_zigzag"
+# Project-side 封装器: 注册 under " rir _ zigzag " / Project-side wrapper: register under "rir_zigzag"
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("rir_zigzag")
 class RIRZigzagEncoder(nn.Module):
     """Zig-RiR (RWKV-in-RWKV) hierarchical encoder.
+        Zig-RiR (RWKV-in-RWKV) hierarchical 编码器。
 
     Thin wrapper exposing the standard project encoder interface:
         - ``out_channels``: list of per-stage channel widths

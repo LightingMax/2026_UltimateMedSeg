@@ -1,4 +1,5 @@
 """Deep supervision loss wrapper.
+    Deep supervision 损失。
 
 When a model returns a list [main_output, aux1, aux2, ...] during training
 with deep_supervision=True, this loss wrapper computes weighted losses on all outputs.
@@ -11,6 +12,7 @@ from medseg.registry import LOSS_REGISTRY
 @LOSS_REGISTRY.register("deep_supervision")
 class DeepSupervisionLoss(nn.Module):
     """Wraps any base loss to support deep supervision multi-output.
+        Wraps any base 损失。
 
     Convention:
       - Model output is a list: [main_pred, aux_pred_1, aux_pred_2, ...]
@@ -36,20 +38,21 @@ class DeepSupervisionLoss(nn.Module):
         super().__init__()
         if base_loss is None:
             base_loss = {"name": "compound"}
-        # Build the base loss from registry
+        # Build the base 损失 / Build the base loss from registry
         loss_cls = LOSS_REGISTRY.get(base_loss["name"])
         self.base_loss = loss_cls(**base_loss.get("params", {}))
         self.aux_weight = aux_weight
 
     def forward(self, pred, target):
         """Compute deep supervision loss.
+            Compute deep supervision 损失。
 
         Args:
             pred: Either a single tensor (no DS) or a list [main, aux1, aux2, ...].
             target: Ground truth tensor.
         """
         if isinstance(pred, (list, tuple)):
-            # Deep supervision mode
+            # 深度 supervision mode / Deep supervision mode
             main_loss = self.base_loss(pred[0], target)
             aux_loss = sum(self.base_loss(p, target) for p in pred[1:])
             n_aux = len(pred) - 1
@@ -57,5 +60,5 @@ class DeepSupervisionLoss(nn.Module):
                 return main_loss + self.aux_weight * aux_loss / n_aux
             return main_loss
         else:
-            # Single output mode (no DS or inference)
+            # Single 输出 mode ( no DS or 推理 ) / Single output mode (no DS or inference)
             return self.base_loss(pred, target)

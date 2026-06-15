@@ -1,227 +1,161 @@
-# 第 08 章：高级训练范式
+﻿# 第 08 章：高级训练范式 — 总览
 
-[English](08_paradigms.md)
-
-除标准监督训练外，UltimateMedSeg 支持 **5 大高级训练范式**，各有专用训练脚本和 YAML 配置。
+[上一章：Foundation 模型](07_foundation_CN.md) | [English](08_paradigms.md) | [下一章：部署](09_deployment_CN.md)
 
 ---
 
-## 概述
+## 为什么需要超越监督学习？
 
-| 范式 | 方法数 | 脚本 | 适用场景 |
-|------|--------|------|----------|
-| 半监督 | 21 | `semi_train.py` | 少量标注 + 大量无标注数据 |
-| 域适应 | 18 | `train_domain_adaptation.py` | 源域→目标域分布差异 |
-| 知识蒸馏 | 27 | `train_distillation.py` | 大模型压缩到小模型 |
-| 弱监督 | 28 | `train_weakly_supervised.py` | 粗糙标注（框、点、涂鸦） |
-| 文本引导 | 13 | `train_text_guided.py` | 文本提示引导分割 |
+标准监督训练——为每张输入图像配对像素级真值 mask——是最简单的学习范式，但对数据的要求也最为苛刻。在医学影像中，这造成了几个实际瓶颈：
 
----
+- **标注稀缺**：专家标注成本高昂。单张 CT 扫描可能需要放射科医师 30 分钟以上才能标注完成。
+- **域偏移**：在扫描仪 A 的图像上训练的模型可能因采集协议差异而在扫描仪 B 上失败。
+- **模型规模**：最先进的模型体积庞大——在边缘设备上部署需要压缩且不损失精度。
+- **粗糙标注**：通常只有边界框、点或图像级标签可用，而非像素级 mask。
 
-## 1. 半监督学习 — 21 个方法
-
-适用于少量标注数据 + 大量无标注数据的场景。
-
-### 一致性正则化
-
-```bash
-# Mean Teacher: EMA 教师 + 无标注数据一致性损失
-python semi_train.py --config configs/training_paradigms/semi_supervision/mean_teacher.yaml
-```
-
-方法: `mean_teacher`, `ua_mt`, `pi_model`, `temporal_ensembling`
-
-### 伪标签
-
-```bash
-# CPS: 双网络交叉伪监督
-python semi_train.py --config configs/training_paradigms/semi_supervision/cps.yaml
-```
-
-方法: `cps`, `fixmatch`, `flexmatch`, `freematch`, `softmatch`, `pseudo_label`, `corrmach`
-
-### 协同训练
-
-方法: `cross_teaching`, `deep_co_training`, `ict`, `r_drop`
-
-### 高级方法
-
-方法: `unimatch`, `cct`, `urpc`, `allspark`, `diffrect`, `ssl4mis_u`
-
-### 配置示例
-
-```yaml
-semi:
-  method: mean_teacher
-  ema_decay: 0.99
-  consistency_weight: 0.1
-  labeled_ratio: 0.1        # 10% 标注数据
-
-data:
-  type: synapse
-  train_dir: ./data/Synapse/train_npz
-  val_dir: ./data/Synapse/test_vol_h5
-```
+五种高级范式针对这些挑战，各有其特定目标。
 
 ---
 
-## 2. 域适应 — 18 个方法
+## 五大范式
 
-适用于训练数据（源域）和部署数据（目标域）分布不同的场景。
+每种范式都有独立的详细教程。点击进入学习理论、配置和实操练习。
 
-### 基于熵
+### [08a：半监督学习](08a_semi_supervised_CN.md)
 
-```bash
-python train_domain_adaptation.py \
-    --config configs/training_paradigms/domain_adaptation/advent.yaml \
-    --output_dir output/da_advent
-```
+**问题**：图像很多但标注很少。
 
-方法: `advent`, `dann`, `source_only`
+**方案**：通过一致性正则化和伪标签，将无标注数据与有标注数据一起使用。
 
-### 测试时自适应
+| 关键方法 | 核心思想 | 预期收益 |
+|---------|---------|---------|
+| Mean Teacher | EMA 教师提供稳定目标 | 10% 标注时达到全监督的 85–95% |
+| CPS | 双网络交叉伪监督 | 全监督的 85–93% |
+| UniMatch | 弱→强增强一致性 | 最佳单模型性能 |
 
-```bash
-python train_domain_adaptation.py \
-    --config configs/training_paradigms/domain_adaptation/tent.yaml \
-    --output_dir output/da_tent
-```
-
-方法: `tent`, `dpl`
-
-### 风格迁移
-
-方法: `fda`, `pixmatch`, `crst`
-
-### 高级方法
-
-方法: `mic`, `daformer`, `hrda`, `pipa`, `ddb`, `sepicо`, `diga`, `micdrop`, `semivl`, `cbmt`
-
-### 数据目录结构
-
-```
-data/
-├── source/          # 源域：图像 + 标注
-│   ├── images/
-│   └── masks/
-├── target/          # 目标域：仅图像（无标注）
-│   └── images/
-└── target_val/      # 目标域验证集（含标注）
-    ├── images/
-    └── masks/
-```
+**脚本**：`semi_train.py` · **配置**：`configs/training_paradigms/semi_supervision/`
 
 ---
 
-## 3. 知识蒸馏 — 27 个方法
+### [08b：域适应](08b_domain_adaptation_CN.md)
 
-将大型教师模型压缩为小型学生模型，同时保持精度。
+**问题**：模型在扫描仪 A 上效果好但在扫描仪 B 上失败。
 
-### 基于 Logit
+**方案**：对齐源域和目标域特征分布，或在测试时适应。
 
-```bash
-python train_distillation.py \
-    --teacher_config configs/training_paradigms/distillation/teacher_large.yaml \
-    --student_config configs/training_paradigms/distillation/student_small.yaml \
-    --distillation_type logit \
-    --temperature 4.0 \
-    --alpha 0.5
+| 关键方法 | 核心思想 | 预期收益 |
+|---------|---------|---------|
+| AdvEnt | 对抗熵最小化 | 目标域 +8–15% |
+| DANN | 梯度反转获取域不变特征 | 目标域 +5–12% |
+| TENT | 测试时 BatchNorm 适应（无需源数据） | 目标域 +5–10% |
+
+**脚本**：`train_domain_adaptation.py` · **配置**：`configs/training_paradigms/domain_adaptation/`
+
+---
+
+### [08c：知识蒸馏](08c_distillation_CN.md)
+
+**问题**：最好的模型太大，无法部署。
+
+**方案**：通过软标签将大教师的知识迁移到小学生。
+
+| 关键方法 | 核心思想 | 预期收益 |
+|---------|---------|---------|
+| Hinton KD | 匹配软化输出分布 | 教师精度的 90–95% |
+| CWD | 逐通道特征蒸馏 | 教师精度的 93–97% |
+| DKD | 解耦目标/非目标蒸馏 | 教师精度的 94–98% |
+
+**脚本**：`train_distillation.py` · **配置**：`configs/training_paradigms/distillation/`
+
+---
+
+### [08d：弱监督学习](08d_weakly_supervised_CN.md)
+
+**问题**：只有边界框、点或图像级标签——没有像素级 mask。
+
+**方案**：通过 CAM、框监督或特征传播从粗糙标注训练。
+
+| 关键方法 | 标注类型 | 预期收益 |
+|---------|---------|---------|
+| Box Supervised | 边界框 | 全监督的 75–90% |
+| CAM / SEAM | 图像级标签 | 全监督的 60–75% |
+| Point / Scribble | 稀疏点或线条 | 全监督的 60–85% |
+
+**脚本**：`train_weakly_supervised.py` · **配置**：`configs/training_paradigms/weak_supervision/`
+
+---
+
+### [08e：文本引导分割](08e_text_guided_CN.md)
+
+**问题**：想分割新结构但不想收集标注数据。
+
+**方案**：通过视觉语言模型（CLIP、MLLM）使用自然语言描述作为监督。
+
+| 关键方法 | 核心思想 | 预期收益 |
+|---------|---------|---------|
+| TextPromptUNet | CLIP 文本嵌入引导 UNet | 有训练数据时 70–82% Dice |
+| MLLM + SAM2 | 检测再分割管线 | 零样本 55–78% Dice |
+| SemanticGuidedUNet | 类别嵌入 + 多尺度注意力 | 有训练数据时 65–78% Dice |
+
+**脚本**：`train_text_guided.py` / `test.py` · **配置**：`configs/training_paradigms/text_guided/`
+
+---
+
+## 快速对比
+
+| 范式 | 所需数据 | 标注成本 | 典型提升 | 脚本 |
+|------|---------|---------|---------|------|
+| 监督（基线） | 100% 标注 | 最高 | 基线 | `train.py` |
+| [半监督](08a_semi_supervised_CN.md) | 10% 标注 + 90% 无标注 | 低 | 全监督的 80–95% | `semi_train.py` |
+| [域适应](08b_domain_adaptation_CN.md) | 源域标注 + 目标域无标注 | 中 | 目标域 +5–15% | `train_domain_adaptation.py` |
+| [蒸馏](08c_distillation_CN.md) | 教师模型 + 标注数据 | 同监督 | 教师精度的 90–98% | `train_distillation.py` |
+| [弱监督](08d_weakly_supervised_CN.md) | 框/点/图像标签 | 低 | 全监督的 75–90% | `train_weakly_supervised.py` |
+| [文本引导](08e_text_guided_CN.md) | 文本提示 | 最低 | 变化大（零样本：40–70%） | `train_text_guided.py` |
+
+---
+
+## 如何选择？
+
 ```
-
-方法: `vanilla_kd`, `dkd`
-
-### 基于特征
-
-方法: `fitnets`, `at`, `fsp`, `nst`, `rkd`, `vid`
-
-### 高级方法
-
-方法: `mgd`, `dist`, `cirkd`, `cwd`, `reviewkd`, `simkd`, `norm`, `sdd`, `aicsd`, `lskd`, `ttm`, `ctkd`, `mlkd`
-
-### 关键参数
-
-```yaml
-distillation:
-  type: logit          # logit / feature / attention
-  temperature: 4.0     # softmax 温度
-  alpha: 0.5           # 平衡：任务损失 vs 蒸馏损失
+你有所有训练数据的像素级 mask 吗？
+├── 是 → 模型对部署来说太大了吗？
+│        ├── 是 → 知识蒸馏 (08c)
+│        └── 否 → 标准监督训练 (train.py)
+│
+└── 否 → 你有什么标注？
+         ├── 部分像素 mask + 大量无标注图像 → 半监督 (08a)
+         ├── 有标注源域 + 无标注目标域 → 域适应 (08b)
+         ├── 边界框、点或图像级标签 → 弱监督 (08d)
+         └── 只有文本描述 → 文本引导 (08e)
 ```
 
 ---
 
-## 4. 弱监督 — 28 个方法
+## 关键论文（所有范式）
 
-使用粗糙标注代替像素级 mask 进行训练。
-
-### 边界框监督
-
-```bash
-python train_weakly_supervised.py \
-    --config configs/training_paradigms/weak_supervision/box_supervised.yaml \
-    --supervision_type box
-```
-
-方法: `box`, `boxinst`
-
-### 图像级标签（基于 CAM）
-
-```bash
-python train_weakly_supervised.py \
-    --config configs/training_paradigms/weak_supervision/cam.yaml \
-    --supervision_type cam
-```
-
-方法: `cam`, `seam`, `puzzlecam`, `advcam`, `eps`, `recam`, `toco`, `lpcam`, `mars`, `bacon`, `wpgseg`, `dupl`, `more`, `psdpm`, `semple`
-
-### 点/涂鸦标注
-
-方法: `point`, `scribble`, `mil`, `em`
+| 论文 | 年份 | 会议 | 范式 | 关键贡献 |
+|------|------|------|------|---------|
+| [Mean Teacher](https://arxiv.org/abs/1703.01780) | 2017 | NeurIPS | 半监督 | EMA 教师用于一致性正则化 |
+| [CPS](https://arxiv.org/abs/2106.01226) | 2021 | CVPR | 半监督 | 双网络交叉伪监督 |
+| [DANN](https://arxiv.org/abs/1505.07818) | 2016 | JMLR | 域适应 | 域对抗训练 |
+| [AdvEnt](https://arxiv.org/abs/1811.12833) | 2019 | CVPR | 域适应 | 对抗熵最小化 |
+| [TENT](https://arxiv.org/abs/2006.10726) | 2021 | ICLR | 域适应 | 测试时熵最小化 |
+| [Hinton KD](https://arxiv.org/abs/1503.02531) | 2015 | NeurIPS WS | 蒸馏 | 基于温度的知识蒸馏 |
+| [DKD](https://arxiv.org/abs/2203.08679) | 2022 | CVPR | 蒸馏 | 解耦知识蒸馏 |
+| [SEAM](https://arxiv.org/abs/2003.13053) | 2020 | CVPR | 弱监督 | CAM 的自监督等变注意力 |
+| [CLIP](https://arxiv.org/abs/2103.00020) | 2021 | ICML | 文本 | 视觉语言对比预训练 |
+| [CRIS](https://arxiv.org/abs/2211.10961) | 2023 | — | 文本 | 通过 CLIP 的文本引导医学分割 |
 
 ---
 
-## 5. 文本引导 — 13 个模型 + MLLM Pipeline
+## 相关文档
 
-使用自然语言文本提示引导分割。
-
-### 可训练模型
-
-```bash
-python train_text_guided.py \
-    --config configs/training_paradigms/text_guided/cris.yaml \
-    --output_dir output/text_cris
-```
-
-模型: `cris`, `biomedparse`, `languidemedseg`, `lvit`, `tganet`, `tpro`, `causalclipseg`, `clip_universal`, `cxr_clip_seg`, `tp_drseg`, `medclip_sam`, `salip`, `medisee`
-
-### MLLM 推理 Pipeline
-
-5 检测器 × 4 分割器 = 20 种组合：
-
-```python
-from medseg.inference.mllm import MLLMPipeline
-
-pipeline = MLLMPipeline(
-    detector='grounding_dino',    # 或 qwen2_vl, qwen3_vl, internvl
-    segmenter='sam2',             # 或 medsam, sam_med2d, lite_medsam
-    text_prompt='liver tumor',
-)
-result = pipeline.predict(image_path)
-```
+- [半监督方法](../paradigms/semi_supervised.md) — 所有 21 个半监督方法
+- [域适应](../paradigms/domain_adaptation.md) — 所有 18 个域适应方法
+- [蒸馏](../paradigms/distillation.md) — 所有 27 个蒸馏方法
+- [弱监督](../paradigms/weakly_supervised.md) — 所有 28 个弱监督方法
+- [文本引导](../paradigms/text_guided.md) — 所有 13 个文本引导模型 + MLLM 管线
 
 ---
 
-## 范式对比实验
-
-```bash
-# 半监督对比（6 方法）
-bash scripts/experiments/run_semi_study.sh
-
-# 域适应对比（8 方法）
-bash scripts/experiments/run_da_study.sh
-
-# 知识蒸馏对比（7 方法）
-bash scripts/experiments/run_kd_study.sh
-
-# 弱监督对比（6 方法）
-bash scripts/experiments/run_weak_study.sh
-```
+[上一章：Foundation 模型](07_foundation_CN.md) | [下一章：部署](09_deployment_CN.md)

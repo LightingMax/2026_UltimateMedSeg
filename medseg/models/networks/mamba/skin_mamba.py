@@ -1,4 +1,5 @@
 """SkinMamba: CNN-Mamba Hybrid for Skin Lesion Segmentation.
+    SkinMamba: CNN-Mamba Hybrid for Skin 病灶 分割。
 
 Reference:
     "SkinMamba: A Precision Skin Lesion Segmentation Architecture with
@@ -25,11 +26,12 @@ from medseg.models.encoders.vmunet_encoder import SS2D
 
 
 # ---------------------------------------------------------------------------
-# Cross-Scale Mamba Block
+# Cross-Scale Mamba 块 / Cross-Scale Mamba Block
 # ---------------------------------------------------------------------------
 
 class CrossScaleMambaBlock(nn.Module):
-    """Cross-scale Mamba block: multi-scale SS2D + aggregation."""
+    """Cross-scale Mamba 块: 多尺度 SS2D + aggregation。
+        Cross-scale Mamba block: multi-scale SS2D + aggregation."""
     def __init__(self, dim, scales=None):
         super().__init__()
         if scales is None:
@@ -58,11 +60,12 @@ class CrossScaleMambaBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Frequency Boundary Guidance Module
+# Frequency 边界 Guidance 模块 / Frequency Boundary Guidance Module
 # ---------------------------------------------------------------------------
 
 class FBGM(nn.Module):
-    """Frequency Boundary Guidance Module using FFT."""
+    """Frequency 边界 Guidance 模块 using FFT。
+        Frequency Boundary Guidance Module using FFT."""
     def __init__(self, dim):
         super().__init__()
         self.conv = nn.Sequential(
@@ -73,7 +76,7 @@ class FBGM(nn.Module):
         )
 
     def forward(self, x):
-        # Compute FFT-based edge map
+        # 计算 FFT-based 边缘 映射 / Compute FFT-based edge map
         x_gray = x.mean(dim=1, keepdim=True)
         fft = torch.fft.fft2(x_gray)
         magnitude = torch.abs(fft)
@@ -89,13 +92,13 @@ class FBGM(nn.Module):
         edge_fft = fft * mask
         edge = torch.abs(torch.fft.ifft2(edge_fft))
         edge = edge.expand_as(x[:, :1, :, :])
-        # Fuse edge with feature
+        # 融合 边缘 with 特征 / Fuse edge with feature
         edge_feat = self.conv(x * edge.expand_as(x))
         return x + edge_feat
 
 
 # ---------------------------------------------------------------------------
-# Encoder/Decoder blocks
+# 编码器 / 解码 blocks / Encoder/Decoder blocks
 # ---------------------------------------------------------------------------
 
 class _DoubleConv(nn.Module):
@@ -116,30 +119,31 @@ class _DoubleConv(nn.Module):
 # ---------------------------------------------------------------------------
 
 class SkinMamba(nn.Module):
-    """SkinMamba for skin lesion segmentation."""
+    """SkinMamba for skin 病灶 分割。
+        SkinMamba for skin lesion segmentation."""
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  base_channels=32, **kwargs):
         super().__init__()
         C = base_channels
         self.num_classes = num_classes
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _DoubleConv(in_channels, C)
         self.enc2 = _DoubleConv(C, C * 2)
         self.enc3 = _DoubleConv(C * 2, C * 4)
         self.enc4 = _DoubleConv(C * 4, C * 8)
         self.pool = nn.MaxPool2d(2)
 
-        # Cross-Scale Mamba blocks at each stage
+        # Cross-Scale Mamba blocks at each 阶段 / Cross-Scale Mamba blocks at each stage
         self.csm1 = CrossScaleMambaBlock(C)
         self.csm2 = CrossScaleMambaBlock(C * 2)
         self.csm3 = CrossScaleMambaBlock(C * 4)
         self.csm4 = CrossScaleMambaBlock(C * 8)
 
-        # FBGM at bottleneck
+        # FBGM at 瓶颈层 / FBGM at bottleneck
         self.fbgm = FBGM(C * 8)
 
-        # Decoder
+        # 解码 / Decoder
         self.up4 = nn.ConvTranspose2d(C * 8, C * 4, 2, stride=2)
         self.dec4 = _DoubleConv(C * 8, C * 4)
         self.up3 = nn.ConvTranspose2d(C * 4, C * 2, 2, stride=2)

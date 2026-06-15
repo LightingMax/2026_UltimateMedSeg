@@ -1,4 +1,5 @@
 """HuatuoGPT-Vision medical MLLM vision encoder (foundation-model encoder).
+    HuatuoGPT-Vision medical MLLM vision encoder (foundation-model 编码器。
 
 HuatuoGPT-Vision (USTC, 2024) is a medical multimodal LLM. Its vision tower
 is a CLIP ViT-L/14 (embed_dim=1024, depth=24, patch_size=14) operating at a
@@ -38,6 +39,7 @@ PRIMARY_PATCH_SIZE = 14
 @ENCODER_REGISTRY.register("huatuogpt_vision")
 class HuatuoGPTVisionEncoder(BaseFoundationEncoder):
     """HuatuoGPT-Vision vision-tower encoder with DPT-style multi-block output.
+        HuatuoGPT-Vision vision-tower 编码器。
 
     Constructor follows the BaseFoundationEncoder contract. The HuatuoGPT-
     Vision tower is structurally a CLIP ViT-L/14 (1024-dim, 24 blocks,
@@ -83,7 +85,7 @@ class HuatuoGPTVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -106,7 +108,7 @@ class HuatuoGPTVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

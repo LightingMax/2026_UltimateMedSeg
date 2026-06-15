@@ -1,4 +1,5 @@
 """SegFormer All-MLP Decoder.
+    SegFormer All-MLP 解码器。
 
 Reference: Xie et al. "SegFormer: Simple and Efficient Design for Semantic
 Segmentation with Transformers" (NeurIPS 2021).
@@ -26,6 +27,7 @@ from medseg.registry import DECODER_REGISTRY
 @DECODER_REGISTRY.register("segformer")
 class SegFormerDecoder(nn.Module):
     """SegFormer all-MLP decoder (1x1 conv variant).
+        SegFormer all-MLP 解码器。
 
     Args:
         encoder_channels: Skip-connection channels, shallow -> deep.
@@ -45,9 +47,9 @@ class SegFormerDecoder(nn.Module):
         self.img_size = img_size
         self.embed_dim = embed_dim
 
-        # All multi-scale features fed to the decoder: skips + bottleneck.
-        # Some callers pass encoder_channels already including the bottleneck
-        # stage; only append when it's clearly missing to avoid double-counting.
+        # All multi-scale features fed to the 解码器 / All multi-scale features fed to the decoder: skips + bottleneck.
+        # Some callers pass encoder_channels already including the 瓶颈层 / Some callers pass encoder_channels already including the bottleneck
+        # 阶段; only append when it's clearly missing to avoid double-counting / stage; only append when it's clearly missing to avoid double-counting.
         all_channels = list(encoder_channels)
         if not all_channels or all_channels[-1] != bottleneck_channels:
             all_channels.append(bottleneck_channels)
@@ -58,7 +60,7 @@ class SegFormerDecoder(nn.Module):
             for ch in all_channels
         ])
 
-        # Fusion: concat all projected features -> 1x1 conv -> BN -> GELU.
+        # 融合: concat all projected 特征 - > 1x1 conv - > BN - > GELU / Fusion: concat all projected features -> 1x1 conv -> BN -> GELU.
         self.fuse = nn.Sequential(
             nn.Conv2d(embed_dim * len(all_channels), embed_dim,
                       kernel_size=1, bias=False),
@@ -66,7 +68,7 @@ class SegFormerDecoder(nn.Module):
             nn.GELU(),
         )
 
-        # Embed-dim-sized segmentation projection (BEFORE the framework seg head).
+        # Embed-dim-sized 分割 projection ( BEFORE the framework seg 头部 ) / Embed-dim-sized segmentation projection (BEFORE the framework seg head).
         self.seg_proj = nn.Conv2d(embed_dim, embed_dim, kernel_size=1, bias=False)
 
         self.dropout = nn.Dropout2d(dropout)
@@ -78,10 +80,10 @@ class SegFormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # All input features ordered shallow (largest) -> deep (smallest).
+        # All 输入 特征 ordered 浅层 ( largest ) - > 深度 ( smallest ) / All input features ordered shallow (largest) -> deep (smallest).
         all_features = list(skip_features) + [bottleneck_feat]
 
-        # Target: shallowest feature's spatial size (~1/4 of input).
+        # 目标: shallowest feature's 空间的 大小 ( ~ 1 / 4 of 输入 ) / Target: shallowest feature's spatial size (~1/4 of input).
         target_size = all_features[0].shape[2:]
 
         projected = []

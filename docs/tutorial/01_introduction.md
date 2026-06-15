@@ -1,4 +1,4 @@
-# Chapter 01: Introduction to Medical Image Segmentation
+﻿# Chapter 01: Introduction to Medical Image Segmentation
 
 [中文文档](01_introduction_CN.md) | [Next: U-Net in Detail](02_unet.md)
 
@@ -57,7 +57,7 @@ Medical image segmentation directly impacts four critical clinical workflows:
 
 ### Evaluation Metrics
 
-UltimateMedSeg computes three families of metrics (see `medseg/utils/metrics.py`):
+APRIL-MedSeg computes three families of metrics (see `medseg/utils/metrics.py`):
 
 **Dice Similarity Coefficient (DSC)**
 
@@ -109,7 +109,7 @@ Each generation addresses specific limitations:
 
 ### Architecture Philosophy
 
-UltimateMedSeg uses a **four-module free-combination** design:
+APRIL-MedSeg uses a **four-module free-combination** design:
 
 ```
 Input Image ──> [Encoder] ──> [Bottleneck] ──> [Decoder] ──> Segmentation Output
@@ -121,11 +121,11 @@ Each module is independently swappable via a single YAML line:
 
 | Module | Registry Count | Examples |
 |--------|---------------|----------|
-| Encoder | 169 | `basic`, `timm_resnet50`, `timm_swin_tiny_patch4_window7_224`, `dinov2`, `dino` |
-| Decoder | 40 | `bilinear`, `deconv`, `emcad`, `cascade_full`, `unetpp` |
+| Encoder | 178 | `basic`, `timm_resnet50`, `timm_swin_tiny_patch4_window7_224`, `dinov2`, `dino` |
+| Decoder | 45 | `bilinear`, `deconv`, `emcad`, `cascade_full`, `unetpp` |
 | Skip Connection | 25 | `concat`, `add`, `cab`, `scse`, `gating` |
 | Bottleneck | 17 | `none`, `aspp`, `dense_aspp`, `mamba`, `transformer` |
-| Complete Network | 128 | `unet`, `transunet`, `swinunet`, `attention_unet`, `vmunet` |
+| Complete Network | 146 | `unet`, `transunet`, `swinunet`, `attention_unet`, `vmunet` |
 
 ### Two Configuration Modes
 
@@ -156,7 +156,7 @@ model:
 ### Project Structure
 
 ```
-UltimateMedSeg/
+APRIL-MedSeg/
 ├── train.py                    # Standard supervised training
 ├── test.py                     # Evaluation with TTA/ensemble
 ├── semi_train.py               # Semi-supervised training
@@ -164,9 +164,9 @@ UltimateMedSeg/
 ├── train_distillation.py       # Knowledge distillation
 ├── train_weakly_supervised.py  # Weakly supervised
 ├── train_text_guided.py        # Text-guided segmentation
-├── configs/                    # 876 YAML configs
+├── configs/                    # 921 YAML configs
 ├── medseg/                     # Core library
-│   ├── models/                 # 169 encoders, 40 decoders, 128 networks
+│   ├── models/                 # 178 encoders, 45 decoders, 146 networks
 │   ├── losses/                 # 15 loss functions
 │   ├── datasets/               # 6 dataset classes
 │   ├── training/               # Advanced training paradigms
@@ -263,8 +263,8 @@ python test.py --config configs/architectures/combinations/general/unet_basic.ya
 
 ### Related Documentation
 
-- [Encoder Guide](../models/encoders.md) -- All 169 encoders with HuggingFace model paths
-- [Decoder Guide](../models/decoders.md) -- 40 decoders with design rationale
+- [Encoder Guide](../models/encoders.md) -- All 178 encoders with HuggingFace model paths
+- [Decoder Guide](../models/decoders.md) -- 45 decoders with design rationale
 - [Loss Functions](../models/README.md) -- 15 loss function implementations
 - [Data Guide](../data/README.md) -- 25 built-in datasets and augmentation pipeline
 - [Research Guide](../research_guide.md) -- Ablation study design and benchmarking protocols

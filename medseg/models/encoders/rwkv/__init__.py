@@ -2,7 +2,7 @@
 
 import sys as _sys
 
-# rwkv_encoder first: rir_zigzag_encoder may resolve it via the legacy alias.
+# rwkv _ 编码器 first: rir _ zigzag _ 编码器 may resolve it via the 遗留 alias / rwkv_encoder first: rir_zigzag_encoder may resolve it via the legacy alias.
 from . import rwkv_encoder
 _sys.modules['medseg.models.encoders.rwkv_encoder'] = rwkv_encoder
 from . import rir_zigzag_encoder

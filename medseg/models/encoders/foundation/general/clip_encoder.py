@@ -1,4 +1,5 @@
 """CLIP ViT image encoder (foundation-model encoder).
+    CLIP ViT image encoder (foundation-model 编码器。
 
 Wraps a timm ViT-CLIP backbone (B/L) and exposes a 4-stage multi-scale
 feature pyramid via the SAM-style "DPT-style multi-block" trick: the final ViT
@@ -28,7 +29,7 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, load_with_ssl_fallback
 
 
-# Default timm model names per variant.
+# 默认值 timm 模型 names per variant / Default timm model names per variant.
 _CLIP_VARIANTS = {
     "base":  {"timm_name": "vit_base_patch16_clip_224", "embed_dim": 768,  "patch_size": 16},
     "large": {"timm_name": "vit_large_patch14_clip_224", "embed_dim": 1024, "patch_size": 14},
@@ -37,7 +38,8 @@ _CLIP_VARIANTS = {
 
 def _build_timm_clip_vit(variant: str, img_size: int, in_chans: int,
                          pretrained: bool):
-    """Create a timm ViT-CLIP model with dynamic-image-size support."""
+    """Create a timm ViT-CLIP 模型 with dynamic-image-size support。
+        Create a timm ViT-CLIP model with dynamic-image-size support."""
     import timm  # local import: heavy dependency, lazy-loaded.
 
     primary = _CLIP_VARIANTS[variant]["timm_name"]
@@ -52,6 +54,7 @@ def _build_timm_clip_vit(variant: str, img_size: int, in_chans: int,
 @ENCODER_REGISTRY.register("clip_vit")
 class CLIPViTEncoder(BaseFoundationEncoder):
     """CLIP ViT (B/L) image encoder with DPT-style multi-block multi-scale output.
+        CLIP ViT (B/L) image 编码器。
 
     Constructor follows the BaseFoundationEncoder contract. Additional kwargs:
         clip_variant: "base" (default) or "large".
@@ -77,29 +80,29 @@ class CLIPViTEncoder(BaseFoundationEncoder):
         self.embed_dim = meta["embed_dim"]
         self.patch_size = meta["patch_size"]
 
-        # Build the timm ViT-CLIP backbone (with optional pretrained weights).
+        # Build the timm ViT-CLIP 骨干网络 ( with 可选 预训练 权重 ) / Build the timm ViT-CLIP backbone (with optional pretrained weights).
         self.backbone, self._backbone_name = _build_timm_clip_vit(
             variant=variant, img_size=img_size,
             in_chans=in_channels, pretrained=pretrained,
         )
         self.num_prefix_tokens = int(getattr(self.backbone, "num_prefix_tokens", 1))
 
-        # Adapter for non-RGB inputs (CLIP ViTs expect 3 channels).
+        # 适配器 for non-RGB inputs ( CLIP ViTs expect 3 通道 ) / Adapter for non-RGB inputs (CLIP ViTs expect 3 channels).
         if in_channels != 3:
             self.input_adapter = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # DPT-style multi-block: project the token grid (B, dim, h, w) to four
-        # pyramid stages with channels [dim/8, dim/4, dim/2, dim].
-        # Spatial scales (deepest LAST):
-        #   stage 0: ConvTranspose 4x  -> ~H/4,  dim/8
-        #   stage 1: ConvTranspose 2x  -> ~H/8,  dim/4
-        #   stage 2: Identity          -> ~H/16, dim/2
-        #   stage 3: MaxPool 2x        -> ~H/32, dim
+        # DPT-style multi-block: project the 标记 grid ( B, dim, h, w ) to four / DPT-style multi-block: project the token grid (B, dim, h, w) to four
+        # 金字塔 阶段 with 通道 [ dim / 8, dim / 4, dim / 2, dim ] / pyramid stages with channels [dim/8, dim/4, dim/2, dim].
+        # 空间的 scales ( deepest LAST ) / Spatial scales (deepest LAST):
+        # 阶段 0: ConvTranspose 4x - > ~ H / 4, dim / 8 / stage 0: ConvTranspose 4x  -> ~H/4,  dim/8
+        # 阶段 1: ConvTranspose 2x - > ~ H / 8, dim / 4 / stage 1: ConvTranspose 2x  -> ~H/8,  dim/4
+        # 阶段 2: Identity - > ~ H / 16, dim / 2 / stage 2: Identity          -> ~H/16, dim/2
+        # 阶段 3: MaxPool 2x - > ~ H / 32, dim / stage 3: MaxPool 2x        -> ~H/32, dim
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -122,7 +125,7 @@ class CLIPViTEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

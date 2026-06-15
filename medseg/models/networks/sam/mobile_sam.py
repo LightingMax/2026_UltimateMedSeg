@@ -1,4 +1,5 @@
 """MobileSAM – lightweight SAM variant with a TinyViT image encoder.
+    MobileSAM – lightweight SAM variant with a TinyViT image 编码器。
 
 Reference:
     Chaoning Zhang, Dongshen Han, Yu Qiao, Jung Uk Kim, Sung-Ho Bae,
@@ -23,8 +24,8 @@ from __future__ import annotations
 
 import os
 
-# Limit huggingface_hub retry/timeout budgets so a network outage does not
-# stall model construction for minutes. Must be set before importing timm.
+# Limit huggingface _ hub retry / timeout budgets so a 网络 outage does not / Limit huggingface_hub retry/timeout budgets so a network outage does not
+# stall 模型 construction for minutes. Must be set before importing timm / stall model construction for minutes. Must be set before importing timm.
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "5")
 
@@ -39,10 +40,11 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# TinyViT encoder wrapper
+# TinyViT 编码器 / TinyViT encoder wrapper
 # ---------------------------------------------------------------------------
 class _TinyViTEncoder(nn.Module):
     """Wraps a timm TinyViT model and exposes:
+        Wraps a timm TinyViT 模型 and exposes。
 
     * a forward that returns the /32 spatial feature map ``(B, C, H/32, W/32)``;
     * a flat ``blocks`` ``ModuleList`` so ``SAMBase.apply_freeze`` can apply
@@ -74,9 +76,9 @@ class _TinyViTEncoder(nn.Module):
         self.embed_dim = embed_dim
         self.backbone = tv
 
-        # Build a flat list of transformer blocks so SAMBase.apply_freeze's
-        # ``unfreeze_last_n_blocks`` knob works. We aggregate the per-stage
-        # ``blocks`` Sequential's into a single ModuleList. The first stage of
+        # Build a flat list of Transformer blocks so SAMBase. 应用 _ freeze's / Build a flat list of transformer blocks so SAMBase.apply_freeze's
+        # ` ` unfreeze _ last _ n _ blocks ` ` knob works. We 聚合 the per-stage / ``unfreeze_last_n_blocks`` knob works. We aggregate the per-stage
+        # ` ` blocks ` ` Sequential's into a single ModuleList. The first 阶段 of / ``blocks`` Sequential's into a single ModuleList. The first stage of
         # TinyViT is a ConvLayer; its blocks are still nn.Modules and can be
         # safely unfrozen too.
         flat: List[nn.Module] = []
@@ -86,26 +88,27 @@ class _TinyViTEncoder(nn.Module):
                 if stage_blocks is not None:
                     for blk in stage_blocks:
                         flat.append(blk)
-        # Use ``add_module`` rather than assigning a fresh ModuleList of the
-        # same parameters (which would double-count them in .parameters()).
+        # Use ` ` add _ 模块 ` ` rather than assigning a fresh ModuleList of the / Use ``add_module`` rather than assigning a fresh ModuleList of the
+        # same 参数 ( which would double-count them in. 参数 ( ) ) / same parameters (which would double-count them in .parameters()).
         # Instead we keep an attribute holding *references* to the existing
-        # block modules. SAMBase only iterates ``getattr(image_encoder, 'blocks')``
-        # to flip ``requires_grad``, so a plain Python list of module refs is
-        # sufficient and avoids parameter duplication.
+        # 块 modules. SAMBase only iterates ` ` getattr ( 图像 _ 编码器, ' blocks ' ) ` ` / block modules. SAMBase only iterates ``getattr(image_encoder, 'blocks')``
+        # to flip ` ` requires _ grad ` `, so a plain Python list of 模块 refs is / to flip ``requires_grad``, so a plain Python list of module refs is
+        # sufficient and avoids 参数 duplication / sufficient and avoids parameter duplication.
         self._block_refs = flat
 
     # Expose as an attribute SAMBase can iterate: a plain list of modules. We
-    # intentionally do NOT register this as a ModuleList to avoid
-    # double-registration of parameters that already live under ``backbone``.
+    # intentionally do NOT 注册 this as a ModuleList to avoid / intentionally do NOT register this as a ModuleList to avoid
+    # double-registration of 参数 that already live under ` ` 骨干网络 ` ` / double-registration of parameters that already live under ``backbone``.
     @property
     def blocks(self):
         return self._block_refs
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Return ``(B, embed_dim, H/32, W/32)`` features."""
+        """返回 ` ` ( B, embed _ dim, H / 32, W / 32 ) ` ` 特征。
+            Return ``(B, embed_dim, H/32, W/32)`` features."""
         feat = self.backbone.forward_features(x)
-        # timm TinyViT.forward_features returns (B, C, H', W'); some versions
-        # may return (B, N, C) — handle both.
+        # timm TinyViT. 前向传播 _ 特征 返回 ( B, C, H ', W ' ); some versions / timm TinyViT.forward_features returns (B, C, H', W'); some versions
+        # may 返回 ( B, N, C ) — handle both / may return (B, N, C) — handle both.
         if feat.dim() == 3:
             B, N, C = feat.shape
             import math
@@ -120,10 +123,11 @@ class _TinyViTEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Lightweight mask decoder
+# Lightweight mask 解码器 / Lightweight mask decoder
 # ---------------------------------------------------------------------------
 class _UpBlock(nn.Module):
-    """ConvTranspose2d (stride 2, kernel 2) + BatchNorm + GELU."""
+    """ConvTranspose2d ( 步长 2, 卷积核 2 ) + BatchNorm + GELU。
+        ConvTranspose2d (stride 2, kernel 2) + BatchNorm + GELU."""
 
     def __init__(self, in_c: int, out_c: int, last: bool = False):
         super().__init__()
@@ -141,6 +145,7 @@ class _UpBlock(nn.Module):
 
 class _MobileSAMMaskDecoder(nn.Module):
     """Four 2x ConvTranspose stages: 320 -> 128 -> 64 -> 32 -> num_classes.
+        Four 2x ConvTranspose 阶段: 320 - > 128 - > 64 - > 32 - > num _ classes。
 
     Net upsampling factor is 16x. Combined with the TinyViT /32 stride, the
     decoder produces logits at /2 of the (padded) input; the outer ``forward``
@@ -165,10 +170,11 @@ class _MobileSAMMaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class MobileSAM(SAMBase):
     """MobileSAM: TinyViT image encoder + lightweight conv mask decoder.
+        MobileSAM: TinyViT image 编码器。
 
     Args:
         in_channels: number of input image channels.
@@ -224,7 +230,7 @@ class MobileSAM(SAMBase):
             pretrained=self._pretrained,
         )
 
-        # ── prompt encoder (MobileSAM here is prompt-free for medical seg) ──
+        # ── prompt 编码器 / ── prompt encoder (MobileSAM here is prompt-free for medical seg) ──
         self.prompt_encoder = None
 
         # ── mask decoder ────────────────────────────────────────────────────
@@ -233,7 +239,7 @@ class MobileSAM(SAMBase):
             num_classes=num_classes,
         )
 
-        # Optional local checkpoint (best-effort, never fatal).
+        # 可选 局部的 检查点 ( best-effort, never fatal ) / Optional local checkpoint (best-effort, never fatal).
         if pretrained_path:
             self._maybe_load_local_checkpoint(pretrained_path)
 
@@ -275,7 +281,7 @@ class MobileSAM(SAMBase):
         feat = self.image_encoder(x_pad)        # (B, embed_dim, H'/32, W'/32)
         logits = self.mask_decoder(feat)        # (B, num_classes, H'/2, W'/2)
 
-        # Snap to padded input size, then crop back to the original (H, W).
+        # Snap to padded 输入 大小, then crop back to the original ( H, W ) / Snap to padded input size, then crop back to the original (H, W).
         if logits.shape[-2:] != x_pad.shape[-2:]:
             logits = F.interpolate(
                 logits,

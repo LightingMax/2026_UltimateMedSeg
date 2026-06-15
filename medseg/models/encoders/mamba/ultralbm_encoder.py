@@ -1,4 +1,5 @@
 """UltraLBM-UNet encoder — extracted from medseg/networks/cnn/ultralbm_unet.py.
+    UltraLBM-UNet 编码器。
 
 UltraLBM-UNet (Ultra-Lightweight Bidirectional Mamba UNet, 2024) uses a 6-stage
 encoder with conv stems on the first 3 levels, then LMBP (Local Mamba Block
@@ -24,14 +25,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from medseg.registry import ENCODER_REGISTRY
-# Re-use the bespoke LMBP / GLMBP blocks directly from the source network file
-# (the network is now physically located in medseg/networks/mamba/).
+# Re-use the bespoke LMBP / GLMBP blocks directly from the 来源 网络 file / Re-use the bespoke LMBP / GLMBP blocks directly from the source network file
+# ( the 网络 is now physically located in medseg / networks / mamba / ) / (the network is now physically located in medseg/networks/mamba/).
 from medseg.models.networks.mamba.ultralbm_unet import LMBP, GLMBP
 
 
 @ENCODER_REGISTRY.register("ultralbm")
 class UltraLBMEncoder(nn.Module):
     """UltraLBM-UNet encoder, exposed as a standalone multi-scale backbone.
+        UltraLBM-UNet 编码器。
 
     Args:
         in_channels: input image channels.
@@ -62,14 +64,14 @@ class UltraLBMEncoder(nn.Module):
         assert len(c_list) == 6, f"c_list must have 6 entries, got {len(c_list)}"
         self.out_channels: List[int] = c_list
 
-        # Stages 1-3: plain Conv3x3 stems
+        # 阶段 1 - 3: plain Conv3x3 stems / Stages 1-3: plain Conv3x3 stems
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, stride=1, padding=1)
-        # Stages 4-5: parallel local / global-local Mamba blocks
+        # 阶段 4 - 5: 并行的 局部的 / global-local Mamba blocks / Stages 4-5: parallel local / global-local Mamba blocks
         self.encoder4 = LMBP(c_list[2], c_list[3], sep_conv_kernel=3)
         self.encoder5 = GLMBP(c_list[3], c_list[4], sep_conv_kernel=5)
-        # Stage 6: GLMBP bottleneck (no downsample)
+        # Stage 6: GLMBP 瓶颈层 / Stage 6: GLMBP bottleneck (no downsample)
         self.encoder6 = GLMBP(c_list[4], c_list[5], sep_conv_kernel=7)
 
         self.ebn1 = nn.GroupNorm(min(4, c_list[0]), c_list[0])

@@ -1,4 +1,5 @@
 """NuLite – lightweight nuclei segmentation with FastViT encoder.
+    NuLite – lightweight nuclei segmentation with FastViT 编码器。
 
 Ported from: https://github.com/CosmoIknosLab/NuLite
 Paper: NuLite – Lightweight and Fast Model for Nuclei Instance Segmentation
@@ -24,7 +25,8 @@ import timm
 # ── building blocks ──────────────────────────────────────────────────────────
 
 class _Conv2DBlock(nn.Module):
-    """Conv → BN → ReLU → Dropout."""
+    """Conv → BN → ReLU → 随机丢弃。
+        Conv → BN → ReLU → Dropout."""
 
     def __init__(self, in_ch: int, out_ch: int, ksize: int = 3, dropout: float = 0.0):
         super().__init__()
@@ -39,10 +41,11 @@ class _Conv2DBlock(nn.Module):
         return self.block(x)
 
 
-# ── FastViT encoder wrapper ──────────────────────────────────────────────────
+# ── FastViT 编码器 / ── FastViT encoder wrapper ──────────────────────────────────────────────────
 
 class _FastViTEncoder(nn.Module):
-    """Wrap a timm FastViT model to extract multi-scale features."""
+    """Wrap a timm FastViT 模型 to 提取 多尺度 特征。
+        Wrap a timm FastViT model to extract multi-scale features."""
 
     _EMBED_DIMS = {
         "fastvit_t8":  [48,  96, 192, 384],
@@ -76,6 +79,7 @@ class _FastViTEncoder(nn.Module):
 
 class _Decoder(nn.Module):
     """U-Net upsampling decoder with skip connections.
+        U-Net upsampling 解码器。
 
     Follows the original NuLite ``create_upsampling_branch`` structure:
     bottleneck_up → decoder4 → decoder3 → decoder2 → decoder1,
@@ -84,33 +88,33 @@ class _Decoder(nn.Module):
 
     def __init__(self, embed_dims: list, dropout: float = 0.0):
         super().__init__()
-        # embed_dims = [c1, c2, c3, c4] from encoder stages 1-4
-        # timm features_only may return 4 or 5 maps; we use the last 4
+        # embed_dims = [c1, c2, c3, c4] from 编码器 / embed_dims = [c1, c2, c3, c4] from encoder stages 1-4
+        # timm 特征 _ only may 返回 4 or 5 映射; we use the last 4 / timm features_only may return 4 or 5 maps; we use the last 4
         c1, c2, c3, c4 = embed_dims
 
-        # Bottleneck: c4 → c3, upsample 2×
+        # 瓶颈层: c4 → c3, 上采样 2 × / Bottleneck: c4 → c3, upsample 2×
         self.bottleneck_up = nn.Sequential(
             _Conv2DBlock(c4, c3, dropout=dropout),
             nn.ConvTranspose2d(c3, c3, kernel_size=2, stride=2),
         )
-        # Decoder stage 4: cat(z3, up) → c2, upsample 2×
+        # 解码 阶段 4: cat ( z3, up ) → c2, 上采样 2 × / Decoder stage 4: cat(z3, up) → c2, upsample 2×
         self.dec4_up = nn.Sequential(
             _Conv2DBlock(c3 * 2, c3, dropout=dropout),
             _Conv2DBlock(c3, c2, dropout=dropout),
             nn.ConvTranspose2d(c2, c2, kernel_size=2, stride=2),
         )
-        # Decoder stage 3: cat(z2, up) → c1, upsample 2×
+        # 解码 阶段 3: cat ( z2, up ) → c1, 上采样 2 × / Decoder stage 3: cat(z2, up) → c1, upsample 2×
         self.dec3_up = nn.Sequential(
             _Conv2DBlock(c2 * 2, c2, dropout=dropout),
             _Conv2DBlock(c2, c1, dropout=dropout),
             nn.ConvTranspose2d(c1, c1, kernel_size=2, stride=2),
         )
-        # Decoder stage 2: cat(z1, up) → c1, upsample 2×
+        # 解码 阶段 2: cat ( z1, up ) → c1, 上采样 2 × / Decoder stage 2: cat(z1, up) → c1, upsample 2×
         self.dec2_up = nn.Sequential(
             _Conv2DBlock(c1 * 2, c1, dropout=dropout),
             nn.ConvTranspose2d(c1, c1, kernel_size=2, stride=2),
         )
-        # Decoder stage 1: upsample 2×
+        # 解码 阶段 1: 上采样 2 × / Decoder stage 1: upsample 2×
         self.dec1_up = nn.Sequential(
             _Conv2DBlock(c1, c1, dropout=dropout),
             nn.ConvTranspose2d(c1, c1, kernel_size=2, stride=2),
@@ -137,6 +141,7 @@ class _Decoder(nn.Module):
 
 class NuLite(nn.Module):
     """NuLite: lightweight nuclei segmentation with FastViT encoder.
+        NuLite: lightweight nuclei segmentation with FastViT 编码器。
 
     Parameters
     ----------
@@ -171,11 +176,11 @@ class NuLite(nn.Module):
 
         self.decoder = _Decoder(embed_dims, dropout=drop_rate)
 
-        # decoder0: process raw input at same spatial resolution as decoder output
-        # Original NuLite: Conv2DBlock(in_channels, c1) applied to raw input
+        # decoder0: process raw input at same spatial resolution as 解码器 / decoder0: process raw input at same spatial resolution as decoder output
+        # Original NuLite: Conv2DBlock ( in _ 通道, c1 ) applied to raw 输入 / Original NuLite: Conv2DBlock(in_channels, c1) applied to raw input
         self.decoder0 = _Conv2DBlock(in_channels, c1, 3, dropout=drop_rate)
 
-        # Segmentation head: cat(decoder0, decoder) → predict
+        # Segmentation head: cat(decoder0, 解码器 / Segmentation head: cat(decoder0, decoder) → predict
         self.seg_head = nn.Sequential(
             _Conv2DBlock(c1 * 2, c1, dropout=drop_rate),
             nn.Conv2d(c1, num_classes, kernel_size=1),
@@ -184,7 +189,7 @@ class NuLite(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         feats = self.encoder(x)
 
-        # Use last 4 feature maps as skip connections
+        # Use last 4 feature maps as 跳跃连接 / Use last 4 feature maps as skip connections
         if len(feats) > 4:
             feats = feats[-4:]
         elif len(feats) < 4:
@@ -192,10 +197,10 @@ class NuLite(nn.Module):
 
         dec_out = self.decoder(feats)  # (B, c1, H_dec, W_dec)
 
-        # Process raw input through decoder0
+        # 处理 raw 输入 through decoder0 / Process raw input through decoder0
         x_skip = self.decoder0(x)      # (B, c1, H, W)
 
-        # Align spatial sizes (interpolate decoder0 output to match decoder output)
+        # Align spatial sizes (interpolate decoder0 output to match 解码器 / Align spatial sizes (interpolate decoder0 output to match decoder output)
         if x_skip.shape[2:] != dec_out.shape[2:]:
             x_skip = F.interpolate(x_skip, size=dec_out.shape[2:], mode="bilinear", align_corners=False)
 

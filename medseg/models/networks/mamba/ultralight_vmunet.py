@@ -21,11 +21,12 @@ from .umamba import MambaSSM
 
 
 # ---------------------------------------------------------------------------
-# PVMLayer: Parallel Vision Mamba
+# PVMLayer: 并行的 Vision Mamba / PVMLayer: Parallel Vision Mamba
 # ---------------------------------------------------------------------------
 
 class PVMLayer(nn.Module):
-    """Parallel Vision Mamba: splits channels into 4 groups, applies Mamba to each."""
+    """并行的 Vision Mamba: splits 通道 into 4 groups, 应用 Mamba to each。
+        Parallel Vision Mamba: splits channels into 4 groups, applies Mamba to each."""
     def __init__(self, input_dim, output_dim, d_state=16, d_conv=4, expand=2):
         super().__init__()
         self.input_dim = input_dim
@@ -62,7 +63,7 @@ class PVMLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SC_Att_Bridge (Spatial-Channel Attention Bridge)
+# SC _ Att _ Bridge ( Spatial-Channel 注意力 Bridge ) / SC_Att_Bridge (Spatial-Channel Attention Bridge)
 # ---------------------------------------------------------------------------
 
 class _ChannelAttBridge(nn.Module):
@@ -143,7 +144,7 @@ class UltraLightVMUNet(nn.Module):
         self.bridge = bridge
         self.deep_supervision = deep_supervision
 
-        # Encoder (first 3 stages: conv, last 3: PVMLayer)
+        # 编码器 ( first 3 阶段: conv, last 3: PVMLayer ) / Encoder (first 3 stages: conv, last 3: PVMLayer)
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, stride=1, padding=1)
@@ -160,7 +161,7 @@ class UltraLightVMUNet(nn.Module):
         if bridge:
             self.scab = SCABridge(c_list, split_att)
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder1 = PVMLayer(c_list[5], c_list[4])
         self.decoder2 = PVMLayer(c_list[4], c_list[3])
         self.decoder3 = PVMLayer(c_list[3], c_list[2])
@@ -175,7 +176,7 @@ class UltraLightVMUNet(nn.Module):
 
         self.final = nn.Conv2d(c_list[0], num_classes, kernel_size=1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c_list[4], num_classes, 1),

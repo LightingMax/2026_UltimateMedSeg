@@ -1,4 +1,5 @@
-"""Transformer cross-fusion skip connection."""
+"""Transformer cross-fusion 跳跃连接。
+    Transformer cross-fusion skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("transformer_fusion")
 class TransformerFusionSkip(nn.Module):
     """Transformer cross-fusion skip.
+        Transformer cross-fusion 跳跃连接。
 
     Flattens decoder and skip features to (B, N, C) token sequences and
     applies a single transformer block: queries come from the decoder
@@ -24,7 +26,7 @@ class TransformerFusionSkip(nn.Module):
         self.num_heads = num_heads
         self.mlp_ratio = mlp_ratio
         self.dropout = dropout
-        # Lazy submodules keyed by (decoder_ch, skip_ch)
+        # Lazy submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazy submodules keyed by (decoder_ch, skip_ch)
         self._blocks = nn.ModuleDict()
 
     def get_out_channels(self, decoder_ch, skip_ch):
@@ -35,7 +37,8 @@ class TransformerFusionSkip(nn.Module):
 
     @staticmethod
     def _pick_heads(embed_dim, requested):
-        """Pick a head count that divides embed_dim, <= requested, >= 1."""
+        """Pick a 头部 count that divides embed _ dim, < = requested, > = 1。
+            Pick a head count that divides embed_dim, <= requested, >= 1."""
         heads = min(max(int(requested), 1), max(embed_dim, 1))
         while heads > 1 and embed_dim % heads != 0:
             heads -= 1
@@ -45,16 +48,16 @@ class TransformerFusionSkip(nn.Module):
         key = self._key(decoder_ch, skip_ch)
         if key in self._blocks:
             return
-        # Output of the transformer branch has ``skip_ch`` channels so that
-        # ``cat(transformer_out, d)`` yields ``decoder_ch + skip_ch`` channels,
-        # matching ``get_out_channels``.
+        # 输出 of the Transformer 分支 has ` ` 跳跃 _ ch ` ` 通道 so that / Output of the transformer branch has ``skip_ch`` channels so that
+        # ` ` cat ( Transformer _ out, d ) ` ` yields ` ` 解码 _ ch + 跳跃 _ ch ` ` 通道 / ``cat(transformer_out, d)`` yields ``decoder_ch + skip_ch`` channels,
+        # matching ` ` get _ out _ 通道 ` ` / matching ``get_out_channels``.
         embed_dim = skip_ch
         heads = self._pick_heads(embed_dim, self.num_heads)
 
-        # Q projection: maps decoder tokens (Cd) into the embed_dim space.
+        # Q projection: maps 解码器 / Q projection: maps decoder tokens (Cd) into the embed_dim space.
         q_proj = nn.Linear(decoder_ch, embed_dim)
-        # K/V projection on skip stream (Cs -> embed_dim). Per the spec this is
-        # the only place the skip stream is touched before attention.
+        # K/V projection on 跳跃连接 / K/V projection on skip stream (Cs -> embed_dim). Per the spec this is
+        # the only place the 跳跃连接 / the only place the skip stream is touched before attention.
         s_proj = nn.Linear(skip_ch, embed_dim)
 
         norm_q = nn.LayerNorm(embed_dim)
@@ -87,7 +90,7 @@ class TransformerFusionSkip(nn.Module):
         self._blocks[key] = block.to(device)
 
     def forward(self, decoder_feat, skip_feat):
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[-2:] != decoder_feat.shape[-2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[-2:],
@@ -99,24 +102,24 @@ class TransformerFusionSkip(nn.Module):
         self._build(Cd, Cs, decoder_feat.device)
         block = self._blocks[self._key(Cd, Cs)]
 
-        # Flatten to (B, N, C)
+        # 展平 to ( B, N, C ) / Flatten to (B, N, C)
         d_tokens = decoder_feat.flatten(2).transpose(1, 2)  # (B, N, Cd)
         s_tokens = skip_feat.flatten(2).transpose(1, 2)     # (B, N, Cs)
 
-        # Project Q from decoder into embed_dim, and K/V from skip via s_proj.
+        # Project Q from 解码器 / Project Q from decoder into embed_dim, and K/V from skip via s_proj.
         q_in = block["q_proj"](d_tokens)   # (B, N, embed_dim)
         kv_in = block["s_proj"](s_tokens)  # (B, N, embed_dim)
 
-        # Pre-norm cross-attention with a residual from the (projected) query.
+        # Pre-norm 交叉注意力 with a 残差 from the ( projected ) query / Pre-norm cross-attention with a residual from the (projected) query.
         q = block["norm_q"](q_in)
         kv = block["norm_kv"](kv_in)
         attn_out, _ = block["attn"](q, kv, kv, need_weights=False)
         x = q_in + attn_out
 
-        # MLP block with residual.
+        # MLP 块 with 残差 / MLP block with residual.
         x = x + block["mlp"](block["norm_mlp"](x))
 
-        # Reshape back to (B, embed_dim, H, W) where embed_dim == skip_ch.
+        # 重塑 back to ( B, embed _ dim, H, W ) where embed _ dim = = 跳跃 _ ch / Reshape back to (B, embed_dim, H, W) where embed_dim == skip_ch.
         transformer_out = x.transpose(1, 2).reshape(B, Cs, H, W)
 
         return torch.cat([transformer_out, decoder_feat], dim=1)

@@ -1,4 +1,4 @@
-"""Transformer-family encoders."""
+"""Transformer系列编码器 / Transformer-family encoders."""
 
 import sys as _sys
 

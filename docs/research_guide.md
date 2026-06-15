@@ -63,7 +63,7 @@ Fix encoder, compare decoders to find the best encoder-decoder pairing.
 
 ### Experiment Design
 
-**3 representative encoders** × **all 40 decoders**:
+**3 representative encoders** × **all 45 decoders**:
 
 | Encoder | Type | Rationale |
 |---------|------|-----------|
@@ -106,7 +106,7 @@ python train.py --config configs/architectures/decoder_study/general/resnet50_em
 
 ### Available YAMLs
 
-`configs/architectures/decoder_study/general/` contains 120 YAMLs (3 encoders × 40 decoders).
+`configs/architectures/decoder_study/general/` contains 133 YAMLs (3 encoders × 45 decoders).
 
 ---
 

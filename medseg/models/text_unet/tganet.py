@@ -1,6 +1,7 @@
-# Reference: https://github.com/nikhilroxtomar/TGANet
+# 参考: https: / / github. com / nikhilroxtomar / TGANet / Reference: https://github.com/nikhilroxtomar/TGANet
 # Paper:     https://arxiv.org/abs/2205.04280
 """TGANet: Text-guided Attention for Improved Polyp Segmentation.
+    TGANet: Text-guided 注意力 for Improved 息肉 分割。
 
 Re-implemented from the paper (Tomar et al., "TGANet: Text-guided
 Attention for Improved Polyp Segmentation", MICCAI 2022) and the README
@@ -40,7 +41,7 @@ import torch.nn.functional as F
 
 
 # ============================================================================
-# Building blocks (1:1 from upstream model.py)
+# Building blocks ( 1: 1 from upstream 模型. py ) / Building blocks (1:1 from upstream model.py)
 # ============================================================================
 
 
@@ -65,7 +66,8 @@ class _Conv2d(nn.Module):
 
 
 class ChannelAttention(nn.Module):
-    """Upstream: ``channel_attention``."""
+    """Upstream: ` ` 通道 _ 注意力 ` `。
+        Upstream: ``channel_attention``."""
 
     def __init__(self, in_planes, ratio=16):
         super().__init__()
@@ -85,7 +87,8 @@ class ChannelAttention(nn.Module):
 
 
 class SpatialAttention(nn.Module):
-    """Upstream: ``spatial_attention``."""
+    """Upstream: ` ` 空间的 _ 注意力 ` `。
+        Upstream: ``spatial_attention``."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -139,6 +142,7 @@ class DilatedConv(nn.Module):
 
 class LabelAttention(nn.Module):
     """Upstream: ``label_attention``.  Channel attention conditioned on
+        Upstream: ` ` 标签 _ 注意力 ` `. 通道 注意力 conditioned on。
     the (B, 128)-d label embedding produced by ``embedding_feature_fusion``."""
 
     def __init__(self, in_c):
@@ -161,7 +165,8 @@ class LabelAttention(nn.Module):
 
 
 class DecoderBlock(nn.Module):
-    """Upstream: ``decoder_block``."""
+    """Upstream: ` ` 解码 _ 块 ` `。
+        Upstream: ``decoder_block``."""
 
     def __init__(self, in_c, out_c, scale=2):
         super().__init__()
@@ -198,7 +203,8 @@ class DecoderBlock(nn.Module):
 
 
 class OutputBlock(nn.Module):
-    """Upstream: ``output_block``."""
+    """Upstream: ` ` 输出 _ 块 ` `。
+        Upstream: ``output_block``."""
 
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -237,6 +243,7 @@ class TextClassifier(nn.Module):
 
 class EmbeddingFeatureFusion(nn.Module):
     """Upstream: ``embedding_feature_fusion``.
+        Upstream: ` ` 嵌入 _ 特征 _ 融合 ` `。
 
     Combines the predicted text-classification logits with the (5, 300)
     label embedding to produce a (B, out_c) label feature.
@@ -264,7 +271,8 @@ class EmbeddingFeatureFusion(nn.Module):
 
 
 class MultiscaleFeatureAggregation(nn.Module):
-    """Upstream: ``multiscale_feature_aggregation``."""
+    """Upstream: ` ` multiscale _ 特征 _ aggregation ` `。
+        Upstream: ``multiscale_feature_aggregation``."""
 
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -302,6 +310,7 @@ class MultiscaleFeatureAggregation(nn.Module):
 
 class TGANet(nn.Module):
     """TGANet polyp / lesion segmentor with text-guided attention.
+        TGANet 息肉 / 病灶 segmentor with text-guided 注意力。
 
     Args:
         in_channels: input image channels (3 by default).
@@ -329,7 +338,7 @@ class TGANet(nn.Module):
         self.n_label_phrases = n_label_phrases
         self.label_embed_dim = label_embed_dim
 
-        # ---- Backbone: ResNet50 (torchvision) -------------------------------
+        # - - - - 骨干网络: ResNet50 ( torchvision ) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Backbone: ResNet50 (torchvision) -------------------------------
         from torchvision.models import resnet50
         backbone = resnet50(weights=None)
         if in_channels != 3:
@@ -340,11 +349,11 @@ class TGANet(nn.Module):
         self.layer2 = backbone.layer2
         self.layer3 = backbone.layer3
 
-        # ---- Text classifier + label fusion ---------------------------------
+        # - - - - Text classifier + 标签 融合 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Text classifier + label fusion ---------------------------------
         self.text_classifier = TextClassifier(1024, [2, 3])
         self.label_fc = EmbeddingFeatureFusion([2, 3, label_embed_dim], 128)
 
-        # ---- Dilated conv encoder neck --------------------------------------
+        # ---- Dilated conv 编码器 / ---- Dilated conv encoder neck --------------------------------------
         self.s1 = DilatedConv(64, 128)
         self.s2 = DilatedConv(256, 128)
         self.s3 = DilatedConv(512, 128)
@@ -364,6 +373,7 @@ class TGANet(nn.Module):
     # ------------------------------------------------------------------
     def forward(self, image, text=None, **kwargs):
         """Forward.
+            前向传播。
 
         Args:
             image: (B, C, H, W) input.
@@ -387,7 +397,7 @@ class TGANet(nn.Module):
                 "label attention and the embedding-feature-fusion module."
             )
         if text.dim() == 2:
-            # accept (B, n_label_phrases*label_embed_dim) flattened embeddings
+            # accept ( B, n _ 标签 _ phrases * 标签 _ embed _ dim ) flattened 嵌入 / accept (B, n_label_phrases*label_embed_dim) flattened embeddings
             text = text.view(B, self.n_label_phrases, self.label_embed_dim)
         if text.shape[1:] != (self.n_label_phrases, self.label_embed_dim):
             raise ValueError(
@@ -421,7 +431,7 @@ class TGANet(nn.Module):
         ag = self.ag(a1, a2, a3)
         y1 = self.y1(ag)
 
-        # Upsample to input resolution for framework compatibility.
+        # 上采样 to 输入 分辨率 for framework 兼容性 / Upsample to input resolution for framework compatibility.
         if y1.shape[2:] != image.shape[2:]:
             y1 = F.interpolate(y1, size=image.shape[2:],
                                mode="bilinear", align_corners=False)

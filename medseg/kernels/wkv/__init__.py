@@ -1,4 +1,5 @@
 """WKV kernel dispatcher for RWKV-style encoders.
+    WKV 卷积核 dispatcher for RWKV-style encoders。
 
 This module unifies how every RWKV-based component in the project obtains a
 WKV operator:
@@ -137,7 +138,8 @@ def is_cuda_available() -> bool:
 
 
 def get_load_error() -> Optional[BaseException]:
-    """Return the exception captured during the most recent failed load."""
+    """返回 the exception captured during the most recent failed 加载。
+        Return the exception captured during the most recent failed load."""
     return _CUDA_LOAD_ERROR
 
 
@@ -180,7 +182,7 @@ def wkv_pytorch(B: int, T: int, C: int,
         kk = k[:, t, :]                # (B, C)
         vv = v[:, t, :]                # (B, C)
 
-        # --- numerator/denominator at step t (current token gets bonus u) ---
+        # - - - numerator / denominator at step t ( current 标记 gets bonus u ) - - - / --- numerator/denominator at step t (current token gets bonus u) ---
         ww = u + kk                    # (B, C)
         p = torch.maximum(pp, ww)
         e1 = torch.exp(pp - p)
@@ -189,10 +191,10 @@ def wkv_pytorch(B: int, T: int, C: int,
         out_slices.append(out_t)
 
         # --- recurrence: aa <- exp(-w) * aa + exp(kk) * vv ----------------
-        # Equivalent to ``pp_new = max(pp - w, kk)`` (note: pp - w, NOT pp + w
+        # Equivalent to ` ` pp _ new = max ( pp - w, kk ) ` ` ( 注意: pp - w, NOT pp + w / Equivalent to ``pp_new = max(pp - w, kk)`` (note: pp - w, NOT pp + w
         # as in the previous buggy implementation). This matches the CUDA
-        # forward kernel which uses ``no = max(o1, k - w*(i-_t))`` so that w
-        # acts as a positive decay rate per step.
+        # 前向传播 卷积核 which uses ` ` no = max ( o1, k - w * ( i - _ t ) ) ` ` so that w / forward kernel which uses ``no = max(o1, k - w*(i-_t))`` so that w
+        # acts as a positive decay 率 per step / acts as a positive decay rate per step.
         ww2 = pp - w                   # (B, C)
         p2 = torch.maximum(ww2, kk)
         e1_2 = torch.exp(ww2 - p2)
@@ -210,6 +212,7 @@ def wkv_pytorch(B: int, T: int, C: int,
 
 class WKVCudaFunction(torch.autograd.Function):
     """Autograd wrapper around the official Vision-RWKV CUDA op.
+        Autograd 封装器 around the official Vision-RWKV CUDA op。
 
     The op writes outputs into pre-allocated tensors (it does not allocate
     them itself), so we mirror the upstream Python wrapper: allocate ``y``
@@ -250,7 +253,7 @@ class WKVCudaFunction(torch.autograd.Function):
         gk = torch.zeros((B, T, C), device=v.device, dtype=torch.float32)
         gv = torch.zeros((B, T, C), device=v.device, dtype=torch.float32)
         op.backward(B, T, C, w, u, k, v, gy, gw, gu, gk, gv)
-        # Reduce per-batch grads on (w, u) -> (C,) to match parameter shape.
+        # Reduce per-batch grads on ( w, u ) - > ( C, ) to match 参数 形状 / Reduce per-batch grads on (w, u) -> (C,) to match parameter shape.
         gw = gw.sum(dim=0)
         gu = gu.sum(dim=0)
         return (None, None, None, gw, gu, gk, gv)
@@ -265,6 +268,7 @@ def run_wkv(B: int, T: int, C: int,
             k: torch.Tensor, v: torch.Tensor,
             *, try_cuda: bool = True, t_max: int = 8192) -> torch.Tensor:
     """Compute WKV attention with CUDA acceleration when possible.
+        计算 WKV 注意力 with CUDA acceleration when possible。
 
     The function first attempts to load (and cache) the CUDA op when the
     inputs live on a CUDA device, and dispatches to it via the autograd

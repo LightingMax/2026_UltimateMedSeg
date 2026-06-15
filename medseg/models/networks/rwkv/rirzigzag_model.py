@@ -1,4 +1,5 @@
 """RIRZigzag (Zig-RiR) – self-contained port from github.com/txchen-USTC/Zig-RiR.
+    RIRZigzag ( Zig-RiR ) – self-contained 移植 from github. com / txchen-USTC / Zig-RiR。
 
 Zigzag RWKV-in-RWKV for Efficient Medical Image Segmentation (TMI 2025).
 
@@ -21,7 +22,7 @@ from medseg.utils.timm_compat import DropPath
 
 
 # ---------------------------------------------------------------------------
-# Spatial shift
+# 空间的 shift / Spatial shift
 # ---------------------------------------------------------------------------
 def q_shift(input, shift_pixel=1, gamma=1 / 4):
     B, C, H, W = input.shape
@@ -37,7 +38,7 @@ def q_shift(input, shift_pixel=1, gamma=1 / 4):
 
 
 # ---------------------------------------------------------------------------
-# VRWKV Spatial Mix (Zigzag RWKV attention)
+# VRWKV 空间的 Mix ( Zigzag RWKV 注意力 ) / VRWKV Spatial Mix (Zigzag RWKV attention)
 # ---------------------------------------------------------------------------
 class _VRWKVSpatialMix(nn.Module):
     def __init__(self, n_embd, layer_id, key_norm=False, scan_schemes=None):
@@ -104,7 +105,7 @@ class _VRWKVSpatialMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VRWKV Channel Mix (FFN)
+# VRWKV 通道 Mix ( FFN ) / VRWKV Channel Mix (FFN)
 # ---------------------------------------------------------------------------
 class _VRWKVChannelMix(nn.Module):
     def __init__(self, n_embd, hidden_rate=4, key_norm=False):
@@ -127,7 +128,7 @@ class _VRWKVChannelMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Zig-RiR Block (nested RWKV-in-RWKV)
+# Zig-RiR 块 ( 嵌套的 RWKV-in-RWKV ) / Zig-RiR Block (nested RWKV-in-RWKV)
 # ---------------------------------------------------------------------------
 class _Block(nn.Module):
     def __init__(self, outer_dim, inner_dim, layer_id, num_words,
@@ -169,7 +170,7 @@ class _Block(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Patch Merging
+# 图块 Merging / Patch Merging
 # ---------------------------------------------------------------------------
 class _PatchMerging2DSentence(nn.Module):
     def __init__(self, dim_in, dim_out, stride=2):
@@ -216,7 +217,7 @@ class _PatchMerging2DWord(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stem
+# 主干 / Stem
 # ---------------------------------------------------------------------------
 class _Stem(nn.Module):
     def __init__(self, img_size=224, in_chans=3, outer_dim=768, inner_dim=24):
@@ -255,7 +256,7 @@ class _Stem(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stage + UpsampleBlock
+# 阶段 + UpsampleBlock / Stage + UpsampleBlock
 # ---------------------------------------------------------------------------
 class _Stage(nn.Module):
     def __init__(self, num_blocks, outer_dim, inner_dim, layer_offset,
@@ -290,7 +291,7 @@ class _UpsampleBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Pyramid Encoder
+# Pyramid 编码器 / Pyramid Encoder
 # ---------------------------------------------------------------------------
 class _PyramidRiREnc(nn.Module):
     def __init__(self, img_size=224, outer_dims=None, in_chans=3):
@@ -337,7 +338,7 @@ class _PyramidRiREnc(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder
+# 解码 / Decoder
 # ---------------------------------------------------------------------------
 class _Decoder(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -349,7 +350,7 @@ class _Decoder(nn.Module):
 
     def forward(self, x1, x2):
         x1 = self.up(x1)
-        # Interpolate if spatial sizes don't match
+        # 插值 if 空间的 sizes don't match / Interpolate if spatial sizes don't match
         if x1.shape[-2:] != x2.shape[-2:]:
             x1 = F.interpolate(x1, size=x2.shape[-2:], mode='bilinear',
                                align_corners=True)
@@ -361,6 +362,7 @@ class _Decoder(nn.Module):
 # ---------------------------------------------------------------------------
 class RIRZigzag(nn.Module):
     """Zigzag RWKV-in-RWKV segmentation model.
+        Zigzag RWKV-in-RWKV 分割 模型。
 
     Args:
         in_channels: Number of input image channels (default 3).

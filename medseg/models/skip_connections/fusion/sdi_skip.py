@@ -1,4 +1,5 @@
 """SDI (Scale-Diverse Integration) skip — adapted from U-Net V2 (ISBI 2025).
+    SDI (Scale-Diverse Integration) 跳跃连接。
 
 Adapted from: https://github.com/yaoppeng/U-Net_v2
 Paper: U-Net V2: Rethinking the Skip Connections of U-Net for Medical
@@ -39,7 +40,8 @@ from medseg.registry import SKIP_REGISTRY
 
 
 class _ChannelAttention(nn.Module):
-    """CBAM channel attention: shared MLP on GAP + GMP pools."""
+    """CBAM 通道 注意力: shared MLP on GAP + GMP pools。
+        CBAM channel attention: shared MLP on GAP + GMP pools."""
 
     def __init__(self, channels, ratio=16):
         super().__init__()
@@ -58,7 +60,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """CBAM spatial attention: 7×7 conv on channel-pooled features."""
+    """CBAM 空间的 注意力: 7 × 7 conv on channel-pooled 特征。
+        CBAM spatial attention: 7×7 conv on channel-pooled features."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -76,6 +79,7 @@ class _SpatialAttention(nn.Module):
 @SKIP_REGISTRY.register("sdi")
 class SDISkip(nn.Module):
     """SDI (Scale-Diverse Integration) skip connection.
+        SDI (Scale-Diverse Integration) 跳跃连接。
 
     Adapts the cross-scale multiplicative fusion of U-Net V2 to the
     framework's per-pair interface.
@@ -89,27 +93,28 @@ class SDISkip(nn.Module):
         super().__init__()
         self.ratio = ratio
         self.spatial_kernel = spatial_kernel
-        # Lazily-built submodules keyed by (decoder_ch, skip_ch)
+        # Lazily-built submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazily-built submodules keyed by (decoder_ch, skip_ch)
         self._cache: dict = {}
 
     def get_out_channels(self, decoder_ch: int, skip_ch: int) -> int:
         return max(decoder_ch, skip_ch)
 
     def _build(self, decoder_ch: int, skip_ch: int, device):
-        """Lazily build layers for a (decoder_ch, skip_ch) pair."""
+        """Lazily build layers for a ( 解码 _ ch, 跳跃 _ ch ) pair。
+            Lazily build layers for a (decoder_ch, skip_ch) pair."""
         key = (decoder_ch, skip_ch, str(device))
         if key in self._cache:
             return self._cache[key]
 
         unified = max(decoder_ch, skip_ch)
 
-        # Project both to unified channels
+        # Project both to 统一的 通道 / Project both to unified channels
         dec_proj = (nn.Conv2d(decoder_ch, unified, 1, bias=False)
                     if decoder_ch != unified else nn.Identity()).to(device)
         skip_proj = (nn.Conv2d(skip_ch, unified, 1, bias=False)
                      if skip_ch != unified else nn.Identity()).to(device)
 
-        # CBAM on skip feature (mirrors U-Net V2's encoder-side attention)
+        # CBAM on skip feature (mirrors U-Net V2's 编码器 / CBAM on skip feature (mirrors U-Net V2's encoder-side attention)
         ca = _ChannelAttention(unified, ratio=self.ratio).to(device)
         sa = _SpatialAttention(kernel_size=self.spatial_kernel).to(device)
 
@@ -125,7 +130,7 @@ class SDISkip(nn.Module):
             nn.ReLU(inplace=True),
         ).to(device)
 
-        # Final 3×3 conv for output refinement
+        # Final 3 × 3 conv for 输出 refinement / Final 3×3 conv for output refinement
         out_conv = nn.Sequential(
             nn.Conv2d(unified, unified, 3, 1, 1, bias=False),
             nn.BatchNorm2d(unified),
@@ -149,7 +154,7 @@ class SDISkip(nn.Module):
 
     def forward(self, decoder_feat: torch.Tensor,
                 skip_feat: torch.Tensor) -> torch.Tensor:
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[2:] != decoder_feat.shape[2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[2:],
@@ -160,15 +165,15 @@ class SDISkip(nn.Module):
         skip_ch = skip_feat.shape[1]
         mod = self._build(dec_ch, skip_ch, decoder_feat.device)
 
-        # Project both to unified channels
+        # Project both to 统一的 通道 / Project both to unified channels
         d = mod["dec_proj"](decoder_feat)
         s = mod["skip_proj"](skip_feat)
 
-        # CBAM attention on skip (channel then spatial)
+        # CBAM attention on 跳跃连接 / CBAM attention on skip (channel then spatial)
         s_attended = mod["ca"](s) * s
         s_attended = mod["sa"](s_attended) * s_attended
 
-        # Multiplicative fusion (core SDI operation)
+        # Multiplicative 融合 ( core SDI operation ) / Multiplicative fusion (core SDI operation)
         # conv_d(d) * conv_s(s_attended) captures cross-scale interaction
         fused = mod["conv_d"](d) * mod["conv_s"](s_attended)
 

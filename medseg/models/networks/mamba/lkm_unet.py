@@ -1,4 +1,5 @@
 """LKM-UNet: Large Kernel Mamba UNet for Medical Image Segmentation.
+    LKM-UNet: Large 卷积核 Mamba UNet for 医学的 图像 分割。
 
 Combines large kernel convolutions with Mamba SSM for capturing both
 local and global features in medical image segmentation.
@@ -45,7 +46,8 @@ class _LargeKernelMambaBlock(nn.Module):
 
 
 class LKMUNet(nn.Module):
-    """LKM-UNet: Large Kernel Mamba UNet."""
+    """LKM-UNet: Large 卷积核 Mamba UNet。
+        LKM-UNet: Large Kernel Mamba UNet."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  embed_dim=64, depths=None, **kwargs):

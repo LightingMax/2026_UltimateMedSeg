@@ -1,4 +1,4 @@
-"""General foundation encoders."""
+"""通用基础编码器 / General foundation encoders."""
 import sys as _sys
 for _stem in ('sam_vit_encoder', 'clip_encoder', 'dino_encoder', 'dinov2_encoder', 'dinov3_encoder'):
     try:

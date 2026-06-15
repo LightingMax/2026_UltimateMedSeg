@@ -24,6 +24,7 @@ Plug-in modules placed between the encoder and decoder at the deepest feature le
 | `gated_attn` | `gated_attn_bottleneck.py` | Gated self-attention (lightweight Transformer) |
 | `moe` | `moe_bottleneck.py` | Mixture-of-Experts with top-k routing (ICLR 2017) |
 | `coordconv` | `coordconv_bottleneck.py` | CoordConv: position-aware convolution (NeurIPS 2018) |
+| `llm4seg` | `llm4seg_bottleneck.py` | LLM-guided semantic bottleneck |
 
 ## Usage in YAML Config
 

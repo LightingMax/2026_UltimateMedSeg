@@ -1,4 +1,5 @@
 """MoNET (Kim et al., Nature Medicine 2024) — Medical cONcept rETriever for dermatology.
+    MoNET ( Kim et al., Nature Medicine 2024 ) — 医学的 cONcept rETriever for dermatology。
 
 MoNET is a CLIP-style vision-language foundation model trained on ~105K
 dermatology image-text pairs from medical literature. Vision tower: CLIP
@@ -12,8 +13,8 @@ and keep only the vision tower.
 """
 # Source: https://huggingface.co/suinleelab/monet
 # Source: https://github.com/suinleelab/MONET
-# Citation: Kim, C., Gadgil, S.U., DeGrave, A.J. et al. Transparent medical
-#   image AI via an image-text foundation model grounded in medical literature.
+# Citation: Kim, C., Gadgil, S. U., DeGrave, A. J. et al. Transparent 医学的 / Citation: Kim, C., Gadgil, S.U., DeGrave, A.J. et al. Transparent medical
+# 图像 AI via an image-text foundation 模型 grounded in 医学的 literature / image AI via an image-text foundation model grounded in medical literature.
 #   Nature Medicine 30, 1154-1165 (2024).
 
 from __future__ import annotations
@@ -31,7 +32,8 @@ MONET_HF_NAME = "suinleelab/monet"  # transformers CLIPModel artifact
 
 
 def _build_clip_vision(pretrained: bool, hf_name: str):
-    """Load the MoNET CLIP vision tower via transformers (no timm)."""
+    """加载 the MoNET CLIP vision tower via transformers ( no timm )。
+        Load the MoNET CLIP vision tower via transformers (no timm)."""
     try:
         from transformers import CLIPModel, CLIPVisionConfig, CLIPVisionModel
     except ImportError as e:
@@ -58,7 +60,8 @@ def _build_clip_vision(pretrained: bool, hf_name: str):
 
 @ENCODER_REGISTRY.register("monet_derm")
 class MoNETDermEncoder(BaseFoundationEncoder):
-    """MoNET CLIP ViT-L/14 dermatology vision encoder (transformers-loaded)."""
+    """MoNET CLIP ViT-L/14 dermatology vision 编码器。
+        MoNET CLIP ViT-L/14 dermatology vision encoder (transformers-loaded)."""
 
     native_img_size: int = 224
 
@@ -74,7 +77,7 @@ class MoNETDermEncoder(BaseFoundationEncoder):
         self.input_adapter = (nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
                               if in_channels != 3 else nn.Identity())
 
-        # Resolve where to load from (local path > explicit hf-hub override > MONET default)
+        # Resolve where to 加载 from ( 局部的 path > explicit hf-hub 覆盖 > MONET 默认值 ) / Resolve where to load from (local path > explicit hf-hub override > MONET default)
         hf_name = pretrained_path if pretrained_path else MONET_HF_NAME
 
         _vision = _build_clip_vision(pretrained, hf_name)
@@ -84,7 +87,7 @@ class MoNETDermEncoder(BaseFoundationEncoder):
         self._patch_size = int(self.backbone.patch_embed.patch_size)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self._dim,
             num_prefix_tokens=int(self.backbone.num_prefix_tokens),
@@ -107,7 +110,7 @@ class MoNETDermEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

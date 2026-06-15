@@ -1,4 +1,5 @@
 """LightM-UNet Encoder: lightweight Mamba-based hierarchical encoder.
+    LightM-UNet Encoder: lightweight Mamba-based hierarchical 编码器。
 
 Extracted from ``medseg/networks/mamba/lightm_unet.py`` (LightM-UNet,
 https://github.com/MrBlankness/LightM-UNet, 2024). The original network
@@ -32,12 +33,13 @@ from medseg.models.networks.mamba.umamba import MambaSSM
 
 
 # ---------------------------------------------------------------------------
-# Helper building blocks (prefixed with "_" since they are encoder-internal).
+# Helper building blocks (prefixed with "_" since they are 编码器 / Helper building blocks (prefixed with "_" since they are encoder-internal).
 # ---------------------------------------------------------------------------
 
 
 class _DWConv(nn.Module):
-    """Depthwise separable convolution (depthwise 3x3 + pointwise 1x1)."""
+    """Depthwise separable 卷积 ( depthwise 3x3 + pointwise 1x1 )。
+        Depthwise separable convolution (depthwise 3x3 + pointwise 1x1)."""
 
     def __init__(self, in_channels: int, out_channels: int,
                  kernel_size: int = 3, stride: int = 1, bias: bool = False):
@@ -58,6 +60,7 @@ class _DWConv(nn.Module):
 
 class _LightMambaLayer(nn.Module):
     """Mamba layer with channel projection + learnable skip scale.
+        Mamba layer with channel projection + learnable 跳跃连接。
 
     Operates on (B, C, *spatial) tensors, flattening the spatial dims to a
     token sequence before applying the SSM and re-folding afterwards.
@@ -93,7 +96,8 @@ class _LightMambaLayer(nn.Module):
 
 
 class _ResMambaBlock(nn.Module):
-    """Residual block with two ``_LightMambaLayer``s (faithful to source)."""
+    """残差 块 with two ` ` _ LightMambaLayer ` ` s ( 忠实 to 来源 )。
+        Residual block with two ``_LightMambaLayer``s (faithful to source)."""
 
     def __init__(self, channels: int,
                  d_state: int = 16, d_conv: int = 4, expand: int = 2):
@@ -120,13 +124,14 @@ class _ResMambaBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Standalone LightM-UNet encoder.
+# Standalone LightM-UNet 编码器 / Standalone LightM-UNet encoder.
 # ---------------------------------------------------------------------------
 
 
 @ENCODER_REGISTRY.register("lightm")
 class LightMUNetEncoder(nn.Module):
     """LightM-UNet encoder: DWConv stem + 4 Mamba stages with MaxPool down.
+        LightM-UNet 编码器。
 
     Args:
         in_channels: Input image channels. If not equal to 3, a 1x1 conv
@@ -165,9 +170,9 @@ class LightMUNetEncoder(nn.Module):
         self.init_filters = init_filters
         self.blocks_down = blocks_down
 
-        # Optional 1x1 stem when caller provides non-RGB input. The DWConv
-        # below can already accept arbitrary in_channels, but we follow the
-        # project convention of a 1x1 stem for parity with other encoders.
+        # 可选 1x1 主干 when caller provides non-RGB 输入. The DWConv / Optional 1x1 stem when caller provides non-RGB input. The DWConv
+        # below can already accept arbitrary in _ 通道, but we follow the / below can already accept arbitrary in_channels, but we follow the
+        # project convention of a 1x1 主干 for 一致性 with other encoders / project convention of a 1x1 stem for parity with other encoders.
         if in_channels != 3:
             self.input_stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_in = 3
@@ -175,10 +180,10 @@ class LightMUNetEncoder(nn.Module):
             self.input_stem = nn.Identity()
             stem_in = in_channels
 
-        # DWConv init: in -> init_filters, stride 1.
+        # DWConv init: in - > init _ filters, 步长 1 / DWConv init: in -> init_filters, stride 1.
         self.conv_init = _DWConv(stem_in, init_filters)
 
-        # Encoder stages.
+        # 编码器 阶段 / Encoder stages.
         self.down_layers = nn.ModuleList()
         for i, n_blocks in enumerate(blocks_down):
             ch = init_filters * (2 ** i)
@@ -206,6 +211,7 @@ class LightMUNetEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Run the encoder and return per-stage feature maps.
+            Run the 编码器。
 
         Args:
             x: (B, in_channels, H, W) input.

@@ -1,4 +1,5 @@
 """Rolling-UNet: Revitalizing MLP's Ability to Efficiently Extract
+    Rolling-UNet: Revitalizing MLP's Ability to Efficiently 提取。
 Long-Distance Dependencies for Medical Image Segmentation (AAAI 2024).
 
 Faithful reimplementation from:
@@ -21,7 +22,8 @@ from medseg.utils.timm_compat import DropPath, to_2tuple, trunc_normal_
 # ---------------------------------------------------------------------------
 
 class DWConv(nn.Module):
-    """Depthwise convolution + pointwise convolution."""
+    """深度可分离卷积 + 逐点卷积。
+        Depthwise convolution + pointwise convolution."""
     def __init__(self, dim=768):
         super().__init__()
         self.dwconv = nn.Conv2d(dim, dim, 3, 1, 1, bias=True, groups=dim)
@@ -75,7 +77,7 @@ class Lo2(nn.Module):
     def forward(self, x, H, W):
         B, N, C = x.shape
 
-        # --- OR-MLP branch 1 (row-shift → col-shift) ---
+        # - - - OR-MLP 分支 1 ( row-shift → col-shift ) - - - / --- OR-MLP branch 1 (row-shift → col-shift) ---
         xn = x.transpose(1, 2).view(B, C, H, W).contiguous()
         xs = torch.chunk(xn, C, 1)
         x_shift = [torch.roll(x_c, shift, 2)
@@ -96,7 +98,7 @@ class Lo2(nn.Module):
         x_shift_c = self.fc2(x_shift_c)
         x_1 = self.drop(x_shift_c)
 
-        # --- OR-MLP branch 2 (col-shift → row-shift, opposite direction) ---
+        # - - - OR-MLP 分支 2 ( col-shift → row-shift, opposite direction ) - - - / --- OR-MLP branch 2 (col-shift → row-shift, opposite direction) ---
         xn = x.transpose(1, 2).view(B, C, H, W).contiguous()
         xs = torch.chunk(xn, C, 1)
         x_shift = [torch.roll(x_c, -shift, 3)
@@ -117,7 +119,7 @@ class Lo2(nn.Module):
         x_shift_r = self.fc4(x_shift_r)
         x_2 = self.drop(x_shift_r)
 
-        # Merge two OR-MLP branches
+        # 合并 two OR-MLP branches / Merge two OR-MLP branches
         x_1 = torch.add(x_1, x)
         x_2 = torch.add(x_2, x)
         x1 = torch.cat([x_1, x_2], dim=2)
@@ -126,14 +128,14 @@ class Lo2(nn.Module):
         x1 = self.drop(x1)
         x1 = torch.add(x1, x)
 
-        # --- DSC branch ---
+        # - - - DSC 分支 - - - / --- DSC branch ---
         x2 = x.transpose(1, 2).view(B, C, H, W)
         x2 = self.dwconv(x2, H, W)
         x2 = self.act2(x2)
         x2 = self.norm2(x2)
         x2 = x2.flatten(2).transpose(1, 2)
 
-        # Merge DOR-MLP + DSC
+        # 合并 DOR-MLP + DSC / Merge DOR-MLP + DSC
         x3 = torch.cat([x1, x2], dim=2)
         x3 = self.fc6(x3)
         x3 = self.drop(x3)
@@ -141,7 +143,8 @@ class Lo2(nn.Module):
 
 
 class Lo2Block(nn.Module):
-    """Wrapper: LayerNorm → Lo2 with DropPath."""
+    """封装器: LayerNorm → Lo2 with DropPath。
+        Wrapper: LayerNorm → Lo2 with DropPath."""
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False,
                  qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1):
@@ -174,7 +177,8 @@ class Lo2Block(nn.Module):
 
 
 class Feature_Incentive_Block(nn.Module):
-    """Patch embedding with GELU activation (Feature Incentive Block)."""
+    """图块 嵌入 with GELU 激活 ( 特征 Incentive 块 )。
+        Patch embedding with GELU activation (Feature Incentive Block)."""
     def __init__(self, img_size=224, patch_size=7, stride=4,
                  in_chans=3, embed_dim=768):
         super().__init__()
@@ -254,7 +258,8 @@ class D_DoubleConv(nn.Module):
 def _build_rolling_unet(in_channels, num_classes, img_size, embed_dims,
                         block2_drop_extra, final_ch,
                         drop_rate, drop_path_rate, depths):
-    """Factory that builds a Rolling-UNet with the given hyperparameters."""
+    """工厂函数 that builds a Rolling-UNet with the given hyperparameters。
+        Factory that builds a Rolling-UNet with the given hyperparameters."""
     return _RollingUNetBase(
         in_channels=in_channels, num_classes=num_classes, img_size=img_size,
         embed_dims=embed_dims, block2_drop_extra=block2_drop_extra,
@@ -264,6 +269,7 @@ def _build_rolling_unet(in_channels, num_classes, img_size, embed_dims,
 
 class _RollingUNetBase(nn.Module):
     """Rolling-UNet base: hybrid Conv + Lo2-MLP architecture (AAAI 2024).
+        Rolling-UNet base: hybrid Conv + Lo2-MLP 架构 ( AAAI 2024 )。
 
     Args:
         in_channels: Input image channels.
@@ -288,7 +294,7 @@ class _RollingUNetBase(nn.Module):
         norm_layer = nn.LayerNorm
         sr_ratios = [8, 4, 2, 1]
 
-        # ---- Encoder (Conv stages) ----
+        # ---- 编码器 / ---- Encoder (Conv stages) ----
         self.conv1 = DoubleConv(in_channels, embed_dims[0])
         self.pool1 = nn.MaxPool2d(2)
         self.conv2 = DoubleConv(embed_dims[0], embed_dims[1])
@@ -297,7 +303,7 @@ class _RollingUNetBase(nn.Module):
         self.pool3 = nn.MaxPool2d(2)
         self.pool4 = nn.MaxPool2d(2)
 
-        # ---- Encoder / Bottleneck (Lo2 stages) ----
+        # ---- 编码器 / ---- Encoder / Bottleneck (Lo2 stages) ----
         self.FIBlock1 = Feature_Incentive_Block(
             img_size=img_size // 4, patch_size=3, stride=1,
             in_chans=embed_dims[2], embed_dim=embed_dims[3])
@@ -326,7 +332,7 @@ class _RollingUNetBase(nn.Module):
         self.norm2 = norm_layer(embed_dims[4])
         self.norm3 = norm_layer(embed_dims[3])
 
-        # ---- Decoder ----
+        # ---- 解码器 / ---- Decoder ----
         self.FIBlock4 = nn.Conv2d(embed_dims[3], embed_dims[2], 3, stride=1, padding=1)
         self.dbn4 = nn.BatchNorm2d(embed_dims[2])
         self.decoder3 = D_DoubleConv(embed_dims[2], embed_dims[1])
@@ -345,7 +351,7 @@ class _RollingUNetBase(nn.Module):
     def forward(self, x):
         B = x.shape[0]
 
-        # ---- Conv Encoder ----
+        # ---- Conv 编码器 / ---- Conv Encoder ----
         out = self.conv1(x)
         t1 = out
         out = self.pool1(out)
@@ -356,7 +362,7 @@ class _RollingUNetBase(nn.Module):
         t3 = out
         out = self.pool3(out)
 
-        # ---- Lo2 Encoder Stage 4 ----
+        # ---- Lo2 编码器 / ---- Lo2 Encoder Stage 4 ----
         out, H, W = self.FIBlock1(out)
         for blk in self.block1:
             out = blk(out, H, W)
@@ -365,7 +371,7 @@ class _RollingUNetBase(nn.Module):
         t4 = out
         out = self.pool4(out)
 
-        # ---- Bottleneck ----
+        # ---- 瓶颈层 / ---- Bottleneck ----
         out, H, W = self.FIBlock2(out)
         for blk in self.block2:
             out = blk(out, H, W)
@@ -375,7 +381,7 @@ class _RollingUNetBase(nn.Module):
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         out = F.interpolate(out, scale_factor=(2, 2), mode='bilinear')
 
-        # ---- Lo2 Decoder Stage 4 ----
+        # ---- Lo2 解码器 / ---- Lo2 Decoder Stage 4 ----
         out = torch.add(out, t4)
         out = out.flatten(2).transpose(1, 2)
         for blk in self.block3:
@@ -386,7 +392,7 @@ class _RollingUNetBase(nn.Module):
             F.relu(self.dbn4(self.FIBlock4(out))),
             scale_factor=(2, 2), mode='bilinear')
 
-        # ---- Conv Decoder ----
+        # ---- Conv 解码器 / ---- Conv Decoder ----
         ds_collect = self.training and self.deep_supervision
         intermediates = []
 
@@ -419,7 +425,7 @@ class _RollingUNetBase(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Concrete size variants (matching original repo exactly)
+# Concrete 大小 variants ( matching original repo exactly ) / Concrete size variants (matching original repo exactly)
 # ---------------------------------------------------------------------------
 
 class RollingUNet(_RollingUNetBase):

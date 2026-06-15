@@ -1,8 +1,9 @@
 # CXR-CLIP-Seg (TMI 2025)
-# Reference: https://github.com/kakaobrain/cxr-clip
+# 参考: https: / / github. com / kakaobrain / cxr-clip / Reference: https://github.com/kakaobrain/cxr-clip
 # Paper: https://arxiv.org/abs/2310.13292
 # Implemented from paper formulas; not a copy of the official repo.
 """CXR-CLIP-Seg: Chest X-Ray CLIP for Zero/Few-Shot Segmentation.
+    CXR-CLIP-Seg: Chest X-Ray CLIP for Zero / Few-Shot 分割。
 
 You et al., "CXR-CLIP: Chest X-Ray Contrastive Language-Image Pre-training
 for downstream segmentation", IEEE TMI 2025.
@@ -36,7 +37,8 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 class _TextGuidedChannelAttention(nn.Module):
-    """Text-guided channel attention (paper Eq. 7)."""
+    """Text-guided 通道 注意力 ( paper Eq. 7 )。
+        Text-guided channel attention (paper Eq. 7)."""
 
     def __init__(self, vis_dim: int, text_dim: int, reduction: int = 4):
         super().__init__()
@@ -57,7 +59,8 @@ class _TextGuidedChannelAttention(nn.Module):
 
 
 class _FPNDecoder(nn.Module):
-    """FPN-style decoder with text-guided attention at each scale."""
+    """FPN-style 解码器。
+        FPN-style decoder with text-guided attention at each scale."""
 
     def __init__(self, encoder_channels, text_dim: int, out_channels: int = 128):
         super().__init__()
@@ -75,11 +78,11 @@ class _FPNDecoder(nn.Module):
         # Top-down path
         laterals = [lat(f) for lat, f in zip(self.laterals, features)]
 
-        # Apply text attention
+        # 应用 text 注意力 / Apply text attention
         for i, attn in enumerate(self.attns):
             laterals[i] = attn(laterals[i], text_emb)
 
-        # Top-down fusion
+        # Top-down 融合 / Top-down fusion
         for i in range(len(laterals) - 2, -1, -1):
             up = F.interpolate(laterals[i + 1], size=laterals[i].shape[2:],
                                mode='bilinear', align_corners=False)
@@ -88,7 +91,7 @@ class _FPNDecoder(nn.Module):
         # Smooth
         out = [sm(lat) for sm, lat in zip(self.smooth, laterals)]
 
-        # Upsample all to largest scale and sum
+        # 上采样 all to largest scale and sum / Upsample all to largest scale and sum
         target_size = out[0].shape[2:]
         fused = out[0]
         for o in out[1:]:
@@ -99,6 +102,7 @@ class _FPNDecoder(nn.Module):
 
 class CXRCLIPSeg(nn.Module):
     """CXR-CLIP-Seg: zero/few-shot CXR segmentation via medical CLIP.
+        CXR-CLIP-Seg: zero / few-shot CXR 分割 via 医学的 CLIP。
 
     Args:
         in_channels: input channels (default 3 for CXR).
@@ -128,7 +132,7 @@ class CXRCLIPSeg(nn.Module):
         self.img_size = img_size
         self.text_proj_dim = text_proj_dim
 
-        # Image encoder (multi-scale features)
+        # Image 编码器 / Image encoder (multi-scale features)
         import torchvision.models as tvm
         if backbone == 'resnet50':
             weights = tvm.ResNet50_Weights.DEFAULT
@@ -159,7 +163,7 @@ class CXRCLIPSeg(nn.Module):
                 for p in m.parameters():
                     p.requires_grad = False
 
-        # Text encoder (frozen CLIP text model)
+        # Text 编码器 / Text encoder (frozen CLIP text model)
         from transformers import CLIPModel
         clip = hf_from_pretrained(CLIPModel, clip_name)
         self.text_encoder = clip.text_model
@@ -168,10 +172,10 @@ class CXRCLIPSeg(nn.Module):
         text_hidden = self.text_encoder.config.hidden_size
         self.text_proj = nn.Linear(text_hidden, text_proj_dim)
 
-        # FPN decoder with text-guided attention
+        # FPN 解码器 / FPN decoder with text-guided attention
         self.decoder = _FPNDecoder(encoder_channels, text_proj_dim, out_channels=128)
 
-        # Segmentation head
+        # 分割 头部 / Segmentation head
         self.head = nn.Conv2d(128, num_classes, 1)
 
     def _encode_text(self, text) -> torch.Tensor:
@@ -207,17 +211,17 @@ class CXRCLIPSeg(nn.Module):
             text = self._default_text_prompts
         B, _, H, W = image.shape
 
-        # Extract multi-scale features
+        # 提取 多尺度 特征 / Extract multi-scale features
         x = self.stem(image)
         f1 = self.layer1(x)
         f2 = self.layer2(f1)
         f3 = self.layer3(f2)
         f4 = self.layer4(f3)
 
-        # Text embedding
+        # Text 嵌入 / Text embedding
         t_emb = self._encode_text(text)  # (B, text_proj_dim)
 
-        # Decode with text-guided attention
+        # Decode with text-guided 注意力 / Decode with text-guided attention
         decoded = self.decoder([f1, f2, f3, f4], t_emb)  # (B, 128, H/4, W/4)
 
         # Segment

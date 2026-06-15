@@ -1,4 +1,5 @@
 """Medical Transformer (MedT) Encoder: faithful port from
+    Medical Transformer (MedT) 编码器。
 https://github.com/jeya-maria-jose/Medical-Transformer
 
 Reference: Valanarasu et al., "Medical Transformer: Gated Axial-Attention
@@ -25,7 +26,8 @@ class qkv_transform(nn.Conv1d):
 
 # ============= AxialAttention (from axialnet.py) =============
 class AxialAttention(nn.Module):
-    """Gated Axial Attention mechanism."""
+    """Gated Axial 注意力 mechanism。
+        Gated Axial Attention mechanism."""
     def __init__(self, in_planes, out_planes, groups=8, kernel_size=56,
                  stride=1, bias=False, width=False):
         assert (in_planes % groups == 0) and (out_planes % groups == 0)
@@ -39,20 +41,20 @@ class AxialAttention(nn.Module):
         self.bias = bias
         self.width = width
 
-        # Multi-head self attention
+        # Multi-head self 注意力 / Multi-head self attention
         self.qkv_transform = qkv_transform(in_planes, out_planes * 2, kernel_size=1, stride=1,
                                             padding=0, bias=False)
         self.bn_qkv = nn.BatchNorm1d(out_planes * 2)
         self.bn_similarity = nn.BatchNorm2d(groups * 3)
         self.bn_output = nn.BatchNorm1d(out_planes * 2)
 
-        # Gating parameters
+        # Gating 参数 / Gating parameters
         self.f_qr = nn.Parameter(torch.tensor(0.1), requires_grad=False)
         self.f_kr = nn.Parameter(torch.tensor(0.1), requires_grad=False)
         self.f_sve = nn.Parameter(torch.tensor(0.1), requires_grad=False)
         self.f_sv = nn.Parameter(torch.tensor(1.0), requires_grad=False)
 
-        # Position embedding
+        # Position 嵌入 / Position embedding
         self.relative = nn.Parameter(torch.randn(self.group_planes * 2, kernel_size * 2 - 1), requires_grad=True)
         query_index = torch.arange(kernel_size).unsqueeze(0)
         key_index = torch.arange(kernel_size).unsqueeze(1)
@@ -78,7 +80,7 @@ class AxialAttention(nn.Module):
         q, k, v = torch.split(qkv.reshape(N * W, self.groups, self.group_planes * 2, H),
                                [self.group_planes // 2, self.group_planes // 2, self.group_planes], dim=2)
 
-        # Relative position embeddings
+        # 相对的 position 嵌入 / Relative position embeddings
         all_embeddings = torch.index_select(self.relative, 1, self.flatten_index).view(
             self.group_planes * 2, self.kernel_size, self.kernel_size)
         q_embedding, k_embedding, v_embedding = torch.split(all_embeddings,
@@ -100,7 +102,7 @@ class AxialAttention(nn.Module):
         sv = torch.einsum('bgij,bgcj->bgci', similarity, v)
         sve = torch.einsum('bgij,cij->bgci', similarity, v_embedding)
 
-        # Gate output
+        # Gate 输出 / Gate output
         sv = torch.mul(sv, self.f_sv)
         sve = torch.mul(sve, self.f_sve)
 
@@ -132,7 +134,7 @@ class AxialBlock(nn.Module):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         width = int(planes * (base_width / 64.))
-        # When stride > 1, apply stride via conv_down and use reduced kernel_size
+        # When 步长 > 1, 应用 步长 via conv _ down and use reduced 卷积核 _ 大小 / When stride > 1, apply stride via conv_down and use reduced kernel_size
         self.conv_down = nn.Conv2d(inplanes, width, kernel_size=1, stride=stride, bias=False)
         effective_ks = kernel_size // stride if stride > 1 else kernel_size
         self.bn1 = norm_layer(width)
@@ -161,9 +163,10 @@ class AxialBlock(nn.Module):
         return out
 
 
-# ============= MedT Encoder Model =============
+# ============= MedT 编码器 / ============= MedT Encoder Model =============
 class AxialEncoder(nn.Module):
-    """Axial Attention encoder from Medical Transformer."""
+    """Axial Attention 编码器。
+        Axial Attention encoder from Medical Transformer."""
     def __init__(self, block, layers, in_channels=3, groups=8, width_per_group=64,
                  norm_layer=None, s=0.125, img_size=128):
         super(AxialEncoder, self).__init__()
@@ -226,6 +229,7 @@ class AxialEncoder(nn.Module):
 @ENCODER_REGISTRY.register("medt")
 class MedTEncoder(nn.Module):
     """Medical Transformer Encoder wrapper.
+        Medical Transformer 编码器。
     Faithful to https://github.com/jeya-maria-jose/Medical-Transformer
     Uses Gated Axial Attention with height and width axes.
     """
@@ -244,7 +248,7 @@ class MedTEncoder(nn.Module):
         self.encoder = AxialEncoder(AxialBlock, [1, 2, 4, 1], in_channels=in_channels,
                                     groups=groups, s=s, img_size=img_size)
 
-        # Compute out_channels
+        # 计算 out _ 通道 / Compute out_channels
         base = int(128 * s)
         self._out_channels = [
             base * AxialBlock.expansion,

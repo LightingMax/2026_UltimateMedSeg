@@ -1,10 +1,10 @@
-# Architecture combination: encoder=convnext + decoder=cascade_full
-# 架构组合：编码器=ConvNeXt + 解码器=完整级联
+# Architecture combination: encoder=timm_convnext_tiny + decoder=cascade_full
+# 架构组合：编码器=timm_convnext_tiny + 解码器=完整级联
 model:
   num_classes: 2
   img_size: 224
   encoder:
-    name: convnext
+    name: timm_convnext_tiny
     in_channels: 3
     pretrained: true
     params: {}

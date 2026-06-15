@@ -1,4 +1,5 @@
 """KNN graph construction for dense feature maps.
+    KNN graph construction for 密集的 特征图。
 
 Source: https://github.com/SLDGroup/G-CASCADE (lib/gcn_lib/torch_edge.py)
 Adapted from ViG (Huawei, 2022).
@@ -11,7 +12,8 @@ import torch.nn.functional as F
 
 
 def pairwise_distance(x):
-    """Compute pairwise distance of a point cloud."""
+    """计算 pairwise distance of a point cloud。
+        Compute pairwise distance of a point cloud."""
     with torch.no_grad():
         x_inner = -2 * torch.matmul(x, x.transpose(2, 1))
         x_square = torch.sum(torch.mul(x, x), dim=-1, keepdim=True)
@@ -29,7 +31,8 @@ def part_pairwise_distance(x, start_idx=0, end_idx=1):
 
 
 def xy_pairwise_distance(x, y):
-    """Compute pairwise distance between two point clouds."""
+    """计算 pairwise distance between two point clouds。
+        Compute pairwise distance between two point clouds."""
     with torch.no_grad():
         xy_inner = -2 * torch.matmul(x, y.transpose(2, 1))
         x_square = torch.sum(torch.mul(x, x), dim=-1, keepdim=True)
@@ -53,7 +56,7 @@ def dense_knn_matrix(x, k=16, relative_pos=None):
         batch_size, n_points, n_dims = x.shape
         # Adapt k if not enough points
         actual_k = min(k, n_points)
-        # Memory efficient implementation
+        # Memory 高效的 implementation / Memory efficient implementation
         n_part = 10000
         if n_points > n_part:
             nn_idx_list = []

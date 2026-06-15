@@ -1,4 +1,5 @@
 """xLSTM-UNet (Bot-style) standalone encoder.
+    xLSTM-UNet (Bot-style) standalone 编码器。
 
 Adapted from ``medseg/networks/other/xlstm_unet.py`` (Chen et al., "xLSTM-UNet
 can be an Effective 2D & 3D Medical Image Segmentation Backbone with
@@ -29,12 +30,13 @@ from medseg.models.networks.other.xlstm_unet import XLSTMLayer  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
-# Standalone xLSTM-UNet (Bot) encoder
+# Standalone xLSTM-UNet (Bot) 编码器 / Standalone xLSTM-UNet (Bot) encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("xlstm")
 class XLSTMEncoder(nn.Module):
     """xLSTM-UNet Bot encoder: residual conv pyramid + XLSTMLayer at bottleneck.
+        xLSTM-UNet Bot 编码器。
 
     The first stage is a stride-1 "stem" that lifts the input to
     ``features[0]`` channels; every subsequent stage applies stride 2 in its
@@ -77,7 +79,7 @@ class XLSTMEncoder(nn.Module):
 
         self.img_size = img_size
 
-        # Per-stage block counts.
+        # Per-stage 块 counts / Per-stage block counts.
         if isinstance(n_blocks_per_stage, int):
             blocks_per_stage = [n_blocks_per_stage] * n_stages
         else:
@@ -87,7 +89,7 @@ class XLSTMEncoder(nn.Module):
                     f"n_blocks_per_stage length {len(blocks_per_stage)} "
                     f"does not match number of stages {n_stages}")
 
-        # Optional channel adapter: 1x1 conv when input is not 3-channel.
+        # 可选 通道 适配器: 1x1 conv when 输入 is not 3-channel / Optional channel adapter: 1x1 conv when input is not 3-channel.
         if in_channels != 3:
             self.input_adapter = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             stem_in = 3
@@ -97,7 +99,7 @@ class XLSTMEncoder(nn.Module):
 
         pad = kernel_size // 2
 
-        # Stem: stride-1 residual block + extra residual blocks.
+        # 主干: 步长 - 1 残差 块 + extra 残差 blocks / Stem: stride-1 residual block + extra residual blocks.
         stem_ch = features[0]
         self.stem = nn.Sequential(
             BasicResBlock(stem_in, stem_ch, kernel_size, pad,
@@ -106,7 +108,7 @@ class XLSTMEncoder(nn.Module):
               for _ in range(blocks_per_stage[0] - 1)],
         )
 
-        # Strided stages 1..n_stages-1.
+        # Strided 阶段 1.. n _ 阶段 - 1 / Strided stages 1..n_stages-1.
         self.stages = nn.ModuleList()
         prev_ch = stem_ch
         for s in range(1, n_stages):
@@ -119,11 +121,11 @@ class XLSTMEncoder(nn.Module):
             self.stages.append(stage)
             prev_ch = features[s]
 
-        # xLSTM at the bottleneck, patch-token mode (resolution-friendly).
+        # xLSTM at the 瓶颈层 / xLSTM at the bottleneck, patch-token mode (resolution-friendly).
         self.xlstm_bottleneck = XLSTMLayer(dim=features[-1], channel_token=False)
 
         self.out_channels: List[int] = list(features)
-        # Effective strides relative to input (stem at 1, then doubling).
+        # Effective strides 相对的 to 输入 ( 主干 at 1, then doubling ) / Effective strides relative to input (stem at 1, then doubling).
         self.strides: List[int] = [1] + [2 ** s for s in range(1, n_stages)]
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
@@ -135,7 +137,7 @@ class XLSTMEncoder(nn.Module):
         for stage in self.stages:
             x = stage(x)
             features.append(x)
-        # Apply xLSTM on the bottleneck (faithful to XLSTMUNetBot.forward,
-        # which replaces ``skips[-1]`` with the xLSTM-refined feature).
+        # Apply xLSTM on the 瓶颈层 / Apply xLSTM on the bottleneck (faithful to XLSTMUNetBot.forward,
+        # which replaces ` ` skips [ - 1 ] ` ` with the xLSTM-refined 特征 ) / which replaces ``skips[-1]`` with the xLSTM-refined feature).
         features[-1] = self.xlstm_bottleneck(features[-1])
         return features

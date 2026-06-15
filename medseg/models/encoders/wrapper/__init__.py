@@ -1,4 +1,4 @@
-"""Wrapper-family encoders."""
+"""封装器系列编码器 / Wrapper-family encoders."""
 
 import sys as _sys
 

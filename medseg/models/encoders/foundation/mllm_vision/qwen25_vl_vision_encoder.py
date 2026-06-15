@@ -1,4 +1,5 @@
 """Qwen2.5-VL vision-tower encoder (foundation-model encoder).
+    Qwen2.5-VL vision-tower encoder (foundation-model 编码器。
 
 Qwen2.5-VL (Alibaba, 2024) is a multimodal LLM whose image side is a custom
 ViT with M-RoPE (Multimodal Rotary Position Embedding) supporting dynamic
@@ -36,7 +37,8 @@ _PATCH_SIZE = 14
 
 @ENCODER_REGISTRY.register("qwen25_vl_vision")
 class Qwen25VLVisionEncoder(BaseFoundationEncoder):
-    """Qwen2.5-VL vision tower with DPT-style multi-block multi-scale output."""
+    """Qwen2. 5-VL vision tower with DPT-style multi-block 多尺度 输出。
+        Qwen2.5-VL vision tower with DPT-style multi-block multi-scale output."""
 
     native_img_size: int = 384
 
@@ -67,7 +69,7 @@ class Qwen25VLVisionEncoder(BaseFoundationEncoder):
                     f"{type(e).__name__}: {e}. Provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Extract the vision tower: Qwen2.5-VL stores it under .visual or .model.visual.
+            # 提取 the vision tower: Qwen2. 5-VL stores it under. visual or. 模型. visual / Extract the vision tower: Qwen2.5-VL stores it under .visual or .model.visual.
             _visual = getattr(_full_model, "visual", None)
             if _visual is None:
                 _model_inner = getattr(_full_model, "model", None)
@@ -115,7 +117,7 @@ class Qwen25VLVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -148,7 +150,7 @@ class Qwen25VLVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

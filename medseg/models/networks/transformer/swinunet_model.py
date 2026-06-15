@@ -1,4 +1,5 @@
 """Swin-UNet – self-contained port from github.com/HuCaoFighting/Swin-Unet.
+    Swin-UNet – self-contained 移植 from github. com / HuCaoFighting / Swin-Unet。
 
 Standard interface:
     model = SwinUNet(in_channels=3, num_classes=2, img_size=224)
@@ -367,7 +368,7 @@ class SwinTransformerSys(nn.Module):
             trunc_normal_(self.absolute_pos_embed, std=.02)
         self.pos_drop = nn.Dropout(p=drop_rate)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
-        # encoder
+        # 编码器 / encoder
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
             layer = BasicLayer(
@@ -384,7 +385,7 @@ class SwinTransformerSys(nn.Module):
                             else None),
                 use_checkpoint=use_checkpoint)
             self.layers.append(layer)
-        # decoder
+        # 解码 / decoder
         self.layers_up = nn.ModuleList()
         self.concat_back_dim = nn.ModuleList()
         for i_layer in range(self.num_layers):
@@ -485,6 +486,7 @@ class SwinTransformerSys(nn.Module):
 
 class SwinUNet(nn.Module):
     """Swin-UNet wrapper with standard interface.
+        Swin-UNet 封装器 with 标准 interface。
 
     Args:
         in_channels (int): Number of input channels (default: 3).
@@ -497,11 +499,11 @@ class SwinUNet(nn.Module):
         patch_size = kwargs.get("patch_size", 4)
         depths = kwargs.get("depths", [2, 2, 6, 2])
         num_layers = len(depths)
-        # Deepest feature resolution = img_size / patch_size / 2^(num_layers-1)
-        # must be divisible by window_size for window-partition to work.
-        # Hence img_size must be a multiple of:
-        #   patch_size * 2^(num_layers-1) * window_size
-        # For defaults (patch=4, num_layers=4, window=7) that is 224.
+        # Deepest 特征 分辨率 = img _ 大小 / 图块 _ 大小 / 2 ^ ( num _ layers - 1 ) / Deepest feature resolution = img_size / patch_size / 2^(num_layers-1)
+        # must be divisible by 窗口 _ 大小 for window-partition to work / must be divisible by window_size for window-partition to work.
+        # Hence img _ 大小 must be a multiple of / Hence img_size must be a multiple of:
+        # 图块 _ 大小 * 2 ^ ( num _ layers - 1 ) * 窗口 _ 大小 / patch_size * 2^(num_layers-1) * window_size
+        # For defaults ( 图块 = 4, num _ layers = 4, 窗口 = 7 ) that is 224 / For defaults (patch=4, num_layers=4, window=7) that is 224.
         divisor = patch_size * (2 ** (num_layers - 1)) * window_size
         if img_size % divisor == 0:
             padded_img_size = img_size
@@ -528,7 +530,7 @@ class SwinUNet(nn.Module):
         pad_w = max(0, target - W)
         if pad_h > 0 or pad_w > 0:
             # reflect-pad needs pad < dim; fall back to replicate then
-            # constant if H/W are too small relative to the pad amount.
+            # constant if H / W are too small 相对的 to the pad amount / constant if H/W are too small relative to the pad amount.
             mode = "reflect"
             if pad_h >= H or pad_w >= W:
                 mode = "replicate"

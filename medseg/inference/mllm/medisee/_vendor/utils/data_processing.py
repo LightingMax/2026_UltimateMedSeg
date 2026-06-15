@@ -70,10 +70,10 @@ if __name__ == "__main__":
         img_path = json_path.replace(".json", ".jpg")
         img = cv2.imread(img_path)[:, :, ::-1]
 
-        # In generated mask, value 1 denotes valid target region, and value 255 stands for region ignored during evaluaiton.
+        # In generated 掩码, value 1 denotes valid 目标 区域, and value 255 stands for 区域 ignored during evaluaiton / In generated mask, value 1 denotes valid target region, and value 255 stands for region ignored during evaluaiton.
         mask, comments, is_sentence = get_mask_from_json(json_path, img)
 
-        ## visualization. Green for target, and red for ignore.
+        # # visualization. Green for 目标, and red for ignore / # visualization. Green for target, and red for ignore.
         valid_mask = (mask == 1).astype(np.float32)[:, :, None]
         ignore_mask = (mask == 255).astype(np.float32)[:, :, None]
         vis_img = img * (1 - valid_mask) * (1 - ignore_mask) + (

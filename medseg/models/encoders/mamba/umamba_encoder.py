@@ -1,4 +1,5 @@
 """U-Mamba Encoder: plain-conv stages with a Mamba SSM bottleneck.
+    U-Mamba 编码器。
 
 Adapted from ``medseg/networks/mamba/umamba.py`` (Ma et al., "U-Mamba: Enhancing
 Long-range Dependency for Biomedical Image Segmentation", MICCAI 2024,
@@ -29,11 +30,12 @@ from medseg.models.networks.mamba.umamba import MambaLayer, MambaSSM  # noqa: F4
 
 
 # ---------------------------------------------------------------------------
-# Plain convolutional building blocks (Conv-InstanceNorm-LeakyReLU)
+# Plain 卷积的 building blocks ( Conv-InstanceNorm-LeakyReLU ) / Plain convolutional building blocks (Conv-InstanceNorm-LeakyReLU)
 # ---------------------------------------------------------------------------
 
 class PlainConvBlock(nn.Module):
-    """Single Conv-InstanceNorm-LeakyReLU block (nnU-Net plain-conv style)."""
+    """Single Conv-InstanceNorm-LeakyReLU 块 ( nnU-Net plain-conv style )。
+        Single Conv-InstanceNorm-LeakyReLU block (nnU-Net plain-conv style)."""
 
     def __init__(self, in_channels: int, out_channels: int,
                  kernel_size: int = 3, stride: int = 1,
@@ -50,7 +52,8 @@ class PlainConvBlock(nn.Module):
 
 
 class PlainConvStage(nn.Module):
-    """Stack of plain conv blocks: first block applies the stage stride."""
+    """Stack of plain conv blocks: first 块 应用 the 阶段 步长。
+        Stack of plain conv blocks: first block applies the stage stride."""
 
     def __init__(self, in_channels: int, out_channels: int,
                  n_blocks: int = 2, kernel_size: int = 3,
@@ -70,12 +73,13 @@ class PlainConvStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Standalone U-Mamba encoder
+# Standalone U-Mamba 编码器 / Standalone U-Mamba encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("umamba")
 class UMambaEncoder(nn.Module):
     """U-Mamba encoder: PlainConv pyramid + MambaLayer at the bottleneck.
+        U-Mamba 编码器。
 
     The first stage runs at stride 1 (nnU-Net "stem"); every subsequent stage
     applies stride 2 in its first conv. Per-stage channel counts double from
@@ -117,11 +121,11 @@ class UMambaEncoder(nn.Module):
 
         self.img_size = img_size
 
-        # Per-stage feature dims: doubled, capped at max_features.
+        # Per-stage 特征 dims: doubled, capped at max _ 特征 / Per-stage feature dims: doubled, capped at max_features.
         features = [min(base_features * (2 ** s), max_features)
                     for s in range(num_stages)]
 
-        # Per-stage block counts.
+        # Per-stage 块 counts / Per-stage block counts.
         if isinstance(n_blocks_per_stage, int):
             blocks_per_stage = [n_blocks_per_stage] * num_stages
         else:
@@ -131,10 +135,10 @@ class UMambaEncoder(nn.Module):
                     f"n_blocks_per_stage length {len(blocks_per_stage)} "
                     f"does not match num_stages {num_stages}")
 
-        # Strides: stem at 1, every subsequent stage at 2.
+        # Strides: 主干 at 1, every subsequent 阶段 at 2 / Strides: stem at 1, every subsequent stage at 2.
         strides = [1] + [2] * (num_stages - 1)
 
-        # Build conv pyramid.
+        # Build conv 金字塔 / Build conv pyramid.
         self.stages = nn.ModuleList()
         prev_ch = in_channels
         for s in range(num_stages):
@@ -147,7 +151,7 @@ class UMambaEncoder(nn.Module):
             ))
             prev_ch = features[s]
 
-        # Mamba bottleneck: patch-token mode on the deepest feature.
+        # Mamba 瓶颈层 / Mamba bottleneck: patch-token mode on the deepest feature.
         self.mamba_bottleneck = MambaLayer(
             dim=features[-1],
             d_state=mamba_d_state,
@@ -164,7 +168,7 @@ class UMambaEncoder(nn.Module):
         for stage in self.stages:
             x = stage(x)
             features.append(x)
-        # Apply Mamba on the bottleneck (faithful to UMambaBot.forward, which
-        # replaces ``skips[-1]`` with the Mamba-refined feature).
+        # Apply Mamba on the 瓶颈层 / Apply Mamba on the bottleneck (faithful to UMambaBot.forward, which
+        # replaces ` ` skips [ - 1 ] ` ` with the Mamba-refined 特征 ) / replaces ``skips[-1]`` with the Mamba-refined feature).
         features[-1] = self.mamba_bottleneck(features[-1])
         return features

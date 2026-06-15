@@ -1,4 +1,4 @@
-# Reference: https://github.com/Edisonhimself/MediSee
+# 参考: https: / / github. com / Edisonhimself / MediSee / Reference: https://github.com/Edisonhimself/MediSee
 # Paper:     https://arxiv.org/abs/2407.16942
 """MediSee 在 medseg 框架下的薄 wrapper。
 
@@ -190,7 +190,7 @@ class MediSeeWrapper(nn.Module):
             self.conv_type
         ]
 
-        # CLIP image processor + SAM transform
+        # CLIP 图像 processor + SAM transform / CLIP image processor + SAM transform
         from transformers import CLIPImageProcessor  # type: ignore
 
         clip_processor = CLIPImageProcessor.from_pretrained(weights.clip_dir)
@@ -230,7 +230,7 @@ class MediSeeWrapper(nn.Module):
         return img_t, resize
 
     # ------------------------------------------------------------------
-    # forward
+    # 前向传播 / forward
     # ------------------------------------------------------------------
     def forward(
         self,
@@ -247,7 +247,7 @@ class MediSeeWrapper(nn.Module):
         b, _, H, W = image.shape
 
         # text -> list[str]; MediSee is a reasoning MLLM and operates on a
-        # natural-language query — None / empty input is rejected.
+        # natural-language query — None / empty 输入 is rejected / natural-language query — None / empty input is rejected.
         if text is None:
             raise ValueError(
                 "MediSeeWrapper.forward requires a textual query (str or "

@@ -35,7 +35,7 @@ from pycocotools import mask
 
 class G_REFER:
     def __init__(self, data_root, dataset="grefcoco", splitBy="unc"):
-        # provide data_root folder which contains grefcoco
+        # provide 数据 _ root folder which contains grefcoco / provide data_root folder which contains grefcoco
         print("loading dataset %s into memory..." % dataset)
         self.ROOT_DIR = osp.abspath(osp.dirname(__file__))
         self.DATA_DIR = osp.join(data_root, dataset)
@@ -46,7 +46,7 @@ class G_REFER:
 
         tic = time.time()
 
-        # load refs from data/dataset/refs(dataset).json
+        # 加载 refs from 数据 / 数据集 / refs ( 数据集 ). json / load refs from data/dataset/refs(dataset).json
         self.data = {}
         self.data["dataset"] = dataset
 
@@ -60,7 +60,7 @@ class G_REFER:
             else:
                 raise FileNotFoundError("JSON file not found")
 
-        # load annotations from data/dataset/instances.json
+        # 加载 annotations from 数据 / 数据集 / instances. json / load annotations from data/dataset/instances.json
         instances_file = osp.join(self.DATA_DIR, "instances.json")
         instances = json.load(open(instances_file, "r"))
         self.data["images"] = instances["images"]
@@ -85,16 +85,16 @@ class G_REFER:
         # create sets of mapping
         # 1)  Refs: 	 	{ref_id: ref}
         # 2)  Anns: 	 	{ann_id: ann}
-        # 3)  Imgs:		 	{image_id: image}
+        # 3 ) Imgs: { 图像 _ id: 图像 } / 3)  Imgs:		 	{image_id: image}
         # 4)  Cats: 	 	{category_id: category_name}
         # 5)  Sents:     	{sent_id: sent}
-        # 6)  imgToRefs: 	{image_id: refs}
-        # 7)  imgToAnns: 	{image_id: anns}
+        # 6 ) imgToRefs: { 图像 _ id: refs } / 6)  imgToRefs: 	{image_id: refs}
+        # 7 ) imgToAnns: { 图像 _ id: anns } / 7)  imgToAnns: 	{image_id: anns}
         # 8)  refToAnn:  	{ref_id: ann}
         # 9)  annToRef:  	{ann_id: ref}
         # 10) catToRefs: 	{category_id: refs}
         # 11) sentToRef: 	{sent_id: ref}
-        # 12) sentToTokens: {sent_id: tokens}
+        # 12 ) sentToTokens: { sent _ id: 标记 } / 12) sentToTokens: {sent_id: tokens}
         print("creating index...")
         # fetch info from instances
         Anns, Imgs, Cats, imgToAnns = {}, {}, {}, {}
@@ -239,7 +239,7 @@ class G_REFER:
 
     def showRef(self, ref, seg_box="seg"):
         ax = plt.gca()
-        # show image
+        # show 图像 / show image
         image = self.Imgs[ref["image_id"]]
         I = io.imread(osp.join(self.IMAGE_DIR, image["file_name"]))
         ax.imshow(I)
@@ -276,7 +276,7 @@ class G_REFER:
                 )
                 ax.add_collection(p)  # thin red polygon
             else:
-                # mask used for refclef
+                # 掩码 used for refclef / mask used for refclef
                 rle = ann["segmentation"]
                 m = mask.decode(rle)
                 img = np.ones((m.shape[0], m.shape[1], 3))
@@ -315,7 +315,7 @@ class G_REFER:
             m, axis=2
         )  # sometimes there are multiple binary map (corresponding to multiple segs)
         m = m.astype(np.uint8)  # convert to np.uint8
-        # compute area
+        # 计算 area / compute area
         area = sum(mask.area(rle))  # should be close to ann['area']
         return {"mask": m, "area": area}
 

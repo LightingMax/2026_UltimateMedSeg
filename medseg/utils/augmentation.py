@@ -166,7 +166,7 @@ def build_transforms(cfg: dict, split: str = "train", dataset=None):
     if img_size == "native":
         img_size = 224
 
-    # Validation/test: no augmentation
+    # 验证 / test: no 数据增强 / Validation/test: no augmentation
     if aug_type == "none" or split in ("val", "test"):
         if aug_type == "albumentations":
             return AlbuWrapper(_build_albu_val(img_size))
@@ -186,6 +186,6 @@ def build_transforms(cfg: dict, split: str = "train", dataset=None):
             return build_augmentation_pipeline(aug_pipeline, img_size=img_size, dataset=dataset)
         _log.warning("augmentation=pipeline but aug_pipeline is empty, falling back to basic")
 
-    # Default: basic transforms
+    # 默认值: 基本 transforms / Default: basic transforms
     from medseg.datasets import get_train_transforms
     return get_train_transforms(img_size)

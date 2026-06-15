@@ -1,4 +1,5 @@
 """SSFormer: Stepwise Strengthened Transformer for Polyp Segmentation.
+    SSFormer: Stepwise Strengthened Transformer for 息肉 分割。
 
 Reference:
     Jinfeng Wang, Qiming Huang, Feilong Tang, Jia Meng, Jionglong Su,
@@ -25,8 +26,8 @@ Self-contained: only torch and timm are required.
 
 import os
 
-# Limit huggingface_hub retry/timeout budgets so a network outage does not
-# stall model construction for minutes. Must be set before importing timm.
+# Limit huggingface _ hub retry / timeout budgets so a 网络 outage does not / Limit huggingface_hub retry/timeout budgets so a network outage does not
+# stall 模型 construction for minutes. Must be set before importing timm / stall model construction for minutes. Must be set before importing timm.
 os.environ.setdefault('HF_HUB_ETAG_TIMEOUT', '3')
 os.environ.setdefault('HF_HUB_DOWNLOAD_TIMEOUT', '5')
 
@@ -62,6 +63,7 @@ class _ConvBNReLU(nn.Module):
 
 class _PLD(nn.Module):
     """Pyramid Local Decoder.
+        Pyramid Local 解码器。
 
     Projects each encoder feature to a common channel width with a 1x1 conv,
     bilinearly upsamples every stage to the top (highest-resolution) stage,
@@ -71,13 +73,13 @@ class _PLD(nn.Module):
 
     def __init__(self, in_channels_list, decoder_channels, num_classes):
         super().__init__()
-        # 1x1 projections to a common embedding dim
+        # 1x1 projections to a common 嵌入 dim / 1x1 projections to a common embedding dim
         self.reduces = nn.ModuleList([
             nn.Conv2d(c, decoder_channels, kernel_size=1, bias=False)
             for c in in_channels_list
         ])
         n = len(in_channels_list)
-        # 3x3 conv stack on the concatenated multi-stage features
+        # 3x3 conv stack on the concatenated multi-stage 特征 / 3x3 conv stack on the concatenated multi-stage features
         self.fuse = nn.Sequential(
             _ConvBNReLU(n * decoder_channels, decoder_channels, kernel_size=3),
             _ConvBNReLU(decoder_channels, decoder_channels, kernel_size=3),
@@ -85,7 +87,7 @@ class _PLD(nn.Module):
         self.head = nn.Conv2d(decoder_channels, num_classes, kernel_size=1)
 
     def forward(self, feats):
-        # feats: list ordered shallow->deep (largest spatial first)
+        # feats: list ordered 浅层 - > 深度 ( largest 空间的 first ) / feats: list ordered shallow->deep (largest spatial first)
         ref_size = feats[0].shape[-2:]
         ups = []
         for proj, f in zip(self.reduces, feats):
@@ -126,10 +128,11 @@ def _build_backbone(in_channels, pretrained=True):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SSFormer(nn.Module):
     """SSFormer: MiT-B2 encoder + PLD decoder.
+        SSFormer: MiT-B2 编码器。
 
     Args:
         in_channels: number of input image channels.
@@ -141,8 +144,8 @@ class SSFormer(nn.Module):
         decoder_channels: shared embedding width inside the PLD decoder.
     """
 
-    # MiT-B2 / PVTv2-B2 use 4x4 patch embed + repeated stride-2 stages, hence
-    # an overall stride of 32; pad inputs to a multiple of this.
+    # MiT-B 2 / PVTv2-B 2 use 4x4 图块 embed + repeated 步长 - 2 阶段, hence / MiT-B2 / PVTv2-B2 use 4x4 patch embed + repeated stride-2 stages, hence
+    # an overall 步长 of 32; pad inputs to a multiple of this / an overall stride of 32; pad inputs to a multiple of this.
     _PATCH_MULT = 32
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
@@ -182,10 +185,10 @@ class SSFormer(nn.Module):
         x_pad, (pad_h, pad_w) = self._pad_to_multiple(x, self._PATCH_MULT)
 
         feats = self.backbone(x_pad)
-        # ordered shallow->deep (largest spatial first), as required by _PLD
+        # ordered 浅层 - > 深度 ( largest 空间的 first ), as required by _ PLD / ordered shallow->deep (largest spatial first), as required by _PLD
         logits = self.decoder(feats)
 
-        # upsample to the (padded) input resolution then crop back
+        # 上采样 to the ( padded ) 输入 分辨率 then crop back / upsample to the (padded) input resolution then crop back
         logits = F.interpolate(
             logits, size=x_pad.shape[-2:], mode='bilinear', align_corners=False,
         )

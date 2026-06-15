@@ -1,4 +1,5 @@
 """DS-TransUNet: Dual Swin Transformer U-Net for Medical Image Segmentation
+    DS-TransUNet: Dual Swin Transformer U-Net for 医学的 图像 分割。
 Source: https://github.com/TianBaoGe/DS-TransUNet (master branch)
 Official file: lib/DS_TransUNet.py (1020 lines)
 
@@ -276,7 +277,7 @@ class PatchEmbed(nn.Module):
         return x
 
 
-# ==================== BasicLayer (Swin stage) ====================
+# = = = = = = = = = = = = = = = = = = = = BasicLayer ( Swin 阶段 ) = = = = = = = = = = = = = = = = = = = = / ==================== BasicLayer (Swin stage) ====================
 class BasicLayer(nn.Module):
     def __init__(self, dim, depth, num_heads, window_size=7, mlp_ratio=4.,
                  qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
@@ -331,9 +332,10 @@ class BasicLayer(nn.Module):
             return x, H, W, x, H, W
 
 
-# ==================== Swin Encoder ====================
+# ==================== Swin 编码器 / ==================== Swin Encoder ====================
 class SwinTransformer(nn.Module):
-    """Swin Transformer backbone. Returns multi-scale features as (B, C, H, W)."""
+    """Swin Transformer 骨干网络. 返回 多尺度 特征 as ( B, C, H, W )。
+        Swin Transformer backbone. Returns multi-scale features as (B, C, H, W)."""
 
     def __init__(self, pretrain_img_size=224, patch_size=4, in_chans=3, embed_dim=128,
                  depths=[2, 2, 18, 2], num_heads=[4, 8, 16, 32], window_size=7,
@@ -430,7 +432,7 @@ class SwinTransformer(nn.Module):
         self._freeze_stages()
 
 
-# ==================== Decoder blocks ====================
+# ==================== 解码器 / ==================== Decoder blocks ====================
 class up_conv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -445,7 +447,8 @@ class up_conv(nn.Module):
 
 
 class Decoder(nn.Module):
-    """Simple decoder: upsample + concat + conv_relu."""
+    """Simple 解码器。
+        Simple decoder: upsample + concat + conv_relu."""
 
     def __init__(self, in_channels, middle_channels, out_channels):
         super().__init__()
@@ -462,7 +465,8 @@ class Decoder(nn.Module):
 
 
 class conv_block(nn.Module):
-    """Convolution block with MaxPool (used in shallow branch)."""
+    """卷积 块 with MaxPool ( used in 浅层 分支 )。
+        Convolution block with MaxPool (used in shallow branch)."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -480,7 +484,8 @@ class conv_block(nn.Module):
 
 
 class Conv_block(nn.Module):
-    """Convolution block without MaxPool (used for skip fusion)."""
+    """Convolution block without MaxPool (used for 跳跃连接。
+        Convolution block without MaxPool (used for skip fusion)."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -496,9 +501,10 @@ class Conv_block(nn.Module):
         return self.conv(x)
 
 
-# ==================== Swin Decoder ====================
+# ==================== Swin 解码器 / ==================== Swin Decoder ====================
 class SwinDecoder(nn.Module):
-    """Inner Swin-based decoder: upsample -> BasicLayer (Swin blocks) -> conv_reduce."""
+    """Inner Swin-based 解码器。
+        Inner Swin-based decoder: upsample -> BasicLayer (Swin blocks) -> conv_reduce."""
 
     def __init__(self, embed_dim, patch_size=4, depths=2, num_heads=6, window_size=7,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0.,
@@ -534,7 +540,8 @@ class SwinDecoder(nn.Module):
 
 
 class Swin_Decoder(nn.Module):
-    """Swin_Decoder wrapper: SwinDecoder(x1) + conv_reduce(x2) -> concat -> conv."""
+    """Swin _ 解码 封装器: SwinDecoder ( x1 ) + conv _ reduce ( x2 ) - > concat - > conv。
+        Swin_Decoder wrapper: SwinDecoder(x1) + conv_reduce(x2) -> concat -> conv."""
 
     def __init__(self, in_channels, depths, num_heads):
         super().__init__()
@@ -554,9 +561,10 @@ class Swin_Decoder(nn.Module):
         return out
 
 
-# ==================== Cross Attention ====================
+# = = = = = = = = = = = = = = = = = = = = Cross 注意力 = = = = = = = = = = = = = = = = = = = = / ==================== Cross Attention ====================
 class Cross_Att(nn.Module):
     """Cross attention between encoder1 (large) and encoder2 (small) features.
+        Cross 注意力 between encoder1 ( large ) and encoder2 ( small ) 特征。
     Uses Transformer blocks with pooled token injection for bidirectional fusion."""
 
     def __init__(self, dim_s, dim_l):
@@ -570,19 +578,19 @@ class Cross_Att(nn.Module):
         self.linear_l = nn.Linear(dim_l, dim_s)
 
     def forward(self, e, r):
-        # e: encoder1 features (B, dim_l, H_e, W_e) -- large encoder
-        # r: encoder2 features (B, dim_s, H_r, W_r) -- small encoder
+        # e: encoder1 features (B, dim_l, H_e, W_e) -- large 编码器 / e: encoder1 features (B, dim_l, H_e, W_e) -- large encoder
+        # r: encoder2 features (B, dim_s, H_r, W_r) -- small 编码器 / r: encoder2 features (B, dim_s, H_r, W_r) -- small encoder
         b_e, c_e, h_e, w_e = e.shape
         e = e.reshape(b_e, c_e, -1).permute(0, 2, 1)  # B, HW, C_l
         b_r, c_r, h_r, w_r = r.shape
         r = r.reshape(b_r, c_r, -1).permute(0, 2, 1)  # B, HW, C_s
-        # Pool to get global tokens
+        # Pool to get 全局的 标记 / Pool to get global tokens
         e_t = torch.flatten(self.avgpool(self.norm_l(e).transpose(1, 2)), 1)  # B, C_l
         r_t = torch.flatten(self.avgpool(self.norm_s(r).transpose(1, 2)), 1)  # B, C_s
-        # Project to other dimension
+        # Project to other 维度 / Project to other dimension
         e_t = self.linear_l(e_t).unsqueeze(1)  # B, 1, C_s
         r_t = self.linear_s(r_t).unsqueeze(1)  # B, 1, C_l
-        # Inject token and run transformer, then remove injected token
+        # Inject 标记 and run Transformer, then remove injected 标记 / Inject token and run transformer, then remove injected token
         r = self.transformer_s(torch.cat([e_t, r], dim=1))[:, 1:, :]  # B, HW, C_s
         e = self.transformer_l(torch.cat([r_t, e], dim=1))[:, 1:, :]  # B, HW, C_l
         e = e.permute(0, 2, 1).reshape(b_e, c_e, h_e, w_e)
@@ -611,25 +619,25 @@ class DS_TransUNet(nn.Module):
         dim = kwargs.get('dim', 128)
         self.num_classes = num_classes
 
-        # Encoder 1: Swin-B-like
+        # 编码器 1: Swin-B-like / Encoder 1: Swin-B-like
         self.encoder = SwinTransformer(
             depths=[2, 2, 18, 2], num_heads=[4, 8, 16, 32],
             drop_path_rate=0.5, embed_dim=128, patch_size=4, in_chans=in_channels,
             window_size=kwargs.get('window_size', 7))
-        # Encoder 2: Swin-T-like with patch_size=8
+        # 编码器 2: Swin-T-like with 图块 _ 大小 = 8 / Encoder 2: Swin-T-like with patch_size=8
         self.encoder2 = SwinTransformer(
             depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
             drop_path_rate=0.2, patch_size=8, embed_dim=96, in_chans=in_channels,
             window_size=kwargs.get('window_size', 7))
 
-        # Cross attention modules (dim_s * scale, dim_l * scale)
-        # enc2 channels: [96, 192, 384, 768], enc1 channels: [128, 256, 512, 1024]
+        # Cross 注意力 modules ( dim _ s * scale, dim _ l * scale ) / Cross attention modules (dim_s * scale, dim_l * scale)
+        # enc2 通道: [ 96, 192, 384, 768 ], enc1 通道: [ 128, 256, 512, 1024 ] / enc2 channels: [96, 192, 384, 768], enc1 channels: [128, 256, 512, 1024]
         self.cross_att_1 = Cross_Att(96 * 1, 128 * 1)
         self.cross_att_2 = Cross_Att(96 * 2, 128 * 2)
         self.cross_att_3 = Cross_Att(96 * 4, 128 * 4)
         self.cross_att_4 = Cross_Att(96 * 8, 128 * 8)
 
-        # Skip fusion conv blocks (concat enc1 + upsampled enc2 -> conv)
+        # 跳跃 融合 conv blocks ( concat enc1 + upsampled enc2 - > conv ) / Skip fusion conv blocks (concat enc1 + upsampled enc2 -> conv)
         dim_s = 96
         dim_l = 128
         tb = dim_s + dim_l  # 224
@@ -638,23 +646,23 @@ class DS_TransUNet(nn.Module):
         self.change3 = Conv_block(tb * 4, dim * 4)  # 896 -> 512
         self.change4 = Conv_block(tb * 8, dim * 8)  # 1792 -> 1024
 
-        # Upsample for enc2 -> enc1 resolution alignment
+        # 上采样 for enc2 - > enc1 分辨率 对齐 / Upsample for enc2 -> enc1 resolution alignment
         self.m1 = nn.Upsample(scale_factor=2)
 
-        # Swin decoders (stages 1-3)
+        # Swin decoders ( 阶段 1 - 3 ) / Swin decoders (stages 1-3)
         self.layer1 = Swin_Decoder(8 * dim, 2, 8)   # 1024 -> 512, then conv to 256
         self.layer2 = Swin_Decoder(4 * dim, 2, 4)   # 512 -> 256, then conv to 128
         self.layer3 = Swin_Decoder(2 * dim, 2, 2)   # 256 -> 128, then conv to 64
 
-        # Simple decoders (stages 4-5, fusing with shallow branch)
+        # 简单 decoders ( 阶段 4 - 5, fusing with 浅层 分支 ) / Simple decoders (stages 4-5, fusing with shallow branch)
         self.layer4 = Decoder(dim, dim, dim // 2)    # 128 -> 64 (skip from ds2: dim//2=64)
         self.layer5 = Decoder(dim // 2, dim // 2, dim // 4)  # 64 -> 32 (skip from ds1: dim//4=32)
 
-        # Shallow CNN branch
+        # 浅层 CNN 分支 / Shallow CNN branch
         self.down1 = nn.Conv2d(in_channels, dim // 4, kernel_size=1, stride=1, padding=0)  # in_ch -> 32
         self.down2 = conv_block(dim // 4, dim // 2)  # 32 -> 64 (with MaxPool2d)
 
-        # Deep supervision heads
+        # 深度 supervision heads / Deep supervision heads
         self.loss1 = nn.Sequential(
             nn.Conv2d(dim * 8, num_classes, kernel_size=1, stride=1, padding=0),
             nn.ReLU(),
@@ -664,23 +672,23 @@ class DS_TransUNet(nn.Module):
             nn.ReLU(),
             nn.Upsample(scale_factor=4))
 
-        # Final output
+        # Final 输出 / Final output
         self.final = nn.Conv2d(dim // 4, num_classes, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
-        # Encode
+        # 编码 / Encode
         out = self.encoder(x)    # list of (B, C, H, W)
         out2 = self.encoder2(x)  # list of (B, C, H, W)
         e1, e2, e3, e4 = out[0], out[1], out[2], out[3]
         r1, r2, r3, r4 = out2[0], out2[1], out2[2], out2[3]
 
-        # Cross attention fusion at each stage
+        # Cross 注意力 融合 at each 阶段 / Cross attention fusion at each stage
         e1, r1 = self.cross_att_1(e1, r1)
         e2, r2 = self.cross_att_2(e2, r2)
         e3, r3 = self.cross_att_3(e3, r3)
         e4, r4 = self.cross_att_4(e4, r4)
 
-        # Concatenate and fuse (with spatial alignment for arbitrary input sizes)
+        # 拼接 and 融合 ( with 空间的 对齐 for arbitrary 输入 sizes ) / Concatenate and fuse (with spatial alignment for arbitrary input sizes)
         def _align_cat(e, r):
             r_up = self.m1(r)
             if r_up.shape[2:] != e.shape[2:]:
@@ -696,10 +704,10 @@ class DS_TransUNet(nn.Module):
         e3 = self.change3(e3)  # -> dim*4 (512)
         e4 = self.change4(e4)  # -> dim*8 (1024)
 
-        # Deep supervision loss from bottleneck
+        # Deep supervision 损失 / Deep supervision loss from bottleneck
         loss1 = self.loss1(e4)
 
-        # Shallow branch
+        # 浅层 分支 / Shallow branch
         ds1 = self.down1(x)    # B, 32, H, W
         ds2 = self.down2(ds1)  # B, 64, H/2, W/2
 
@@ -708,7 +716,7 @@ class DS_TransUNet(nn.Module):
         d2 = self.layer2(d1, e2)   # Swin_Decoder: 512->256->128, skip e2
         d3 = self.layer3(d2, e1)   # Swin_Decoder: 256->128->64, skip e1
 
-        # Deep supervision loss from d3
+        # Deep supervision 损失 / Deep supervision loss from d3
         loss2 = self.loss2(d3)
 
         d4 = self.layer4(d3, ds2)  # Decoder: 128->64, skip ds2
@@ -720,5 +728,5 @@ class DS_TransUNet(nn.Module):
         return o
 
 
-# Alias for registry
+# Alias for 注册表 / Alias for registry
 DSTransUNet = DS_TransUNet

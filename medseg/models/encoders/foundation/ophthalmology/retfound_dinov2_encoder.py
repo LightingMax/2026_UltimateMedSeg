@@ -1,4 +1,5 @@
 """RETFound-DINOv2 retinal foundation-model encoder (ophthalmology).
+    RETFound-DINOv2 retinal foundation-model 编码器。
 
 Reference:
     Zhou et al., "RETFound: A Foundation Model for Retinal Images",
@@ -43,6 +44,7 @@ _PATCH_SIZE = 14
 @ENCODER_REGISTRY.register("retfound_dinov2")
 class RETFoundDINOv2Encoder(BaseFoundationEncoder):
     """RETFound-DINOv2 (retinal DINOv2 ViT-L/14) encoder with FPN-from-tokens pyramid.
+        RETFound-DINOv2 (retinal DINOv2 ViT-L/14) 编码器。
 
     The backbone is a DINOv2-pretrained ViT-Large/14 (``embed_dim=1024``,
     ``patch_size=14``).  ``out_channels = [dim/8, dim/4, dim/2, dim]``
@@ -68,7 +70,7 @@ class RETFoundDINOv2Encoder(BaseFoundationEncoder):
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — Dinov2Model via transformers.
+        # 骨干网络 — Dinov2Model via transformers / Backbone — Dinov2Model via transformers.
         if pretrained:
             self.backbone = load_hf_vit(
                 hf_name=_PRIMARY_HF_NAME,

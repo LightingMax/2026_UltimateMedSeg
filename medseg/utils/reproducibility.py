@@ -65,7 +65,7 @@ def set_seed(seed: int = 42, deterministic: bool = True) -> None:
                 pass
     else:
         # 非确定性模式：开启 cuDNN benchmark 以获得更好性能
-        # Non-deterministic: enable cuDNN benchmark for better performance
+        # Non-deterministic: enable cuDNN 基准测试 for better performance / Non-deterministic: enable cuDNN benchmark for better performance
         torch.backends.cudnn.deterministic = False
         torch.backends.cudnn.benchmark = True
 

@@ -1,4 +1,5 @@
 """MultiResUNet – self-contained port from nibtehaz/MultiResUNet.
+    MultiResUNet – self-contained 移植 from nibtehaz / MultiResUNet。
 
 MultiResUNet: Rethinking the U-Net architecture for multimodal biomedical
 image segmentation (Ibtehaz & Rahman, Neural Networks 2020).
@@ -35,6 +36,7 @@ class _ConvBlock(nn.Module):
 
 class _MultiResBlock(nn.Module):
     """Multi-resolution block: parallel 3x3, 5x5, 7x7 convolutions.
+        Multi-resolution 块: 并行的 3x3, 5x5, 7x7 convolutions。
 
     Approximated with cascaded 3x3 convolutions for efficiency.
     Also includes a 1x1 shortcut + residual connection.
@@ -84,6 +86,7 @@ class _MultiResBlock(nn.Module):
 
 class _ResPath(nn.Module):
     """Residual path for skip connections.
+        Residual path for 跳跃连接。
 
     Stacks `depth` residual conv blocks (stride=1) to reduce the semantic
     gap between encoder and decoder features while keeping spatial dims.
@@ -113,6 +116,7 @@ class _ResPath(nn.Module):
 # ---------------------------------------------------------------------------
 class MultiResUNet(nn.Module):
     """MultiResUNet with 4 encoder levels.
+        MultiResUNet with 4 编码器。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -125,23 +129,23 @@ class MultiResUNet(nn.Module):
                  alpha=1.67, **kwargs):
         super().__init__()
         self.alpha = alpha
-        # Encoder (MultiResBlocks) — output ch = base (via reduce conv)
+        # 编码器 ( MultiResBlocks ) — 输出 ch = base ( via reduce conv ) / Encoder (MultiResBlocks) — output ch = base (via reduce conv)
         self.enc1 = _MultiResBlock(in_channels, 32, alpha)
         self.enc2 = _MultiResBlock(32, 64, alpha)
         self.enc3 = _MultiResBlock(64, 128, alpha)
         self.enc4 = _MultiResBlock(128, 256, alpha)
         self.pool = nn.MaxPool2d(2)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = _MultiResBlock(256, 512, alpha)
 
-        # ResPath skip connections (output ch = base)
+        # ResPath 跳跃连接 / ResPath skip connections (output ch = base)
         self.respath1 = _ResPath(32, 32, depth=4)
         self.respath2 = _ResPath(64, 64, depth=3)
         self.respath3 = _ResPath(128, 128, depth=2)
         self.respath4 = _ResPath(256, 256, depth=1)
 
-        # Decoder
+        # 解码 / Decoder
         self.up4 = nn.ConvTranspose2d(512, 256, 2, stride=2)
         self.dec4 = _MultiResBlock(256 + 256, 256, alpha)
         self.up3 = nn.ConvTranspose2d(256, 128, 2, stride=2)
@@ -151,26 +155,27 @@ class MultiResUNet(nn.Module):
         self.up1 = nn.ConvTranspose2d(64, 32, 2, stride=2)
         self.dec1 = _MultiResBlock(32 + 32, 32, alpha)
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(32, num_classes, 1)
 
     @staticmethod
     def _out_ch(base, alpha):
-        """Compute MultiResBlock output channels."""
+        """计算 MultiResBlock 输出 通道。
+            Compute MultiResBlock output channels."""
         W = int(base * alpha)
         return int(W * 0.167) + int(W * 0.333) + int(W * 0.5)
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.enc1(x)
         e2 = self.enc2(self.pool(e1))
         e3 = self.enc3(self.pool(e2))
         e4 = self.enc4(self.pool(e3))
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.bottleneck(self.pool(e4))
 
-        # Decoder with ResPath skip connections
+        # Decoder with ResPath 跳跃连接 / Decoder with ResPath skip connections
         d4 = self.up4(b)
         e4 = self.respath4(e4)
         d4 = self.dec4(torch.cat([d4, e4], dim=1))

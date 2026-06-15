@@ -1,4 +1,5 @@
 """H2Former Encoder: faithful port from https://github.com/NKUhealong/H2Former
+    H2Former 编码器。
 
 Reference: He et al., "H2Former: An Effective Hierarchical Hybrid Transformer
            for Medical Image Segmentation"
@@ -18,7 +19,7 @@ from medseg.utils.timm_compat import DropPath, to_2tuple, trunc_normal_
 from medseg.registry import ENCODER_REGISTRY
 
 
-# ============= Basic ResNet blocks =============
+# = = = = = = = = = = = = = 基本 ResNet blocks = = = = = = = = = = = = = / ============= Basic ResNet blocks =============
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=dilation, groups=groups, bias=False, dilation=dilation)
@@ -56,7 +57,7 @@ class BasicBlock(nn.Module):
         return out
 
 
-# ============= Swin components (from basic_module.py) =============
+# = = = = = = = = = = = = = Swin components ( from 基本 _ 模块. py ) = = = = = = = = = = = = = / ============= Swin components (from basic_module.py) =============
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
@@ -232,14 +233,15 @@ class BasicLayer(nn.Module):
 
 # ============= PatchEmbed and PatchMerging (H2Former specific) =============
 class PatchEmbed(nn.Module):
-    """Multi-scale patch embedding for H2Former."""
+    """Multi-scale 图块 嵌入 for H2Former。
+        Multi-scale patch embedding for H2Former."""
     def __init__(self, img_size=224, patch_size=[2, 4, 8, 16], in_chans=4, embed_dim=64):
         super().__init__()
         self.projs = nn.ModuleList()
         for ps in patch_size:
             self.projs.append(nn.Conv2d(in_chans, embed_dim, kernel_size=ps, stride=ps // 2, padding=ps // 4))
         self.norm = nn.LayerNorm(embed_dim)
-        # Target resolution: img_size // 2 (matching output after conv1+maxpool+layer1)
+        # 目标 分辨率: img _ 大小 / / 2 ( matching 输出 after conv1 + maxpool + layer1 ) / Target resolution: img_size // 2 (matching output after conv1+maxpool+layer1)
         self.target_size = img_size // 2
 
     def forward(self, x):
@@ -248,7 +250,7 @@ class PatchEmbed(nn.Module):
             out = proj(x)  # (B, C, H_i, W_i) - different spatial sizes
             out = F.adaptive_avg_pool2d(out, (self.target_size, self.target_size))
             outs.append(out)
-        # Average multi-scale features
+        # Average 多尺度 特征 / Average multi-scale features
         x = sum(outs) / len(outs)
         x = x.flatten(2).transpose(1, 2)
         x = self.norm(x)
@@ -256,7 +258,8 @@ class PatchEmbed(nn.Module):
 
 
 class PatchMerging(nn.Module):
-    """Patch merging for H2Former with ECA-like attention."""
+    """图块 merging for H2Former with ECA-like 注意力。
+        Patch merging for H2Former with ECA-like attention."""
     def __init__(self, dim):
         super().__init__()
         self.reductions = nn.ModuleList()
@@ -273,7 +276,7 @@ class PatchMerging(nn.Module):
         return x
 
 
-# ============= Decoder (from H2Former.py) =============
+# ============= 解码器 / ============= Decoder (from H2Former.py) =============
 class Decoder(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -291,7 +294,7 @@ class Decoder(nn.Module):
         return x
 
 
-# ============= Res34_Swin_MS (H2Former main model) =============
+# = = = = = = = = = = = = = Res34 _ Swin _ MS ( H2Former main 模型 ) = = = = = = = = = = = = = / ============= Res34_Swin_MS (H2Former main model) =============
 class Res34_Swin_MS(nn.Module):
     """H2Former: ResNet34 + Swin Transformer hybrid.
     Faithful to original Res34_Swin_MS class.
@@ -363,7 +366,8 @@ class Res34_Swin_MS(nn.Module):
         return nn.Sequential(*layers)
 
     def forward_encoder(self, x):
-        """Extract multi-scale encoder features."""
+        """Extract multi-scale 编码器。
+            Extract multi-scale encoder features."""
         encoder = []
         ms1 = self.patch_embed(x)
 
@@ -416,6 +420,7 @@ class Res34_Swin_MS(nn.Module):
 @ENCODER_REGISTRY.register("h2former")
 class H2FormerEncoder(nn.Module):
     """H2Former encoder wrapper.
+        H2Former 编码器。
     Faithful to https://github.com/NKUhealong/H2Former
     """
 

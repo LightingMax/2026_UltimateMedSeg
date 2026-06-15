@@ -1,4 +1,5 @@
 """LeViT-UNet (Pattern Recognition 2023) - self-contained port.
+    LeViT-UNet ( Pattern Recognition 2023 ) - self-contained 移植。
 
 Reference: Xu et al., "LeViT-UNet: Make Faster Encoders with Transformer for
 Medical Image Segmentation." github.com/apple1986/LeViT_UNet
@@ -55,7 +56,8 @@ class _DoubleConv(nn.Module):
 
 
 class _Up(nn.Module):
-    """ConvTranspose2d upsample followed by a DoubleConv after concatenation."""
+    """ConvTranspose2d 上采样 followed by a DoubleConv after concatenation。
+        ConvTranspose2d upsample followed by a DoubleConv after concatenation."""
 
     def __init__(self, in_c: int, skip_c: int, out_c: int):
         super().__init__()
@@ -71,7 +73,8 @@ class _Up(nn.Module):
 
 
 class LeViTUNet(nn.Module):
-    """LeViT-UNet: LeViT encoder + UNet-style decoder with skip connections."""
+    """LeViT-UNet: LeViT 编码器。
+        LeViT-UNet: LeViT encoder + UNet-style decoder with skip connections."""
 
     def __init__(
         self,
@@ -88,7 +91,7 @@ class LeViTUNet(nn.Module):
         self.img_size = int(img_size)
         self.levit_model = levit_model
 
-        # ---- LeViT encoder (timm) -----------------------------------------
+        # ---- LeViT 编码器 / ---- LeViT encoder (timm) -----------------------------------------
         self.levit = load_with_ssl_fallback(
             timm.create_model,
             levit_model,
@@ -100,8 +103,8 @@ class LeViTUNet(nn.Module):
         assert len(levit_ch) >= 3, f"Expected >=3 LeViT feature maps, got {len(levit_ch)}"
         c1, c2, c3 = levit_ch[0], levit_ch[1], levit_ch[2]
 
-        # Fuse the three LeViT feature maps at the coarsest-but-largest grid
-        # (14x14 for a 224 input) so the decoder can start from a single tensor.
+        # 融合 the three LeViT 特征图 at the coarsest-but-largest grid / Fuse the three LeViT feature maps at the coarsest-but-largest grid
+        # (14x14 for a 224 input) so the 解码器 / (14x14 for a 224 input) so the decoder can start from a single tensor.
         fused_ch = 256
         self.fuse = nn.Sequential(
             nn.Conv2d(c1 + c2 + c3, fused_ch, kernel_size=1, bias=False),
@@ -109,9 +112,9 @@ class LeViTUNet(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # ---- CNN stem providing high-res skip features --------------------
-        # Operates on the padded input (multiple of 16). Produces skips at
-        # strides 2, 4, 8 with channel widths 32, 64, 128 respectively.
+        # ---- CNN stem providing high-res 跳跃连接 / ---- CNN stem providing high-res skip features --------------------
+        # Operates on the padded 输入 ( multiple of 16 ). Produces skips at / Operates on the padded input (multiple of 16). Produces skips at
+        # strides 2, 4, 8 with 通道 widths 32, 64, 128 respectively / strides 2, 4, 8 with channel widths 32, 64, 128 respectively.
         stem_c = (32, 64, 128, 192)
         self.stem0 = _DoubleConv(in_channels, stem_c[0])               # stride 1
         self.down1 = nn.Sequential(nn.MaxPool2d(2), _DoubleConv(stem_c[0], stem_c[1]))  # /2
@@ -119,9 +122,9 @@ class LeViTUNet(nn.Module):
         self.down3 = nn.Sequential(nn.MaxPool2d(2), _DoubleConv(stem_c[2], stem_c[3]))  # /8
 
         # ---- Decoder ------------------------------------------------------
-        # The decoder starts from the fused LeViT feature (resampled to /16 of
-        # the padded input) and progressively upsamples through /8, /4, /2, /1
-        # while fusing the CNN-stem skip features at each level.
+        # The 解码器 / The decoder starts from the fused LeViT feature (resampled to /16 of
+        # the padded 输入 ) and progressively upsamples through / 8, / 4, / 2, / 1 / the padded input) and progressively upsamples through /8, /4, /2, /1
+        # while fusing the CNN-stem 跳跃连接 / while fusing the CNN-stem skip features at each level.
         self.dec3 = _Up(fused_ch, stem_c[3], 192)   # /16 -> /8  (skip: s3)
         self.dec2 = _Up(192, stem_c[2], 128)        # /8  -> /4  (skip: s2)
         self.dec1 = _Up(128, stem_c[1], 64)         # /4  -> /2  (skip: s1)
@@ -157,22 +160,22 @@ class LeViTUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
 
-        # Pad to multiple of 16 for clean stride arithmetic.
+        # Pad to multiple of 16 for clean 步长 arithmetic / Pad to multiple of 16 for clean stride arithmetic.
         x_pad, pad_h, pad_w = self._pad_to_multiple(x, 16)
 
-        # CNN stem on padded input.
+        # CNN 主干 on padded 输入 / CNN stem on padded input.
         s0 = self.stem0(x_pad)        # 1/1
         s1 = self.down1(s0)           # 1/2
         s2 = self.down2(s1)           # 1/4
         s3 = self.down3(s2)           # 1/8
 
-        # LeViT backbone strictly requires a 224x224 input.
+        # LeViT 骨干网络 strictly requires a 224x224 输入 / LeViT backbone strictly requires a 224x224 input.
         x_levit = x_pad if (x_pad.shape[-2] == _LEVIT_INPUT and x_pad.shape[-1] == _LEVIT_INPUT) \
             else F.interpolate(x_pad, size=(_LEVIT_INPUT, _LEVIT_INPUT),
                                mode="bilinear", align_corners=False)
         f1, f2, f3 = self.levit(x_levit)[:3]
 
-        # Align deeper LeViT maps to f1's spatial grid then fuse.
+        # Align deeper LeViT 映射 to f1's 空间的 grid then 融合 / Align deeper LeViT maps to f1's spatial grid then fuse.
         target_hw = f1.shape[-2:]
         if f2.shape[-2:] != target_hw:
             f2 = F.interpolate(f2, size=target_hw, mode="bilinear", align_corners=False)
@@ -180,7 +183,7 @@ class LeViTUNet(nn.Module):
             f3 = F.interpolate(f3, size=target_hw, mode="bilinear", align_corners=False)
         bn = self.fuse(torch.cat([f1, f2, f3], dim=1))  # (B, 256, 14, 14) at 224 path
 
-        # Resample fused bottleneck to the padded /16 grid.
+        # Resample fused 瓶颈层 / Resample fused bottleneck to the padded /16 grid.
         pH, pW = x_pad.shape[-2], x_pad.shape[-1]
         bn = F.interpolate(bn, size=(pH // 16, pW // 16),
                            mode="bilinear", align_corners=False)
@@ -192,7 +195,7 @@ class LeViTUNet(nn.Module):
 
         out = self.head(d)
 
-        # Remove padding then resize to the original H, W (cheap if same size).
+        # Remove 填充 then resize to the original H, W ( cheap if same 大小 ) / Remove padding then resize to the original H, W (cheap if same size).
         if pad_h or pad_w:
             out = out[..., :x_pad.shape[-2] - pad_h, :x_pad.shape[-1] - pad_w]
         if out.shape[-2:] != (H, W):

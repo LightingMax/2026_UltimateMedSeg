@@ -1,4 +1,5 @@
 """Polyp-PVT: Polyp Segmentation with Pyramid Vision Transformer.
+    Polyp-PVT: 息肉 分割 with 金字塔 Vision Transformer。
 
 Reference:
     Bo Dong, Wenhai Wang, Deng-Ping Fan, Jinpeng Li, Huazhu Fu, Ling Shao.
@@ -22,8 +23,8 @@ Self-contained: only torch and timm (for the PVT backbone) are required.
 
 import os
 
-# Limit huggingface_hub retry/timeout budgets so a network outage does not
-# stall model construction for minutes. Must be set before importing timm.
+# Limit huggingface _ hub retry / timeout budgets so a 网络 outage does not / Limit huggingface_hub retry/timeout budgets so a network outage does not
+# stall 模型 construction for minutes. Must be set before importing timm / stall model construction for minutes. Must be set before importing timm.
 os.environ.setdefault('HF_HUB_ETAG_TIMEOUT', '3')
 os.environ.setdefault('HF_HUB_DOWNLOAD_TIMEOUT', '5')
 
@@ -40,7 +41,8 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 # Building blocks
 # ---------------------------------------------------------------------------
 class _BasicConv2d(nn.Module):
-    """Conv + BN + ReLU, supporting tuple kernel/padding for non-square kernels."""
+    """Conv + BN + ReLU, supporting tuple 卷积核 / 填充 for non-square kernels。
+        Conv + BN + ReLU, supporting tuple kernel/padding for non-square kernels."""
 
     def __init__(self, in_c, out_c, kernel_size, stride=1, padding=0, dilation=1):
         super().__init__()
@@ -57,6 +59,7 @@ class _BasicConv2d(nn.Module):
 
 class _RFB(nn.Module):
     """Receptive Field Block: reduces channels and aggregates multi-scale context.
+        Receptive Field 块: reduces 通道 and 聚合 多尺度 context。
 
     Used in Polyp-PVT to bring all encoder stages to a common channel dim while
     enlarging their receptive fields via dilated 3x3 convolutions.
@@ -98,6 +101,7 @@ class _RFB(nn.Module):
 
 class _CFM(nn.Module):
     """Cascaded Fusion Module.
+        Cascaded 融合 模块。
 
     Fuses three top-level features (x1=stride32, x2=stride16, x3=stride8) via
     cascaded element-wise multiplication, 3x3 conv refinement, and bilinear
@@ -118,10 +122,10 @@ class _CFM(nn.Module):
         self.conv4 = _BasicConv2d(3 * channel, channel, kernel_size=3, padding=1)
 
     def forward(self, x1, x2, x3):
-        # x1: highest level (smallest spatial)
+        # x1: highest level ( smallest 空间的 ) / x1: highest level (smallest spatial)
         # x2: middle level
-        # x3: lowest level (largest spatial)
-        # Faithful to official: upsample chain then conv
+        # x3: lowest level ( largest 空间的 ) / x3: lowest level (largest spatial)
+        # 忠实 to official: 上采样 chain then conv / Faithful to official: upsample chain then conv
         x1_1 = x1
         x2_1 = self.conv_upsample1(self.upsample(x1)) * x2
         x3_1 = (
@@ -140,7 +144,8 @@ class _CFM(nn.Module):
 
 
 class _GCN(nn.Module):
-    """Graph Convolutional Network module (faithful to official Polyp-PVT)."""
+    """Graph 卷积的 网络 模块 ( 忠实 to official Polyp-PVT )。
+        Graph Convolutional Network module (faithful to official Polyp-PVT)."""
 
     def __init__(self, num_state, num_node, bias=False):
         super().__init__()
@@ -157,6 +162,7 @@ class _GCN(nn.Module):
 
 class _SAM(nn.Module):
     """Similarity Aggregation Module (faithful to official Polyp-PVT).
+        Similarity Aggregation 模块 ( 忠实 to official Polyp-PVT )。
 
     Uses GCN-based graph reasoning with edge-guided priors to refine the CFM
     output using the low-level (stride-4) feature.
@@ -209,7 +215,8 @@ class _SAM(nn.Module):
 
 
 class _ChannelAttention(nn.Module):
-    """Channel attention (faithful to official Polyp-PVT)."""
+    """通道 注意力 ( 忠实 to official Polyp-PVT )。
+        Channel attention (faithful to official Polyp-PVT)."""
 
     def __init__(self, in_planes, ratio=16):
         super().__init__()
@@ -228,7 +235,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """Spatial attention (faithful to official Polyp-PVT)."""
+    """空间的 注意力 ( 忠实 to official Polyp-PVT )。
+        Spatial attention (faithful to official Polyp-PVT)."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -245,10 +253,11 @@ class _SpatialAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class PolypPVT(nn.Module):
     """Polyp-PVT segmentation network.
+        Polyp-PVT 分割 网络。
 
     Args:
         in_channels: number of input image channels.
@@ -275,7 +284,7 @@ class PolypPVT(nn.Module):
         )
 
         enc_channels = self.backbone.feature_info.channels()
-        # Expect 4 stages from pvt_v2_b2: [64, 128, 320, 512]
+        # Expect 4 阶段 from pvt _ v2 _ b2: [ 64, 128, 320, 512 ] / Expect 4 stages from pvt_v2_b2: [64, 128, 320, 512]
         if len(enc_channels) != 4:
             raise RuntimeError(
                 f'Expected 4 encoder features, got {len(enc_channels)}: {enc_channels}'
@@ -283,7 +292,7 @@ class PolypPVT(nn.Module):
         c1, c2, c3, c4 = enc_channels
 
         # --- Decoder --------------------------------------------------------
-        # CIM: channel + spatial attention on low-level feature
+        # CIM: 通道 + 空间的 注意力 on low-level 特征 / CIM: channel + spatial attention on low-level feature
         self.ca = _ChannelAttention(c1)
         self.sa = _SpatialAttention()
 
@@ -292,13 +301,13 @@ class PolypPVT(nn.Module):
         self.rfb4 = _RFB(c4, channel)
         self.cfm = _CFM(channel)
 
-        # SAM: needs CIM feature reduced to `channel` dim + downsampled
+        # SAM: needs CIM 特征 reduced to ` 通道 ` dim + downsampled / SAM: needs CIM feature reduced to `channel` dim + downsampled
         self.translayer2_0 = _BasicConv2d(c1, channel, kernel_size=1)
         self.down05 = nn.Upsample(scale_factor=0.5, mode='bilinear',
                                   align_corners=True)
         self.sam = _SAM(channel, num_in=channel)
 
-        # --- Heads (faithful: separate CFM and SAM prediction heads) --------
+        # - - - Heads ( 忠实: separate CFM and SAM 预测 heads ) - - - - - - - - / --- Heads (faithful: separate CFM and SAM prediction heads) --------
         self.out_cfm = nn.Conv2d(channel, num_classes, kernel_size=1)
         self.out_sam = nn.Conv2d(channel, num_classes, kernel_size=1)
 
@@ -306,27 +315,27 @@ class PolypPVT(nn.Module):
         H, W = x.shape[-2:]
         f1, f2, f3, f4 = self.backbone(x)
 
-        # CIM: channel + spatial attention on low-level feature (faithful)
+        # CIM: 通道 + 空间的 注意力 on low-level 特征 ( 忠实 ) / CIM: channel + spatial attention on low-level feature (faithful)
         f1_ca = self.ca(f1) * f1
         cim_feature = self.sa(f1_ca) * f1_ca
 
-        # CFM: fuse high-level features (faithful)
+        # CFM: 融合 high-level 特征 ( 忠实 ) / CFM: fuse high-level features (faithful)
         r2 = self.rfb2(f2)
         r3 = self.rfb3(f3)
         r4 = self.rfb4(f4)
         cfm_feature = self.cfm(r4, r3, r2)       # stride 8
 
-        # SAM: refine CFM output with CIM feature (faithful)
+        # SAM: refine CFM 输出 with CIM 特征 ( 忠实 ) / SAM: refine CFM output with CIM feature (faithful)
         T2 = self.translayer2_0(cim_feature)
         T2 = self.down05(T2)                      # stride 8
         sam_feature = self.sam(cfm_feature, T2)
 
-        # Two prediction heads (faithful to official)
+        # Two 预测 heads ( 忠实 to official ) / Two prediction heads (faithful to official)
         pred_cfm = self.out_cfm(cfm_feature)
         pred_sam = self.out_sam(sam_feature)
         pred_cfm = F.interpolate(
             pred_cfm, size=(H, W), mode='bilinear', align_corners=False)
         pred_sam = F.interpolate(
             pred_sam, size=(H, W), mode='bilinear', align_corners=False)
-        # Return SAM prediction (typically more refined)
+        # 返回 SAM 预测 ( typically more refined ) / Return SAM prediction (typically more refined)
         return pred_sam

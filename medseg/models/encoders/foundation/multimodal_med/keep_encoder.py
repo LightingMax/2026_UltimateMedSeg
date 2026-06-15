@@ -1,4 +1,5 @@
 """KEEP foundation-model encoder (knowledge-enhanced pathology, 2024/2026).
+    KEEP foundation-model 编码器。
 
 Reference:
     Zhou et al., "Knowledge-enhanced pretraining for vision-language
@@ -41,18 +42,19 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, HuggingFaceViTWrapper
 
 
-# Architecture constants for KEEP's ViT-Large/16 vision tower.
+# 架构 constants for KEEP's ViT-Large / 16 vision tower / Architecture constants for KEEP's ViT-Large/16 vision tower.
 _KEEP_EMBED_DIM = 1024
 _KEEP_PATCH_SIZE = 16
 _KEEP_HF_NAME = "Astaxanthin/KEEP"
 
-# Primary weight source: HuggingFace Hub (Astaxanthin/KEEP, custom transformers model).
+# Primary 权重 来源: HuggingFace Hub ( Astaxanthin / KEEP, custom transformers 模型 ) / Primary weight source: HuggingFace Hub (Astaxanthin/KEEP, custom transformers model).
 PRIMARY_BACKBONE_NAME = _KEEP_HF_NAME
 
 
 @ENCODER_REGISTRY.register("keep")
 class KEEPEncoder(BaseFoundationEncoder):
     """KEEP (knowledge-enhanced pathology, ViT-Large/16) encoder.
+        KEEP (knowledge-enhanced pathology, ViT-Large/16) 编码器。
 
     The vision tower is a ViT-Large/16 (``embed_dim=1024``, ``patch_size=16``,
     depth=24, heads=16, ``init_values=1e-5`` LayerScale), matching the
@@ -102,7 +104,7 @@ class KEEPEncoder(BaseFoundationEncoder):
             inference_only=inference_only, **kwargs,
         )
 
-        # ---- channel adapter for non-RGB inputs (KEEP is RGB-only) -------
+        # - - - - 通道 适配器 for non-RGB inputs ( KEEP is RGB-only ) - - - - - - - / ---- channel adapter for non-RGB inputs (KEEP is RGB-only) -------
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(
                 in_channels, 3, kernel_size=1, bias=False,
@@ -113,7 +115,7 @@ class KEEPEncoder(BaseFoundationEncoder):
             backbone_in_chans = 3
 
         # ---- backbone ---------------------------------------------------
-        # Load the KEEP model via transformers and extract the vision tower.
+        # 加载 the KEEP 模型 via transformers and 提取 the vision tower / Load the KEEP model via transformers and extract the vision tower.
         ref_size = self._pad_to_multiple_size(int(img_size))
 
         if pretrained:
@@ -134,7 +136,7 @@ class KEEPEncoder(BaseFoundationEncoder):
                     f"{type(e).__name__}: {e}. Provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Extract the vision tower from the KEEP model.
+            # 提取 the vision tower from the KEEP 模型 / Extract the vision tower from the KEEP model.
             _visual = getattr(_keep_model, "visual", None)
             if _visual is None:
                 _visual = getattr(_keep_model, "vision_model", None)
@@ -146,7 +148,7 @@ class KEEPEncoder(BaseFoundationEncoder):
                     f"Expected attributes: 'visual', 'vision_model', or 'vision_tower'."
                 )
             _vit = getattr(_visual, "trunk", None) or getattr(_visual, "backbone", _visual)
-            # Add compatibility attributes for HuggingFaceViTWrapper.
+            # Add 兼容性 attributes for HuggingFaceViTWrapper / Add compatibility attributes for HuggingFaceViTWrapper.
             if not hasattr(_vit, 'embed_dim'):
                 _vit.embed_dim = _KEEP_EMBED_DIM
             if not hasattr(_vit, 'num_features'):
@@ -169,13 +171,13 @@ class KEEPEncoder(BaseFoundationEncoder):
             )
         self._backbone_name = PRIMARY_BACKBONE_NAME
 
-        # ---- backbone introspection -------------------------------------
+        # - - - - 骨干网络 introspection - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- backbone introspection -------------------------------------
         self.patch_size = int(self.backbone.patch_embed.patch_size)
         self.embed_dim = int(self.backbone.embed_dim)
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -189,12 +191,14 @@ class KEEPEncoder(BaseFoundationEncoder):
     @classmethod
     def _pad_to_multiple_size(cls, size: int) -> int:
         """Round ``size`` up to a multiple of ``patch_size * 8`` so that all
+            Round ` ` 大小 ` ` up to a multiple of ` ` 图块 _ 大小 * 8 ` ` so that all。
         four pyramid stages have integer spatial dims."""
         m = cls.PATCH_SIZE * 8  # 16 * 8 = 128
         return ((int(size) + m - 1) // m) * m
 
     def _pad_input(self, x: torch.Tensor) -> Tuple[torch.Tensor, int, int]:
-        """Zero-pad ``x`` so its spatial dims are multiples of ``patch_size``."""
+        """Zero-pad ` ` x ` ` so its 空间的 dims are multiples of ` ` 图块 _ 大小 ` `。
+            Zero-pad ``x`` so its spatial dims are multiples of ``patch_size``."""
         _, _, H, W = x.shape
         ps = self.patch_size
         H_pad = int(math.ceil(H / ps) * ps)
@@ -215,7 +219,7 @@ class KEEPEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

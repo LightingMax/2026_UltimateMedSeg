@@ -1,4 +1,5 @@
 """FAT-Net: Feature Adaptive Transformers for Automated Skin Lesion Segmentation.
+    FAT-Net: 特征 自适应的 Transformers for Automated Skin 病灶 分割。
 
 Faithful port from github.com/SZUcsh/FAT-Net (Medical Image Analysis 2022).
 
@@ -26,7 +27,8 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 
 
 class FAMBlock(nn.Module):
-    """Feature Adaptive Module block (official: conv3+relu, conv1+relu, sum)."""
+    """特征 自适应的 模块 块 ( official: conv3 + relu, conv1 + relu, sum )。
+        Feature Adaptive Module block (official: conv3+relu, conv1+relu, sum)."""
     def __init__(self, channels):
         super(FAMBlock, self).__init__()
         self.conv3 = nn.Conv2d(in_channels=channels, out_channels=channels,
@@ -47,6 +49,7 @@ class FAMBlock(nn.Module):
 
 class DecoderBottleneckLayer(nn.Module):
     """Decoder bottleneck (official implementation).
+        Decoder 瓶颈层。
 
     1x1 reduce -> norm -> relu -> transpose conv up (or bilinear) ->
     1x1 project -> norm -> relu
@@ -86,7 +89,8 @@ class DecoderBottleneckLayer(nn.Module):
 
 
 class SEBlock(nn.Module):
-    """Squeeze-and-Excitation block (official implementation)."""
+    """Squeeze-and-Excitation 块 ( official implementation )。
+        Squeeze-and-Excitation block (official implementation)."""
     def __init__(self, channel, r=16):
         super(SEBlock, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
@@ -103,13 +107,14 @@ class SEBlock(nn.Module):
         y = self.avg_pool(x).view(b, c)
         # Excitation
         y = self.fc(y).view(b, c, 1, 1)
-        # Fusion
+        # 融合 / Fusion
         y = torch.mul(x, y)
         return y
 
 
 class FAT_Net(nn.Module):
     """FAT-Net official architecture.
+        FAT-Net official 架构。
 
     ResNet34 CNN encoder + DeiT transformer encoder, SE attention at
     bottleneck, FAM blocks on skip connections, DecoderBottleneck decoder.
@@ -117,8 +122,8 @@ class FAT_Net(nn.Module):
     def __init__(self, n_channels=3, n_classes=1, pretrained=True):
         super(FAT_Net, self).__init__()
 
-        # DeiT-tiny distilled transformer encoder (timm — avoids torch.hub
-        # polluting timm's VisionTransformer registry for other models).
+        # DeiT-tiny distilled transformer 编码器 / DeiT-tiny distilled transformer encoder (timm — avoids torch.hub
+        # polluting timm's VisionTransformer 注册表 for other models ) / polluting timm's VisionTransformer registry for other models).
         transformer = load_with_ssl_fallback(
             timm.create_model,
             "deit_tiny_distilled_patch16_224",
@@ -213,6 +218,7 @@ class FAT_Net(nn.Module):
 
 class FATNet(nn.Module):
     """FAT-Net wrapper with standard interface.
+        FAT-Net 封装器 with 标准 interface。
 
     Args:
         in_channels: Input channels (default 3).

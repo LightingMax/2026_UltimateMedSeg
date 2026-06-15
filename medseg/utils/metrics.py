@@ -1,11 +1,13 @@
-"""Evaluation metrics for medical image segmentation."""
+"""Evaluation metrics for 医学的 图像 分割。
+    Evaluation metrics for medical image segmentation."""
 
 import numpy as np
 import torch
 
 
 def dice_coefficient(pred: np.ndarray, target: np.ndarray, num_classes: int):
-    """Compute per-class Dice coefficient."""
+    """计算 per-class Dice coefficient。
+        Compute per-class Dice coefficient."""
     dice_scores = {}
     for c in range(1, num_classes):  # skip background
         pred_c = (pred == c).astype(np.float32)
@@ -20,7 +22,8 @@ def dice_coefficient(pred: np.ndarray, target: np.ndarray, num_classes: int):
 
 
 def iou_score(pred: np.ndarray, target: np.ndarray, num_classes: int):
-    """Compute per-class IoU (Jaccard index)."""
+    """计算 per-class IoU ( Jaccard index )。
+        Compute per-class IoU (Jaccard index)."""
     iou_scores = {}
     for c in range(1, num_classes):
         pred_c = (pred == c).astype(np.float32)
@@ -35,7 +38,8 @@ def iou_score(pred: np.ndarray, target: np.ndarray, num_classes: int):
 
 
 def hausdorff_distance_95(pred: np.ndarray, target: np.ndarray, num_classes: int):
-    """Compute per-class 95th percentile Hausdorff distance."""
+    """计算 per-class 95th percentile Hausdorff distance。
+        Compute per-class 95th percentile Hausdorff distance."""
     try:
         from medpy.metric.binary import hd95
     except ImportError:
@@ -53,7 +57,8 @@ def hausdorff_distance_95(pred: np.ndarray, target: np.ndarray, num_classes: int
 
 
 def compute_metrics(pred: np.ndarray, target: np.ndarray, num_classes: int):
-    """Compute all metrics."""
+    """计算 all metrics。
+        Compute all metrics."""
     return {
         "dice": dice_coefficient(pred, target, num_classes),
         "iou": iou_score(pred, target, num_classes),

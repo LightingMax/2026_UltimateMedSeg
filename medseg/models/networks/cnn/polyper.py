@@ -1,4 +1,5 @@
 """Polyper: Boundary Sensitive Polyp Segmentation.
+    Polyper: 边界敏感 息肉 分割。
 
 Reference:
     Shao et al., "Polyper: Boundary Sensitive Polyp Segmentation", AAAI 2024.
@@ -33,7 +34,8 @@ class _ConvBN(nn.Module):
 
 
 class _BoundaryGuidance(nn.Module):
-    """Boundary Guidance Module: uses edge cues to refine features."""
+    """边界 Guidance 模块: uses 边缘 cues to refine 特征。
+        Boundary Guidance Module: uses edge cues to refine features."""
     def __init__(self, dim):
         super().__init__()
         self.edge_conv = nn.Sequential(
@@ -47,7 +49,8 @@ class _BoundaryGuidance(nn.Module):
 
 
 class _SwinTEncoder(nn.Module):
-    """Swin-T encoder via timm, output 4 stages: [96, 192, 384, 768]."""
+    """Swin-T 编码器。
+        Swin-T encoder via timm, output 4 stages: [96, 192, 384, 768]."""
     def __init__(self, in_channels=3, img_size=224, pretrained=True):
         super().__init__()
         import ssl, warnings
@@ -67,7 +70,7 @@ class _SwinTEncoder(nn.Module):
                     pretrained=pretrained, features_only=True,
                     in_chans=backbone_in)
             except Exception as e2:
-                # Fallback: build RGB backbone + 1x1 stem
+                # Fallback: build RGB 骨干网络 + 1x1 主干 / Fallback: build RGB backbone + 1x1 stem
                 warnings.warn(f"Pretrained download failed ({e2}); using random init.")
                 if in_channels != 3:
                     self.stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
@@ -94,30 +97,31 @@ class _SwinTEncoder(nn.Module):
 
 
 class Polyper(nn.Module):
-    """Polyper for boundary-sensitive polyp segmentation (Swin-T backbone)."""
+    """Polyper for boundary-sensitive 息肉 分割 ( Swin-T 骨干网络 )。
+        Polyper for boundary-sensitive polyp segmentation (Swin-T backbone)."""
     def __init__(self, in_channels=3, num_classes=2, img_size=352,
                  pretrained=True, **kwargs):
         super().__init__()
         self.num_classes = num_classes
 
-        # Swin-T encoder (timm, ImageNet pretrained)
-        # Output channels: [96, 192, 384, 768]
+        # Swin-T 编码器 / Swin-T encoder (timm, ImageNet pretrained)
+        # 输出 通道: [ 96, 192, 384, 768 ] / Output channels: [96, 192, 384, 768]
         self.encoder = _SwinTEncoder(in_channels=in_channels, img_size=img_size,
                                      pretrained=pretrained)
         enc_chs = self.encoder.out_channels  # [96, 192, 384, 768]
 
-        # Polyp Region Branch (main decoder)
+        # Polyp Region Branch (main 解码器 / Polyp Region Branch (main decoder)
         self.up4 = _ConvBN(enc_chs[3], enc_chs[2])
         self.up3 = _ConvBN(enc_chs[2] + enc_chs[2], enc_chs[1])
         self.up2 = _ConvBN(enc_chs[1] + enc_chs[1], enc_chs[0])
         self.up1 = _ConvBN(enc_chs[0] + enc_chs[0], 64)
 
-        # Boundary Guidance at each skip
+        # Boundary Guidance at each 跳跃连接 / Boundary Guidance at each skip
         self.bg3 = _BoundaryGuidance(enc_chs[2])
         self.bg2 = _BoundaryGuidance(enc_chs[1])
         self.bg1 = _BoundaryGuidance(enc_chs[0])
 
-        # Boundary Branch
+        # 边界 分支 / Boundary Branch
         self.bb_up4 = _ConvBN(enc_chs[3], enc_chs[2])
         self.bb_up3 = _ConvBN(enc_chs[2] + enc_chs[2], enc_chs[1])
         self.bb_up2 = _ConvBN(enc_chs[1] + enc_chs[1], enc_chs[0])
@@ -131,7 +135,7 @@ class Polyper(nn.Module):
         feats = self.encoder(x)
         e1, e2, e3, e4 = feats
 
-        # Region branch
+        # 区域 分支 / Region branch
         r4 = F.interpolate(self.up4(e4), scale_factor=2, mode='bilinear', align_corners=False)
         r3 = self.up3(torch.cat([r4[:, :, :e3.shape[2], :e3.shape[3]], self.bg3(e3)], dim=1))
         r3 = F.interpolate(r3, scale_factor=2, mode='bilinear', align_corners=False)
@@ -139,7 +143,7 @@ class Polyper(nn.Module):
         r2 = F.interpolate(r2, scale_factor=2, mode='bilinear', align_corners=False)
         r1 = self.up1(torch.cat([r2[:, :, :e1.shape[2], :e1.shape[3]], self.bg1(e1)], dim=1))
 
-        # Boundary branch
+        # 边界 分支 / Boundary branch
         b4 = F.interpolate(self.bb_up4(e4), scale_factor=2, mode='bilinear', align_corners=False)
         b3 = self.bb_up3(torch.cat([b4[:, :, :e3.shape[2], :e3.shape[3]], e3], dim=1))
         b3 = F.interpolate(b3, scale_factor=2, mode='bilinear', align_corners=False)

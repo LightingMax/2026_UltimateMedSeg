@@ -1,4 +1,4 @@
-# 第 02 讲：U-Net 详解
+﻿# 第 02 讲：U-Net 详解
 
 [上一讲：概述](01_introduction_CN.md) | [English](02_unet.md) | [下一讲：数据与预处理](03_data_CN.md)
 
@@ -80,7 +80,7 @@ U 形结构天然构建了这一多尺度金字塔。
 | **转置卷积** (Deconv) | 通过转置卷积学习上采样 | 可学习的上采样核 | 可能产生棋盘格伪影 |
 | **双线性 + 卷积** | 固定双线性插值后接卷积 | 无伪影、更简单 | 上采样不可学习 |
 
-UltimateMedSeg 中两者均可用：
+APRIL-MedSeg 中两者均可用：
 - `decoder: bilinear` -- 双线性上采样 + 卷积
 - `decoder: deconv` -- 转置卷积
 
@@ -141,7 +141,7 @@ UltimateMedSeg 中两者均可用：
 
 ---
 
-## 4. UltimateMedSeg 实操
+## 4. APRIL-MedSeg 实操
 
 ### 4.1 模式一：完整网络
 
@@ -325,9 +325,9 @@ python train.py --config configs/intro_to_datasets/busi.yaml
 
 ### 相关文档
 
-- [网络指南](../models/networks_CN.md) -- 128 个完整网络架构
-- [编码器指南](../models/encoders_CN.md) -- 169 个编码器（含 U-Net 变体）
-- [解码器指南](../models/decoders_CN.md) -- 40 个解码器及设计理念
+- [网络指南](../models/networks_CN.md) -- 146 个完整网络架构
+- [编码器指南](../models/encoders_CN.md) -- 178 个编码器（含 U-Net 变体）
+- [解码器指南](../models/decoders_CN.md) -- 45 个解码器及设计理念
 - [跳跃连接](../models/skip_connections_CN.md) -- 25 种跳跃连接实现
 - [瓶颈层](../models/bottlenecks_CN.md) -- 17 个瓶颈层模块
 

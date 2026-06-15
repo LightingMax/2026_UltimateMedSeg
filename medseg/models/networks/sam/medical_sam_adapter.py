@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import os
 
-# Bound HuggingFace download timeouts so a flaky network does not stall the
+# Bound HuggingFace download timeouts so a flaky 网络 does not stall the / Bound HuggingFace download timeouts so a flaky network does not stall the
 # constructor for minutes. Must be set before ``timm`` is imported.
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "5")
@@ -43,10 +43,11 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# Adapter primitives
+# 适配器 primitives / Adapter primitives
 # ---------------------------------------------------------------------------
 class _Adapter(nn.Module):
     """Bottleneck MLP adapter as used by Med-SA.
+        瓶颈层 MLP 适配器 as used by Med-SA。
 
     Structure: LayerNorm -> Linear(dim -> hidden) -> GELU -> Linear(hidden ->
     dim) with a residual connection. The output projection is zero-initialised
@@ -70,6 +71,7 @@ class _Adapter(nn.Module):
 
 class _AdaptedBlock(nn.Module):
     """Wraps one timm ViT ``Block`` to inject two adapters per the Med-SA
+        Wraps one timm ViT ` ` 块 ` ` to inject two adapters per the Med-SA。
     recipe: one right AFTER the attention residual, one right AFTER the MLP
     residual.
 
@@ -86,9 +88,9 @@ class _AdaptedBlock(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b = self.block
-        # timm.Block uses ls1/ls2 (LayerScale or Identity) and
+        # timm. 块 uses ls1 / ls2 ( LayerScale or Identity ) and / timm.Block uses ls1/ls2 (LayerScale or Identity) and
         # drop_path1/drop_path2 (DropPath or Identity); both are present in
-        # the timm versions we target. Fall back gracefully otherwise.
+        # the timm versions we 目标. Fall back gracefully otherwise / the timm versions we target. Fall back gracefully otherwise.
         ls1 = getattr(b, "ls1", nn.Identity())
         ls2 = getattr(b, "ls2", nn.Identity())
         dp1 = getattr(b, "drop_path1", nn.Identity())
@@ -102,11 +104,12 @@ class _AdaptedBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder factory
+# 编码器 工厂函数 / Encoder factory
 # ---------------------------------------------------------------------------
 def _build_vit_with_adapters(img_size: int, in_channels: int,
                              pretrained: bool, mlp_ratio: float = 0.25):
     """Create timm ``vit_base_patch16_224`` and replace each Block with an
+        Create timm ` ` vit _ base _ patch16 _ 224 ` ` and replace each 块 with an。
     ``_AdaptedBlock`` wrapper. Returns the (modified) timm model.
     """
     import timm
@@ -124,8 +127,8 @@ def _build_vit_with_adapters(img_size: int, in_channels: int,
 
     vit = load_with_ssl_fallback(_create, pretrained=pretrained)
 
-    # Inject adapters after attn AND after mlp in every transformer block.
-    # timm's ViT calls ``self.blocks(x)`` (a Sequential), so we keep the same
+    # Inject adapters after attn AND after mlp in every Transformer 块 / Inject adapters after attn AND after mlp in every transformer block.
+    # timm's ViT calls ` ` self. blocks ( x ) ` ` ( a 顺序的 ), so we keep the same / timm's ViT calls ``self.blocks(x)`` (a Sequential), so we keep the same
     # container type when swapping in the wrapped blocks.
     embed_dim = vit.embed_dim if hasattr(vit, "embed_dim") else 768
     new_blocks = nn.Sequential(
@@ -136,10 +139,11 @@ def _build_vit_with_adapters(img_size: int, in_channels: int,
 
 
 # ---------------------------------------------------------------------------
-# Mask decoder (four ConvTranspose2d stages)
+# Mask 解码器 / Mask decoder (four ConvTranspose2d stages)
 # ---------------------------------------------------------------------------
 class _MaskDecoder(nn.Module):
     """Four ``ConvTranspose2d`` stages: 768 -> 256 -> 128 -> 64 -> n_class.
+        Four ` ` ConvTranspose2d ` ` 阶段: 768 - > 256 - > 128 - > 64 - > n _ class。
 
     Each non-final stage is followed by BatchNorm + GELU. The final stage
     produces raw logits with no activation.
@@ -170,10 +174,11 @@ class _MaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class MedicalSAMAdapter(SAMBase):
     """Med-SA / Medical-SAM-Adapter (2024) for prompt-free medical seg.
+        Med-SA / Medical-SAM-Adapter ( 2024 ) for prompt-free 医学的 seg。
 
     Args:
         in_channels: number of input channels (default 3).
@@ -224,7 +229,7 @@ class MedicalSAMAdapter(SAMBase):
             inference_only=inference_only,
         )
 
-        # Backbone with 2 adapters injected per block.
+        # 骨干网络 with 2 adapters injected per 块 / Backbone with 2 adapters injected per block.
         self.image_encoder = _build_vit_with_adapters(
             img_size=img_size,
             in_channels=in_channels,
@@ -234,17 +239,17 @@ class MedicalSAMAdapter(SAMBase):
             getattr(self.image_encoder, "num_prefix_tokens", 1)
         )
 
-        # Med-SA is prompt-free; expose ``None`` so SAMBase.apply_freeze can
+        # Med-SA is prompt-free; expose ` ` None ` ` so SAMBase. 应用 _ freeze can / Med-SA is prompt-free; expose ``None`` so SAMBase.apply_freeze can
         # introspect uniformly across SAM-family models.
         self.prompt_encoder = None
 
-        # Conv decoder (four ConvTranspose2d layers, 16x upsample).
+        # Conv 解码器 / Conv decoder (four ConvTranspose2d layers, 16x upsample).
         self.mask_decoder = _MaskDecoder(self._EMBED_DIM, num_classes)
 
         self.apply_freeze()
 
-        # Re-enable adapter params: even when the image encoder is frozen,
-        # the adapter sub-modules must remain trainable. ``inference_only``
+        # Re-enable adapter params: even when the image 编码器 / Re-enable adapter params: even when the image encoder is frozen,
+        # the 适配器 sub-modules must remain trainable. ` ` 推理 _ only ` ` / the adapter sub-modules must remain trainable. ``inference_only``
         # still wins — it freezes everything, including adapters.
         if not self._freeze_cfg["inference_only"]:
             for name, p in self.image_encoder.named_parameters():
@@ -253,17 +258,18 @@ class MedicalSAMAdapter(SAMBase):
 
     # ------------------------------------------------------------------
     def _encode(self, x: torch.Tensor) -> torch.Tensor:
-        """Run the ViT and return patch tokens reshaped to ``(B, C, Hp, Wp)``."""
+        """Run the ViT and 返回 图块 标记 reshaped to ` ` ( B, C, Hp, Wp ) ` `。
+            Run the ViT and return patch tokens reshaped to ``(B, C, Hp, Wp)``."""
         B, _, H, W = x.shape
         tokens = self.image_encoder.forward_features(x)
 
-        # Strip CLS / prefix tokens if present.
+        # Strip CLS / prefix 标记 if present / Strip CLS / prefix tokens if present.
         if tokens.dim() == 3 and self.num_prefix_tokens > 0:
             tokens = tokens[:, self.num_prefix_tokens:, :]
 
         Hp, Wp = H // self._PATCH, W // self._PATCH
         if tokens.dim() == 4:
-            # Some timm versions hand back a 2-D feature grid directly.
+            # Some timm versions hand back a 2-D 特征 grid directly / Some timm versions hand back a 2-D feature grid directly.
             return tokens
         expected = Hp * Wp
         if tokens.shape[1] != expected:
@@ -278,8 +284,8 @@ class MedicalSAMAdapter(SAMBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
 
-        # Pad to a multiple of the patch size; record original (H, W) so we
-        # can crop the decoder output back to it.
+        # Pad to a multiple of the 图块 大小; record original ( H, W ) so we / Pad to a multiple of the patch size; record original (H, W) so we
+        # can crop the 解码器 / can crop the decoder output back to it.
         pad_h = (self._PATCH - H % self._PATCH) % self._PATCH
         pad_w = (self._PATCH - W % self._PATCH) % self._PATCH
         if pad_h or pad_w:

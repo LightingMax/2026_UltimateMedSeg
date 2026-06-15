@@ -53,8 +53,8 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
     b1_area = (b1_x2 - b1_x1) * (b1_y2 - b1_y1)
     b2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1)
 
-    # print(box1, box1.shape)
-    # print(box2, box2.shape)
+    # print ( box1, box1. 形状 ) / print(box1, box1.shape)
+    # print ( box2, box2. 形状 ) / print(box2, box2.shape)
     return inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
 
@@ -67,7 +67,7 @@ def xywh2xyxy(x):
 #     x_c, y_c, w, h = x.unbind(-1)
 #     b = [(x_c ), (y_c),
 #          (x_c + w), (y_c +  h)]
-#     return torch.stack(b, dim=-1)
+# 返回 torch. stack ( b, dim = - 1 ) / return torch.stack(b, dim=-1)
 
 def xyxy2xywh(x):
     x0, y0, x1, y1 = x.unbind(-1)
@@ -122,10 +122,11 @@ def generalized_box_iou(boxes1, boxes2):
 
 def bbox_losses(batch_pred, batch_target):
     """Compute the losses related to the bounding boxes,
+        计算 the 损失 related to the bounding boxes。
        including the L1 regression loss and the GIoU loss
     """
     batch_size = batch_pred.shape[0]
-    # world_size = get_world_size()
+    # world _ 大小 = get _ world _ 大小 ( ) / world_size = get_world_size()
     num_boxes = batch_size
 
     loss_bbox = F.l1_loss(batch_pred, batch_target, reduction='none')
@@ -142,15 +143,16 @@ def bbox_losses(batch_pred, batch_target):
 
 def bbox_giou(batch_pred, batch_target):
     """Compute the losses related to the bounding boxes,
+        计算 the 损失 related to the bounding boxes。
        including the L1 regression loss and the GIoU loss
     """
     batch_size = batch_pred.shape[0]
-    # world_size = get_world_size()
+    # world _ 大小 = get _ world _ 大小 ( ) / world_size = get_world_size()
     num_boxes = batch_size
     loss_giou = 1 - torch.diag(generalized_box_iou(
         xywh2xyxy(batch_pred),
         batch_target
-        # xywh2xyxy(batch_target)
+        # xywh2xyxy ( 批次 _ 目标 ) / xywh2xyxy(batch_target)
     ))
     return loss_giou.mean()
 

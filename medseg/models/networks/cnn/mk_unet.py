@@ -1,4 +1,5 @@
 """MK-UNet: Multi-Kernel Lightweight CNN for Medical Image Segmentation.
+    MK-UNet: Multi-Kernel 轻量级 CNN for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/SLDGroup/MK-UNet  (ICCV 2025 CVAMD Oral)
@@ -68,7 +69,7 @@ def _channel_shuffle(x, groups):
 
 
 # ---------------------------------------------------------------------------
-# Channel & Spatial Attention
+# 通道 & 空间的 注意力 / Channel & Spatial Attention
 # ---------------------------------------------------------------------------
 
 class ChannelAttention(nn.Module):
@@ -102,7 +103,7 @@ class SpatialAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Grouped Attention Gate
+# Grouped 注意力 Gate / Grouped Attention Gate
 # ---------------------------------------------------------------------------
 
 class GroupedAttentionGate(nn.Module):
@@ -131,7 +132,7 @@ class GroupedAttentionGate(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Multi-Kernel Inverted Residual Block
+# Multi-Kernel Inverted 残差 块 / Multi-Kernel Inverted Residual Block
 # ---------------------------------------------------------------------------
 
 class MultiKernelDWConv(nn.Module):
@@ -158,7 +159,8 @@ class MultiKernelDWConv(nn.Module):
 
 
 class MKInvertedResidualBlock(nn.Module):
-    """MobileNetV2-style Inverted Residual Block with multi-kernel DW conv."""
+    """MobileNetV2-style Inverted 残差 块 with multi-kernel DW conv。
+        MobileNetV2-style Inverted Residual Block with multi-kernel DW conv."""
     def __init__(self, in_c, out_c, stride, expansion_factor=2,
                  dw_parallel=True, add=True, kernel_sizes=(1, 3, 5),
                  activation='relu6'):
@@ -221,7 +223,8 @@ def _mk_irb_bottleneck(in_c, out_c, n, s, expansion_factor=2, kernel_sizes=(1, 3
 # ---------------------------------------------------------------------------
 
 class MKUNet(nn.Module):
-    """MK-UNet: Multi-Kernel Lightweight CNN UNet."""
+    """MK-UNet: Multi-Kernel 轻量级 CNN UNet。
+        MK-UNet: Multi-Kernel Lightweight CNN UNet."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  channels=(16, 32, 64, 96, 160), depths=(1, 1, 1, 1, 1),
@@ -233,27 +236,27 @@ class MKUNet(nn.Module):
         kernel_sizes = list(kernel_sizes)
         self.deep_supervision = deep_supervision
 
-        # Encoder
+        # 编码器 / Encoder
         self.encoder1 = _mk_irb_bottleneck(in_channels, c[0], depths[0], 1, expansion_factor, kernel_sizes)
         self.encoder2 = _mk_irb_bottleneck(c[0], c[1], depths[1], 1, expansion_factor, kernel_sizes)
         self.encoder3 = _mk_irb_bottleneck(c[1], c[2], depths[2], 1, expansion_factor, kernel_sizes)
         self.encoder4 = _mk_irb_bottleneck(c[2], c[3], depths[3], 1, expansion_factor, kernel_sizes)
         self.encoder5 = _mk_irb_bottleneck(c[3], c[4], depths[4], 1, expansion_factor, kernel_sizes)
 
-        # Attention Gates
+        # 注意力 Gates / Attention Gates
         self.AG1 = GroupedAttentionGate(c[3], c[3], c[3] // 2, gag_kernel, c[3] // 2)
         self.AG2 = GroupedAttentionGate(c[2], c[2], c[2] // 2, gag_kernel, c[2] // 2)
         self.AG3 = GroupedAttentionGate(c[1], c[1], c[1] // 2, gag_kernel, c[1] // 2)
         self.AG4 = GroupedAttentionGate(c[0], c[0], c[0] // 2, gag_kernel, c[0] // 2)
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder1 = _mk_irb_bottleneck(c[4], c[3], 1, 1, expansion_factor, kernel_sizes)
         self.decoder2 = _mk_irb_bottleneck(c[3], c[2], 1, 1, expansion_factor, kernel_sizes)
         self.decoder3 = _mk_irb_bottleneck(c[2], c[1], 1, 1, expansion_factor, kernel_sizes)
         self.decoder4 = _mk_irb_bottleneck(c[1], c[0], 1, 1, expansion_factor, kernel_sizes)
         self.decoder5 = _mk_irb_bottleneck(c[0], c[0], 1, 1, expansion_factor, kernel_sizes)
 
-        # Channel & Spatial Attention
+        # 通道 & 空间的 注意力 / Channel & Spatial Attention
         self.CA1 = ChannelAttention(c[4], ratio=16)
         self.CA2 = ChannelAttention(c[3], ratio=16)
         self.CA3 = ChannelAttention(c[2], ratio=16)
@@ -263,7 +266,7 @@ class MKUNet(nn.Module):
 
         self.final = nn.Conv2d(c[0], num_classes, kernel_size=1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c[3], num_classes, 1),
@@ -274,7 +277,7 @@ class MKUNet(nn.Module):
         named_apply(partial(_init_weights, scheme=''), self)
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         out = F.max_pool2d(self.encoder1(x), 2, 2)
         t1 = out
         out = F.max_pool2d(self.encoder2(out), 2, 2)
@@ -288,7 +291,7 @@ class MKUNet(nn.Module):
         ds_collect = self.training and self.deep_supervision
         intermediates = []
 
-        # Decoder
+        # 解码 / Decoder
         out = self.CA1(out) * out
         out = self.SA(out) * out
         out = F.relu(F.interpolate(self.decoder1(out), scale_factor=2, mode='bilinear'))
@@ -329,7 +332,8 @@ class MKUNet(nn.Module):
         return main_out
 
     def _ds_forward(self, main_out, intermediates):
-        """Deep supervision helper."""
+        """深度 supervision helper。
+            Deep supervision helper."""
         input_size = main_out.shape[2:]
         aux = []
         for feat, head in zip(intermediates, self.ds_heads):

@@ -1,4 +1,5 @@
 """ResUNet-a – self-contained port from feevos/resuneta.
+    ResUNet-a – self-contained 移植 from feevos / resuneta。
 
 ResUNet-a: A deep learning framework for semantic segmentation of remotely
 sensed data (Diakogiannis et al., ISPRS 2020).
@@ -18,7 +19,8 @@ import torch.nn.functional as F
 # Building blocks
 # ---------------------------------------------------------------------------
 class _ResBlock(nn.Module):
-    """Residual block: 2x Conv-BN with identity shortcut."""
+    """残差 块: 2x Conv-BN with identity shortcut。
+        Residual block: 2x Conv-BN with identity shortcut."""
 
     def __init__(self, in_ch, out_ch, stride=1):
         super().__init__()
@@ -44,7 +46,8 @@ class _ResBlock(nn.Module):
 
 
 class _DilatedBlock(nn.Module):
-    """Dilated residual block with multi-dilation rates (1, 2, 4, 8)."""
+    """Dilated 残差 块 with multi-dilation rates ( 1, 2, 4, 8 )。
+        Dilated residual block with multi-dilation rates (1, 2, 4, 8)."""
 
     def __init__(self, channels, dilations=(1, 2, 4, 8)):
         super().__init__()
@@ -65,7 +68,8 @@ class _DilatedBlock(nn.Module):
 
 
 class _PSPPool(nn.Module):
-    """Pyramid Spatial Pooling: adaptive pooling at 4 scales + 1x1 conv."""
+    """金字塔 空间的 池化: 自适应的 池化 at 4 scales + 1x1 conv。
+        Pyramid Spatial Pooling: adaptive pooling at 4 scales + 1x1 conv."""
 
     def __init__(self, in_ch, out_ch, pool_sizes=(1, 2, 3, 6)):
         super().__init__()
@@ -100,6 +104,7 @@ class _PSPPool(nn.Module):
 # ---------------------------------------------------------------------------
 class ResUNetA(nn.Module):
     """ResUNet-a with 4 encoder levels, dilated bottleneck, and PSP pooling.
+        ResUNet-a with 4 编码器。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -111,20 +116,20 @@ class ResUNetA(nn.Module):
         super().__init__()
         filters = [32, 64, 128, 256, 512]
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _ResBlock(in_channels, filters[0])
         self.enc2 = _ResBlock(filters[0], filters[1], stride=2)
         self.enc3 = _ResBlock(filters[1], filters[2], stride=2)
         self.enc4 = _ResBlock(filters[2], filters[3], stride=2)
 
-        # Bottleneck with dilated convolutions + PSP
+        # 瓶颈层 with dilated convolutions + PSP / Bottleneck with dilated convolutions + PSP
         self.bottleneck = nn.Sequential(
             _ResBlock(filters[3], filters[4], stride=2),
             _DilatedBlock(filters[4]),
             _PSPPool(filters[4], filters[4]),
         )
 
-        # Decoder
+        # 解码 / Decoder
         self.up4 = nn.ConvTranspose2d(filters[4], filters[3], 2, stride=2)
         self.dec4 = _ResBlock(filters[3] * 2, filters[3])
         self.up3 = nn.ConvTranspose2d(filters[3], filters[2], 2, stride=2)
@@ -134,20 +139,20 @@ class ResUNetA(nn.Module):
         self.up1 = nn.ConvTranspose2d(filters[1], filters[0], 2, stride=2)
         self.dec1 = _ResBlock(filters[0] * 2, filters[0])
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(filters[0], num_classes, 1)
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.enc1(x)
         e2 = self.enc2(e1)
         e3 = self.enc3(e2)
         e4 = self.enc4(e3)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.bottleneck(e4)
 
-        # Decoder with skip connections
+        # Decoder with 跳跃连接 / Decoder with skip connections
         d4 = self.dec4(torch.cat([self.up4(b), e4], 1))
         d3 = self.dec3(torch.cat([self.up3(d4), e3], 1))
         d2 = self.dec2(torch.cat([self.up2(d3), e2], 1))

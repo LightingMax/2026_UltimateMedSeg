@@ -1,6 +1,7 @@
-# Reference: https://github.com/ljwztc/CLIP-Driven-Universal-Model
+# 参考: https: / / github. com / ljwztc / CLIP-Driven-Universal-Model / Reference: https://github.com/ljwztc/CLIP-Driven-Universal-Model
 # Paper:     https://arxiv.org/abs/2301.00785
 """CLIP-Driven Universal Model (ICCV 2023) -- 2D adaptation.
+    CLIP-Driven Universal 模型 ( ICCV 2023 ) - - 2D adaptation。
 
 Implemented from the paper formulas (Liu et al., "CLIP-Driven Universal
 Model for Organ Segmentation and Tumor Detection", ICCV 2023) and the
@@ -49,7 +50,7 @@ import torch.nn.functional as F
 
 
 # ---------------------------------------------------------------------------
-# UNet2D -- 1:1 transcription of model/Unet.py (3D -> 2D)
+# UNet2D - - 1: 1 transcription of 模型 / Unet. py ( 3D - > 2D ) / UNet2D -- 1:1 transcription of model/Unet.py (3D -> 2D)
 # ---------------------------------------------------------------------------
 
 
@@ -141,7 +142,8 @@ class UpTransition(nn.Module):
 
 
 class UNet2D(nn.Module):
-    """1:1 of upstream UNet3D (3D -> 2D); returns (bottleneck, decoder_top)."""
+    """1: 1 of upstream UNet3D ( 3D - > 2D ); 返回 ( 瓶颈层, 解码 _ top )。
+        1:1 of upstream UNet3D (3D -> 2D); returns (bottleneck, decoder_top)."""
 
     def __init__(self, in_channels: int = 1, act: str = "relu"):
         super().__init__()
@@ -167,12 +169,13 @@ class UNet2D(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Universal model -- 1:1 of model/Universal_model.py (3D -> 2D)
+# Universal 模型 - - 1: 1 of 模型 / Universal _ 模型. py ( 3D - > 2D ) / Universal model -- 1:1 of model/Universal_model.py (3D -> 2D)
 # ---------------------------------------------------------------------------
 
 
 class CLIPDrivenUniversalModel2D(nn.Module):
     """2D adaptation of `Universal_model` from CLIP-Driven Universal Model (ICCV'23).
+        2D adaptation of ` Universal _ 模型 ` from CLIP-Driven Universal 模型 ( ICCV ' 23 )。
 
     Args (mirror upstream where applicable):
         img_size:    input H=W (used only by future swinunetr backbone).
@@ -221,7 +224,7 @@ class CLIPDrivenUniversalModel2D(nn.Module):
 
         self.encoding = encoding
 
-        # dynamic-head shape (1:1 with upstream)
+        # dynamic-head 形状 ( 1: 1 with upstream ) / dynamic-head shape (1:1 with upstream)
         weight_nums, bias_nums = [], []
         weight_nums.append(8 * 8)
         weight_nums.append(8 * 8)
@@ -232,7 +235,7 @@ class CLIPDrivenUniversalModel2D(nn.Module):
         self.weight_nums = weight_nums
         self.bias_nums = bias_nums
 
-        # controller produces (sum(weights+biases)) channels from concat([feat, organ])
+        # controller produces ( sum ( 权重 + biases ) ) 通道 from concat ( [ feat, 器官 ] ) / controller produces (sum(weights+biases)) channels from concat([feat, organ])
         self.controller = nn.Conv2d(
             256 + 256, sum(weight_nums + bias_nums), kernel_size=1, stride=1, padding=0
         )
@@ -240,9 +243,9 @@ class CLIPDrivenUniversalModel2D(nn.Module):
         if self.encoding == "rand_embedding":
             self.organ_embedding = nn.Embedding(out_channels, 256)
         elif self.encoding == "word_embedding":
-            # Strict: paper requires pre-computed CLIP text embeddings of the
-            # organ / lesion class names. We refuse to silently substitute
-            # ``torch.randn`` because doing so would be a non-CLIP model
+            # Strict: paper requires pre-computed CLIP text 嵌入 of the / Strict: paper requires pre-computed CLIP text embeddings of the
+            # 器官 / 病灶 class names. We refuse to silently substitute / organ / lesion class names. We refuse to silently substitute
+            # ` ` torch. randn ` ` because doing so would be a non-CLIP 模型 / ``torch.randn`` because doing so would be a non-CLIP model
             # masquerading as CLIP-Universal.
             if clip_embedding is None:
                 raise ValueError(
@@ -292,7 +295,7 @@ class CLIPDrivenUniversalModel2D(nn.Module):
 
         for l in range(num_layers):
             if l < num_layers - 1:
-                # 4D weight for 2D conv: (out, in, 1, 1)
+                # 4D 权重 for 2D conv: ( out, in, 1, 1 ) / 4D weight for 2D conv: (out, in, 1, 1)
                 weight_splits[l] = weight_splits[l].reshape(num_insts * channels, -1, 1, 1)
                 bias_splits[l] = bias_splits[l].reshape(num_insts * channels)
             else:
@@ -312,13 +315,14 @@ class CLIPDrivenUniversalModel2D(nn.Module):
         return x
 
     # ------------------------------------------------------------------
-    # forward
+    # 前向传播 / forward
     # ------------------------------------------------------------------
 
     def _resolve_organ_embedding(self, text: Any | None) -> torch.Tensor:
-        """Return task encoding tensor of shape (class_num, 256, 1, 1)."""
+        """返回 task encoding 张量 of 形状 ( class _ num, 256, 1, 1 )。
+            Return task encoding tensor of shape (class_num, 256, 1, 1)."""
         if text is not None and isinstance(text, torch.Tensor):
-            # caller supplies CLIP class embedding (class_num, 512)
+            # caller supplies CLIP class 嵌入 ( class _ num, 512 ) / caller supplies CLIP class embedding (class_num, 512)
             assert text.shape == (self.class_num, 512), (
                 f"text override must be ({self.class_num}, 512), got {tuple(text.shape)}"
             )
@@ -330,12 +334,13 @@ class CLIPDrivenUniversalModel2D(nn.Module):
 
         if self.encoding == "rand_embedding":
             return self.organ_embedding.weight.unsqueeze(-1).unsqueeze(-1)
-        # word_embedding (no override)
+        # word _ 嵌入 ( no 覆盖 ) / word_embedding (no override)
         task_encoding = F.relu(self.text_to_vision(self.organ_embedding))
         return task_encoding.unsqueeze(-1).unsqueeze(-1)
 
     def forward(self, image: torch.Tensor, text: Any | None = None):
         """forward(image, text=None).
+            前向传播 ( 图像, text = None )。
 
         text: optionally a (class_num, 512) tensor that overrides the registered
               organ embedding (mirrors upstream `word_embedding` mechanism).

@@ -1,4 +1,5 @@
 """LLM4Seg bottleneck — Tang et al., MICCAI 2025.
+    LLM4Seg 瓶颈层。
 
 Idea: use the last K transformer blocks of a *frozen* pretrained LLM
 (Llama / Qwen / Phi / etc.) as a bottleneck refiner for medical image
@@ -36,6 +37,7 @@ from medseg.utils.hf_hub import call_with_hf_fallback
 
 def _load_llm_blocks(llm_model: str, num_layers: int, dtype):
     """Load the last ``num_layers`` decoder blocks of an LLM via transformers.
+        Load the last ``num_layers`` 解码器。
 
     Returns (block_list: nn.ModuleList, hidden_size: int).
     Raises RuntimeError on failure (no silent fallback).
@@ -61,7 +63,7 @@ def _load_llm_blocks(llm_model: str, num_layers: int, dtype):
             f"Underlying error: {type(e).__name__}: {e}"
         ) from e
 
-    # Load the model with the requested dtype to save memory; we only use the blocks
+    # 加载 the 模型 with the requested dtype to 保存 memory; we only use the blocks / Load the model with the requested dtype to save memory; we only use the blocks
     try:
         model = call_with_hf_fallback(
             AutoModel.from_pretrained,
@@ -78,7 +80,7 @@ def _load_llm_blocks(llm_model: str, num_layers: int, dtype):
             f"Underlying error: {type(e).__name__}: {e}"
         ) from e
 
-    # Locate the transformer block list. Architectures vary in attribute names.
+    # Locate the Transformer 块 list. Architectures vary in attribute names / Locate the transformer block list. Architectures vary in attribute names.
     blocks = None
     for attr_chain in (("layers",), ("model", "layers"), ("transformer", "h"),
                        ("transformer", "blocks"), ("encoder", "layer"), ("h",)):
@@ -112,19 +114,19 @@ def _load_llm_blocks(llm_model: str, num_layers: int, dtype):
 
 
 # ---------------------------------------------------------------------------
-# Source-code presets — Tang et al. (MICCAI 2025) source uses DeepSeek-R1-Distill
-# variants of Qwen and Llama as the two LLM families. Pass `llm_model='deepseek_qwen'`
-# (alias 'qwen') or `llm_model='deepseek_llama'` (alias 'llama'), OR any HF model id.
+# Source-code presets — Tang et al. ( MICCAI 2025 ) 来源 uses DeepSeek-R 1-Distill / Source-code presets — Tang et al. (MICCAI 2025) source uses DeepSeek-R1-Distill
+# variants of Qwen and Llama as the two LLM families. Pass ` llm _ 模型 = ' deepseek _ qwen ' ` / variants of Qwen and Llama as the two LLM families. Pass `llm_model='deepseek_qwen'`
+# ( alias ' qwen ' ) or ` llm _ 模型 = ' deepseek _ llama ' ` ( alias ' llama ' ), OR any HF 模型 id / (alias 'qwen') or `llm_model='deepseek_llama'` (alias 'llama'), OR any HF model id.
 # ---------------------------------------------------------------------------
 LLM_PRESETS = {
-    # DeepSeek-R1-Distill-Qwen (as used in the LLM4Seg source) — the primary 'qwen' option
+    # DeepSeek-R 1-Distill-Qwen ( as used in the LLM4Seg 来源 ) — the primary ' qwen ' option / DeepSeek-R1-Distill-Qwen (as used in the LLM4Seg source) — the primary 'qwen' option
     'qwen':           'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
     'deepseek_qwen':  'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
     'deepseek_qwen_1_5b': 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
     'deepseek_qwen_7b':   'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
     'deepseek_qwen_14b':  'deepseek-ai/DeepSeek-R1-Distill-Qwen-14B',
 
-    # DeepSeek-R1-Distill-Llama (matching family choice in the source)
+    # DeepSeek-R 1-Distill-Llama ( matching family choice in the 来源 ) / DeepSeek-R1-Distill-Llama (matching family choice in the source)
     'llama':              'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
     'deepseek_llama':     'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
     'deepseek_llama_8b':  'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
@@ -139,6 +141,7 @@ LLM_PRESETS = {
 @BOTTLENECK_REGISTRY.register("llm4seg")
 class LLM4SegBottleneck(nn.Module):
     """LLM4Seg (Tang et al., MICCAI 2025) bottleneck.
+        LLM4Seg (Tang et al., MICCAI 2025) 瓶颈层。
 
     The official source code uses DeepSeek-R1-Distill family in two flavors:
         - DeepSeek-R1-Distill-Qwen-1.5B  — preset key 'qwen' / 'deepseek_qwen'
@@ -175,7 +178,7 @@ class LLM4SegBottleneck(nn.Module):
     ):
         super().__init__()
         self.in_channels = in_channels
-        # Resolve source-preset key -> HF model id
+        # Resolve source-preset key - > HF 模型 id / Resolve source-preset key -> HF model id
         resolved_llm = LLM_PRESETS.get(llm_model, llm_model)
         self.llm_model = resolved_llm
         self.num_llm_layers = num_llm_layers
@@ -187,7 +190,7 @@ class LLM4SegBottleneck(nn.Module):
             "fp32": torch.float32, "fp16": torch.float16,
         }.get(dtype, torch.float32)
 
-        # Load frozen LLM blocks (use the resolved model id)
+        # 加载 frozen LLM blocks ( use the resolved 模型 id ) / Load frozen LLM blocks (use the resolved model id)
         self.llm_blocks, self.hidden_dim = _load_llm_blocks(
             resolved_llm, num_llm_layers, torch_dtype
         )
@@ -209,7 +212,8 @@ class LLM4SegBottleneck(nn.Module):
         return self._out_channels
 
     def _llm_forward(self, tokens: torch.Tensor) -> torch.Tensor:
-        """Run tokens (B, N, D) through the LLM blocks. Handles common block APIs."""
+        """Run 标记 ( B, N, D ) through the LLM blocks. Handles common 块 APIs。
+            Run tokens (B, N, D) through the LLM blocks. Handles common block APIs."""
         x = tokens
         # Cast to LLM dtype if blocks have a different dtype
         block_dtype = next(self.llm_blocks.parameters()).dtype
@@ -217,11 +221,11 @@ class LLM4SegBottleneck(nn.Module):
 
         for blk in self.llm_blocks:
             try:
-                # Llama / Qwen / Phi style: returns tuple (hidden_states, ...)
+                # Llama / Qwen / Phi style: 返回 tuple ( hidden _ states,... ) / Llama / Qwen / Phi style: returns tuple (hidden_states, ...)
                 out = blk(x_in)
             except TypeError:
-                # Some blocks need attention_mask, position_ids etc.
-                # Fall back to passing an all-ones attention mask
+                # Some blocks need 注意力 _ 掩码, position _ ids etc / Some blocks need attention_mask, position_ids etc.
+                # Fall back to passing an all-ones 注意力 掩码 / Fall back to passing an all-ones attention mask
                 B, N, _ = x_in.shape
                 attn_mask = torch.ones((B, N), device=x_in.device, dtype=torch.long)
                 out = blk(x_in, attention_mask=attn_mask)
@@ -231,14 +235,14 @@ class LLM4SegBottleneck(nn.Module):
                 x_in = out.get("hidden_states", out.get("last_hidden_state", x_in))
             else:
                 x_in = out
-        # Cast back to the original input dtype
+        # Cast back to the original 输入 dtype / Cast back to the original input dtype
         return x_in.to(x.dtype)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
         residual = x if self.use_residual else None
 
-        # 1x1 in-proj + flatten
+        # 1x1 in-proj + 展平 / 1x1 in-proj + flatten
         h = self.in_proj(x)                            # (B, D, H, W)
         h = h.flatten(2).transpose(1, 2)               # (B, N, D)
         h = self.in_norm(h)
@@ -247,7 +251,7 @@ class LLM4SegBottleneck(nn.Module):
         h = self._llm_forward(h)
 
         h = self.out_norm(h)
-        # Reshape back + out-proj
+        # 重塑 back + out-proj / Reshape back + out-proj
         h = h.transpose(1, 2).reshape(B, self.hidden_dim, H, W)
         h = self.out_proj(h)                           # (B, C, H, W)
 

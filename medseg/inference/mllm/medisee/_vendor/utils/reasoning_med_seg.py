@@ -104,8 +104,9 @@ class ReasoningMedSegDataset(torch.utils.data.Dataset):
 
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad

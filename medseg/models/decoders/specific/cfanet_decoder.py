@@ -1,4 +1,5 @@
 """CFANet decoder – extracted from networks/cnn/cfanet_model.py.
+    CFANet 解码器。
 
 Cross-level Feature Aggregation decoder (Pattern Recognition 2023).
 Dual-branch (edge + main) decoding with BAM, CFF, GateFusion, ChannelAttention.
@@ -80,7 +81,8 @@ class _GateFusion(nn.Module):
 
 
 class _BAM(nn.Module):
-    """Boundary Attention Module."""
+    """边界 注意力 模块。
+        Boundary Attention Module."""
 
     def __init__(self, channel):
         super().__init__()
@@ -95,7 +97,8 @@ class _BAM(nn.Module):
 
 
 class _CFF(nn.Module):
-    """Cross-level Feature Fusion."""
+    """Cross-level 特征 融合。
+        Cross-level Feature Fusion."""
 
     def __init__(self, in_ch1, in_ch2, out_channel):
         super().__init__()
@@ -125,11 +128,12 @@ class _CFF(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Public decoder wrapper
+# Public 解码器 / Public decoder wrapper
 # ---------------------------------------------------------------------------
 @DECODER_REGISTRY.register("cfanet")
 class CFANetDecoder(nn.Module):
     """CFANet dual-branch decoder (edge + main with BAM & CFF).
+        CFANet dual-branch 解码器。
 
     has_internal_skip = True  (consumes all encoder features internally)
     out_channels = num_classes (produces final logits)
@@ -146,14 +150,14 @@ class CFANetDecoder(nn.Module):
         self.channel = channel
         act_fn = nn.ReLU(inplace=True)
 
-        # Derive channel sizes from encoder_channels (with adapter-provided defaults)
-        # Default to Res2Net-style: [64, 256, 512, 1024, 2048]
+        # Derive 通道 sizes from 编码器 _ 通道 ( with adapter-provided defaults ) / Derive channel sizes from encoder_channels (with adapter-provided defaults)
+        # 默认值 to Res2Net-style: [ 64, 256, 512, 1024, 2048 ] / Default to Res2Net-style: [64, 256, 512, 1024, 2048]
         if encoder_channels is not None and len(encoder_channels) >= 5:
             c = list(encoder_channels)
         else:
             c = [64, 256, 512, 1024, 2048]
 
-        # Feature adaptation layers
+        # 特征 adaptation layers / Feature adaptation layers
         self.layer0 = nn.Sequential(
             nn.Conv2d(c[0], channel, 3, stride=2, padding=1),
             nn.BatchNorm2d(channel), act_fn)
@@ -165,7 +169,7 @@ class CFANetDecoder(nn.Module):
         self.high_fusion1 = _CFF(c[2], c[3], channel)
         self.high_fusion2 = _CFF(c[3], c[4], channel)
 
-        # Edge branch
+        # 边缘 分支 / Edge branch
         self.layer_edge0 = nn.Sequential(
             nn.Conv2d(channel, channel, 3, 1, 1),
             nn.BatchNorm2d(channel), act_fn)
@@ -177,7 +181,7 @@ class CFANetDecoder(nn.Module):
             nn.BatchNorm2d(64), act_fn)
         self.layer_edge3 = nn.Sequential(nn.Conv2d(64, 1, 1))
 
-        # Main decode branch 1
+        # Main decode 分支 1 / Main decode branch 1
         self.layer_cat_ori1 = nn.Sequential(
             nn.Conv2d(channel * 2, channel, 3, 1, 1),
             nn.BatchNorm2d(channel), act_fn)
@@ -201,7 +205,7 @@ class CFANetDecoder(nn.Module):
             nn.BatchNorm2d(64), act_fn)
         self.layer_hig31 = nn.Sequential(nn.Conv2d(64, num_classes, 1))
 
-        # Main decode branch 2
+        # Main decode 分支 2 / Main decode branch 2
         self.layer_cat_ori2 = nn.Sequential(
             nn.Conv2d(channel * 2, channel, 3, 1, 1),
             nn.BatchNorm2d(channel), act_fn)
@@ -226,7 +230,7 @@ class CFANetDecoder(nn.Module):
         self.layer_hig32 = nn.Sequential(nn.Conv2d(64, num_classes, 1))
         self.layer_fil = nn.Sequential(nn.Conv2d(64, num_classes, 1))
 
-        # Attention modules
+        # 注意力 modules / Attention modules
         self.atten_edge_0 = _ChannelAttention(channel)
         self.atten_edge_1 = _ChannelAttention(channel)
         self.atten_edge_2 = _ChannelAttention(channel)
@@ -263,7 +267,7 @@ class CFANetDecoder(nn.Module):
         """
         x0, x1, x2, x3, x4 = skip_features
 
-        # Feature adaptation
+        # 特征 adaptation / Feature adaptation
         x0_a = self.layer0(x0)
         x1_a = self.layer1(x1)
         low_fused = self.low_fusion(x0_a, x1_a)
@@ -274,7 +278,7 @@ class CFANetDecoder(nn.Module):
             x3, F.interpolate(x4, size=x3.shape[2:],
                               mode='bilinear', align_corners=True))
 
-        # Edge branch
+        # 边缘 分支 / Edge branch
         edge_atten = self.atten_edge_ori(low_fused)
         edge = self.cat_01(low_fused, low_fused * edge_atten)
         edge = self.layer_cat_ori1(torch.cat((edge, low_fused), dim=1))
@@ -300,7 +304,7 @@ class CFANetDecoder(nn.Module):
         edge = self.layer_cat31(torch.cat((edge, x0_a_up_edge), dim=1))
         edge_out = self.layer_hig31(self.up_2(edge))
 
-        # Main branch
+        # Main 分支 / Main branch
         main_atten = self.atten_edge_2(high2)
         main = self.cat_02(high2, high2 * main_atten)
         main = self.layer_cat_ori2(torch.cat((main, high2), dim=1))
@@ -320,6 +324,6 @@ class CFANetDecoder(nn.Module):
         main = self.layer_cat32(torch.cat((main, x0_a_up_main), dim=1))
         main_out = self.layer_hig32(self.up_2(main))
 
-        # Final fusion
+        # Final 融合 / Final fusion
         final = self.layer_fil(self.up_2(self.cat_31(main, edge)))
         return final + edge_out + main_out

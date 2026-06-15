@@ -1,4 +1,5 @@
 """SAM image encoder backed by a timm ViT (B/L/H) with an DPT-style multi-block head.
+    SAM image 编码器。
 
 This module exposes :class:`SAMViTEncoder` (registered key ``"sam_vit"``).
 It loads a plain ViT backbone via :mod:`timm`, drops the prefix (CLS /
@@ -29,7 +30,7 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, load_with_ssl_fallback
 
 
-# Primary backbone name per variant.
+# Primary 骨干网络 name per variant / Primary backbone name per variant.
 _VARIANT_TO_NAME = {
     "base":  "vit_base_patch16_224",
     "large": "vit_large_patch16_224",
@@ -39,7 +40,8 @@ _VARIANT_TO_NAME = {
 
 def _build_timm_vit(variant: str, img_size: int, in_chans: int,
                     pretrained: bool):
-    """Create a timm ViT backbone for the requested variant."""
+    """Create a timm ViT 骨干网络 for the requested variant。
+        Create a timm ViT backbone for the requested variant."""
     import timm
 
     PRIMARY_BACKBONE_NAME = _VARIANT_TO_NAME[variant]
@@ -112,8 +114,8 @@ class SAMViTEncoder(BaseFoundationEncoder):
         self.vit_variant = vit_variant
 
         # ---- Backbone --------------------------------------------------
-        # When a custom checkpoint path is given we skip the timm pretrained
-        # download (the local file will replace those weights anyway).
+        # When a custom checkpoint path is given we 跳跃连接 / When a custom checkpoint path is given we skip the timm pretrained
+        # download ( the 局部的 file will replace those 权重 anyway ) / download (the local file will replace those weights anyway).
         self.backbone, self._backbone_name = _build_timm_vit(
             variant=vit_variant,
             img_size=img_size,
@@ -148,10 +150,10 @@ class SAMViTEncoder(BaseFoundationEncoder):
             getattr(self.backbone, "num_prefix_tokens", 1)
         )
 
-        # ---- Output channels (deepest LAST) ----------------------------
+        # - - - - 输出 通道 ( deepest LAST ) - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Output channels (deepest LAST) ----------------------------
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -164,6 +166,7 @@ class SAMViTEncoder(BaseFoundationEncoder):
 
     def _pad_to_multiple(self, x: torch.Tensor) -> Tuple[torch.Tensor, Tuple[int, int]]:
         """Right/bottom pad ``x`` so H,W are multiples of ``patch_size * 2``.
+            Right / bottom pad ` ` x ` ` so H, W are multiples of ` ` 图块 _ 大小 * 2 ` `。
 
         The factor of 2 ensures the /32 (MaxPool2d) branch sees at least one
         even-sided input. Returns the padded tensor and the original ``(H, W)``.
@@ -187,7 +190,7 @@ class SAMViTEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

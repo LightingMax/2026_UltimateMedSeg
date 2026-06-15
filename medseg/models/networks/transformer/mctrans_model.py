@@ -1,4 +1,5 @@
 """MCTrans – faithful port from github.com/JiYuanFeng/MCTrans.
+    MCTrans – 忠实 移植 from github. com / JiYuanFeng / MCTrans。
 
 Multi-Compound Transformer for Accurate Biomedical Image Segmentation (IJCV 2022).
 
@@ -21,28 +22,29 @@ from torch.nn.init import xavier_uniform_, constant_, normal_
 
 
 # ---------------------------------------------------------------------------
-# Pure PyTorch Multi-Scale Deformable Attention
+# 纯 PyTorch Multi-Scale Deformable 注意力 / Pure PyTorch Multi-Scale Deformable Attention
 # ---------------------------------------------------------------------------
 def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations, attention_weights):
-    """Pure PyTorch fallback for MSDeformAttnFunction using grid_sample."""
+    """纯 PyTorch fallback for MSDeformAttnFunction using grid _ 样本。
+        Pure PyTorch fallback for MSDeformAttnFunction using grid_sample."""
     N, Len_in, n_heads, d_head = value.shape
     # sampling_locations: (N, Len_q, n_heads, n_levels, n_points, 2) in [0,1]
-    # attention_weights: (N, Len_q, n_heads, n_levels, n_points)
+    # 注意力 _ 权重: ( N, Len _ q, n _ heads, n _ levels, n _ points ) / attention_weights: (N, Len_q, n_heads, n_levels, n_points)
     N_, Len_q, _, n_levels, n_points, _ = sampling_locations.shape
     value_list = value.split([H_ * W_ for H_, W_ in value_spatial_shapes], dim=1)
     sampling_grids = 2 * sampling_locations - 1  # map [0,1] to [-1,1]
     sampling_value_list = []
     for lid, (H_, W_) in enumerate(value_spatial_shapes):
-        # v: (N, Len_lid, n_heads, d_head) -> (N*n_heads, d_head, H_, W_)
+        # v: ( N, Len _ lid, n _ heads, d _ 头部 ) - > ( N * n _ heads, d _ 头部, H _, W _ ) / v: (N, Len_lid, n_heads, d_head) -> (N*n_heads, d_head, H_, W_)
         v = value_list[lid].permute(0, 2, 3, 1).reshape(N * n_heads, d_head, H_, W_)
         # s: (N, Len_q, n_heads, n_points, 2) -> (N*n_heads, Len_q, n_points, 2)
         s = sampling_grids[:, :, :, lid].permute(0, 2, 1, 3, 4).reshape(N * n_heads, Len_q, n_points, 2)
         v_sampled = F.grid_sample(v, s, mode='bilinear', padding_mode='zeros', align_corners=False)
-        # v_sampled: (N*n_heads, d_head, Len_q, n_points)
+        # v _ sampled: ( N * n _ heads, d _ 头部, Len _ q, n _ points ) / v_sampled: (N*n_heads, d_head, Len_q, n_points)
         sampling_value_list.append(v_sampled)
     sampling_value = torch.stack(sampling_value_list, dim=4)  # (N*n_heads, d_head, Len_q, n_points, n_levels)
     sampling_value = sampling_value.permute(0, 1, 4, 2, 3)  # (N*n_heads, d_head, n_levels, Len_q, n_points)
-    # attention: (N, Len_q, n_heads, n_levels, n_points) -> (N*n_heads, 1, n_levels, Len_q, n_points)
+    # 注意力: ( N, Len _ q, n _ heads, n _ levels, n _ points ) - > ( N * n _ heads, 1, n _ levels, Len _ q, n _ points ) / attention: (N, Len_q, n_heads, n_levels, n_points) -> (N*n_heads, 1, n_levels, Len_q, n_points)
     attn = attention_weights.permute(0, 2, 3, 1, 4).reshape(N * n_heads, 1, n_levels, Len_q, n_points)
     output = (sampling_value * attn).sum(-1).sum(2)  # (N*n_heads, d_head, Len_q)
     output = output.reshape(N, n_heads * d_head, Len_q).permute(0, 2, 1)
@@ -50,7 +52,8 @@ def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations,
 
 
 class MSDeformAttn(nn.Module):
-    """Multi-Scale Deformable Attention (pure PyTorch implementation)."""
+    """Multi-Scale Deformable 注意力 ( 纯 PyTorch implementation )。
+        Multi-Scale Deformable Attention (pure PyTorch implementation)."""
 
     def __init__(self, d_model=240, n_levels=3, n_heads=8, n_points=4):
         super().__init__()
@@ -205,12 +208,12 @@ class CALayer(nn.Module):
         return tgt
 
     def forward(self, tgt, src):
-        # self attention (seq-first for nn.MultiheadAttention)
+        # self 注意力 ( seq-first for nn. MultiheadAttention ) / self attention (seq-first for nn.MultiheadAttention)
         tgt2 = self.self_attn(tgt.transpose(0, 1), tgt.transpose(0, 1),
                                tgt.transpose(0, 1))[0].transpose(0, 1)
         tgt = tgt + self.dropout2(tgt2)
         tgt = self.norm2(tgt)
-        # cross attention (also seq-first)
+        # cross 注意力 ( also seq-first ) / cross attention (also seq-first)
         tgt2 = self.cross_attn(tgt.transpose(0, 1), src.transpose(0, 1),
                                 src.transpose(0, 1))[0].transpose(0, 1)
         tgt = tgt + self.dropout1(tgt2)
@@ -239,10 +242,11 @@ class CA(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Position embedding (sine)
+# Position 嵌入 ( sine ) / Position embedding (sine)
 # ---------------------------------------------------------------------------
 def build_sine_position_encoding(mask, hidden_dim):
-    """Build 2D sine position embedding from mask."""
+    """Build 2D sine position 嵌入 from 掩码。
+        Build 2D sine position embedding from mask."""
     not_mask = ~mask
     y_embed = not_mask.cumsum(1, dtype=torch.float32)
     x_embed = not_mask.cumsum(2, dtype=torch.float32)
@@ -271,7 +275,7 @@ def conv_bn_relu(in_channels, out_channels, kernel_size=3, padding=1, stride=1):
 
 
 # ---------------------------------------------------------------------------
-# ResNet backbone (5 features: [64, 64, 128, 256, 512])
+# ResNet 骨干网络 ( 5 特征: [ 64, 64, 128, 256, 512 ] ) / ResNet backbone (5 features: [64, 64, 128, 256, 512])
 # ---------------------------------------------------------------------------
 class _BasicBlock(nn.Module):
     expansion = 1
@@ -293,7 +297,8 @@ class _BasicBlock(nn.Module):
 
 
 class _ResNetBackbone(nn.Module):
-    """ResNet producing 5 features: [c0(64), c1(64), c2(128), c3(256), c4(512)]."""
+    """ResNet producing 5 特征: [ c0 ( 64 ), c1 ( 64 ), c2 ( 128 ), c3 ( 256 ), c4 ( 512 ) ]。
+        ResNet producing 5 features: [c0(64), c1(64), c2(128), c3(256), c4(512)]."""
 
     def __init__(self, in_channels=3):
         super().__init__()
@@ -330,10 +335,11 @@ class _ResNetBackbone(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Attention-gated decoder blocks
+# Attention-gated 解码器 / Attention-gated decoder blocks
 # ---------------------------------------------------------------------------
 class AttBlock(nn.Module):
-    """Attention gate for skip connections (from official code)."""
+    """Attention gate for 跳跃连接。
+        Attention gate for skip connections (from official code)."""
 
     def __init__(self, F_g, F_l, F_int):
         super().__init__()
@@ -346,7 +352,7 @@ class AttBlock(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, g, x):
-        # Align spatial sizes if needed
+        # Align 空间的 sizes if needed / Align spatial sizes if needed
         if g.shape[2:] != x.shape[2:]:
             x = F.interpolate(x, size=g.shape[2:], mode='bilinear', align_corners=True)
         g1 = self.W_g(g)
@@ -370,7 +376,7 @@ class DecBlock(nn.Module):
         if skip is not None:
             if hasattr(self, "att"):
                 skip = self.att(g=x, x=skip)
-            # Align spatial sizes if 2x upsample doesn't perfectly match skip
+            # Align spatial sizes if 2x upsample doesn't perfectly match 跳跃连接 / Align spatial sizes if 2x upsample doesn't perfectly match skip
             if x.shape[2:] != skip.shape[2:]:
                 skip = F.interpolate(skip, size=x.shape[2:], mode='bilinear',
                                      align_corners=True)
@@ -384,7 +390,8 @@ class DecBlock(nn.Module):
 # MCTrans center (DSA)
 # ---------------------------------------------------------------------------
 class MCTransCenter(nn.Module):
-    """MCTrans center: projects levels (2,3,4) → d_model → DSA → recover."""
+    """MCTrans center: projects levels ( 2, 3, 4 ) → d _ 模型 → DSA → recover。
+        MCTrans center: projects levels (2,3,4) → d_model → DSA → recover."""
 
     def __init__(self, d_model=240, nhead=8, d_ffn=1024, dropout=0.1,
                  act="relu", n_points=4, n_levels=3, n_sa_layers=6,
@@ -435,7 +442,7 @@ class MCTransCenter(nn.Module):
                 tran_feats.append(feat)
         for idx, proj in enumerate(self.projs):
             tran_feats[idx] = proj(tran_feats[idx])
-        # Flatten for DSA
+        # 展平 for DSA / Flatten for DSA
         features_flatten = []
         mask_flatten = []
         lvl_pos_embed_flatten = []
@@ -467,7 +474,7 @@ class MCTransCenter(nn.Module):
         feats_out = self.dsa(features_flatten, spatial_shapes_t,
                               level_start_index, valid_ratios,
                               lvl_pos_embed_flatten, mask_flatten)
-        # Recover per-level features
+        # Recover per-level 特征 / Recover per-level features
         out = []
         features = feats_out.split(
             spatial_shapes_t.prod(1).tolist(), dim=1)
@@ -479,7 +486,7 @@ class MCTransCenter(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MCTransAuxHead (training only)
+# MCTransAuxHead ( 训练 only ) / MCTransAuxHead (training only)
 # ---------------------------------------------------------------------------
 class MCTransAuxHead(nn.Module):
     def __init__(self, d_model=240, d_ffn=1024, dropout=0.1, act="relu",
@@ -505,10 +512,11 @@ class MCTransAuxHead(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main MCTrans model
+# Main MCTrans 模型 / Main MCTrans model
 # ---------------------------------------------------------------------------
 class MCTrans(nn.Module):
     """Multi-Compound Transformer for medical image segmentation.
+        Multi-Compound Transformer for 医学的 图像 分割。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -527,19 +535,19 @@ class MCTrans(nn.Module):
         n_levels = 3
         enc_channels = [64, 64, 128, 256, 512]
         proj_idxs = (2, 3, 4)
-        # Backbone
+        # 骨干网络 / Backbone
         self.backbone = _ResNetBackbone(in_channels)
         # MCTrans center (DSA)
         self.center = MCTransCenter(
             d_model=d_model, nhead=n_heads, d_ffn=d_ffn,
             n_sa_layers=n_sa_layers, n_points=n_points, n_levels=n_levels,
             in_channels=enc_channels, proj_idxs=proj_idxs)
-        # CA layers (cross-attention with proxy tokens)
+        # CA layers ( 交叉注意力 with proxy 标记 ) / CA layers (cross-attention with proxy tokens)
         ca_layer = CALayer(d_model=d_model, d_ffn=d_ffn, n_heads=n_heads)
         self.ca = CA(att_layer=ca_layer, n_layers=n_ca_layers,
                      n_category=num_classes, d_model=d_model)
         self.proj_idxs = proj_idxs
-        # Feature enhancement via CA proxy tokens
+        # 特征 enhancement via CA proxy 标记 / Feature enhancement via CA proxy tokens
         self.feat_proj = nn.Linear(num_classes * d_model, d_model)
         # UNetDecoder with AttBlock
         dec_in = enc_channels[:2] + [d_model] * n_levels  # [64, 64, 240, 240, 240]
@@ -548,7 +556,7 @@ class MCTrans(nn.Module):
         skip_rev = dec_in_rev[1:]
         for in_c, skip_c in zip(dec_in_rev, skip_rev):
             self.decoder.append(DecBlock(in_c, skip_c, skip_c, attention=True))
-        # Final projection head
+        # Final projection 头部 / Final projection head
         self.final_conv = nn.Conv2d(dec_in[0], num_classes, 1)
 
     def forward(self, x):
@@ -556,18 +564,18 @@ class MCTrans(nn.Module):
         features = self.backbone(x)
         # MCTrans center (DSA on levels 2,3,4)
         features = self.center(features)
-        # CA (cross-attention with proxy tokens)
+        # CA ( 交叉注意力 with proxy 标记 ) / CA (cross-attention with proxy tokens)
         ca_inputs = [features[idx].flatten(2).transpose(1, 2)
                       for idx in self.proj_idxs]
         ca_input = torch.cat(ca_inputs, 1)
         proxy_out = self.ca(ca_input)  # (B, num_classes, d_model)
-        # Feature enhancement: project proxy tokens to enhance features
+        # 特征 enhancement: project proxy 标记 to enhance 特征 / Feature enhancement: project proxy tokens to enhance features
         proxy_flat = self.feat_proj(proxy_out.flatten(1))  # (B, d_model)
-        # Apply as channel-wise modulation to each transformer feature
+        # 应用 as channel-wise modulation to each Transformer 特征 / Apply as channel-wise modulation to each transformer feature
         for idx in self.proj_idxs:
             feat = features[idx]  # (B, d_model, H, W)
             B = feat.shape[0]
-            # Broadcast proxy to spatial dims
+            # Broadcast proxy to 空间的 dims / Broadcast proxy to spatial dims
             mod = proxy_flat.unsqueeze(-1).unsqueeze(-1).expand_as(feat)
             features[idx] = feat + feat * mod
         # Decode (reverse order: deepest first)
@@ -575,6 +583,6 @@ class MCTrans(nn.Module):
         x = feats_rev[0]
         for i, layer in enumerate(self.decoder):
             x = layer(x, feats_rev[i + 1])
-        # Upsample to original input resolution
+        # 上采样 to original 输入 分辨率 / Upsample to original input resolution
         x = F.interpolate(x, size=input_size, mode='bilinear', align_corners=True)
         return self.final_conv(x)

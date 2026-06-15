@@ -1,4 +1,5 @@
 """SegFormer MiT (Mix-Transformer) encoder.
+    SegFormer MiT (Mix-Transformer) 编码器。
 
 Wraps timm's ``mit_b2`` backbone with ``features_only=True`` to expose 4
 multi-scale feature maps suitable for U-Net style decoders. Falls back to
@@ -35,15 +36,16 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
             ssl._create_default_https_context = prev
 
 
-# MiT (SegFormer Mix-Transformer) is the spec target. Some timm versions do
+# MiT ( SegFormer Mix-Transformer ) is the spec 目标. Some timm versions do / MiT (SegFormer Mix-Transformer) is the spec target. Some timm versions do
 # not bundle it; PVTv2 is the closest architectural sibling (MiT is a
 # refinement of PVTv2). We try MiT first, then PVTv2-B2, then any available
-# 4-stage transformer pyramid.
+# 4-stage Transformer 金字塔 / 4-stage transformer pyramid.
 _MIT_CANDIDATES = ("mit_b2", "pvt_v2_b2")
 
 
 def _create_mit_backbone(pretrained: bool):
-    """Create the MiT backbone with graceful fallback across timm versions."""
+    """Create the MiT 骨干网络 with graceful fallback across timm versions。
+        Create the MiT backbone with graceful fallback across timm versions."""
     last_err = None
     for name in _MIT_CANDIDATES:
         try:
@@ -54,7 +56,7 @@ def _create_mit_backbone(pretrained: bool):
                 in_chans=3,
             ), name
         except RuntimeError as e:
-            # "Unknown model" errors -> try the next candidate.
+            # " Unknown 模型 " errors - > try the next candidate / "Unknown model" errors -> try the next candidate.
             last_err = e
             continue
     raise RuntimeError(
@@ -65,6 +67,7 @@ def _create_mit_backbone(pretrained: bool):
 @ENCODER_REGISTRY.register("segformer_mit")
 class SegFormerMiTEncoder(nn.Module):
     """SegFormer Mix-Transformer (MiT-B2) backbone.
+        SegFormer Mix-Transformer ( MiT-B 2 ) 骨干网络。
 
     Uses ``timm.create_model("mit_b2", features_only=True)`` to extract four
     hierarchical feature maps at strides 4, 8, 16, 32. The deepest feature is
@@ -88,19 +91,19 @@ class SegFormerMiTEncoder(nn.Module):
     ):
         super().__init__()
 
-        # MiT backbones are designed for 3-channel RGB input. If the caller
-        # supplies a different in_channels, prepend a learnable 1x1 stem to
-        # remap to 3 channels.
+        # MiT backbones are designed for 3-channel RGB 输入. If the caller / MiT backbones are designed for 3-channel RGB input. If the caller
+        # supplies a different in _ 通道, prepend a learnable 1x1 主干 to / supplies a different in_channels, prepend a learnable 1x1 stem to
+        # remap to 3 通道 / remap to 3 channels.
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_proj = None
 
         def _build(pretrained: bool = True, **build_kwargs):
-            # Accept **kwargs so that ``_load_with_ssl_fallback``'s offline
-            # fallback (which injects ``pretrained=False``) does not raise an
+            # Accept * * kwargs so that ` ` _ 加载 _ with _ ssl _ fallback ` ` ' s offline / Accept **kwargs so that ``_load_with_ssl_fallback``'s offline
+            # fallback ( which injects ` ` 预训练 = False ` ` ) does not raise an / fallback (which injects ``pretrained=False``) does not raise an
             # unexpected-keyword error. Any additional kwargs are forwarded
-            # to ``timm.create_model`` via ``_create_mit_backbone``.
+            # to ` ` timm. create _ 模型 ` ` via ` ` _ create _ mit _ 骨干网络 ` ` / to ``timm.create_model`` via ``_create_mit_backbone``.
             backbone, _name = _create_mit_backbone(pretrained)
             return backbone
 
@@ -109,7 +112,7 @@ class SegFormerMiTEncoder(nn.Module):
         else:
             self.backbone = _build(pretrained=False)
 
-        # Some timm pyramids emit more than 4 features (e.g. stems); keep the
+        # Some timm pyramids emit more than 4 特征 ( e. g. stems ); keep the / Some timm pyramids emit more than 4 features (e.g. stems); keep the
         # deepest 4 to match the SegFormer 4-stage contract.
         all_channels = list(self.backbone.feature_info.channels())
         if len(all_channels) > 4:
@@ -125,7 +128,7 @@ class SegFormerMiTEncoder(nn.Module):
         if self.input_proj is not None:
             x = self.input_proj(x)
         features = list(self.backbone(x))[self._slice]
-        # Ensure BCHW format (some timm models output BHWC).
+        # Ensure BCHW format ( some timm models 输出 BHWC ) / Ensure BCHW format (some timm models output BHWC).
         out: List[torch.Tensor] = []
         for i, f in enumerate(features):
             if f.ndim == 4:

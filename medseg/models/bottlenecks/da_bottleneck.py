@@ -1,4 +1,5 @@
 """Dual Attention (DA) bottleneck — faithful port from
+    Dual Attention (DA) 瓶颈层。
 https://github.com/junfu1115/DANet (Fu et al., CVPR 2019,
 "Dual Attention Network for Scene Segmentation").
 
@@ -27,10 +28,11 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 
 # ====================================================================
-#  PAM_Module — 1:1 from encoding/nn/da_att.py
+# PAM _ 模块 — 1: 1 from encoding / nn / da _ att. py / PAM_Module — 1:1 from encoding/nn/da_att.py
 # ====================================================================
 class PAM_Module(Module):
-    """Position attention module (CVPR 2019, junfu1115/DANet)."""
+    """Position 注意力 模块 ( CVPR 2019, junfu1115 / DANet )。
+        Position attention module (CVPR 2019, junfu1115/DANet)."""
 
     def __init__(self, in_dim):
         super().__init__()
@@ -56,10 +58,11 @@ class PAM_Module(Module):
 
 
 # ====================================================================
-#  CAM_Module — 1:1 from encoding/nn/da_att.py (incl. ``max - energy``)
+# CAM _ 模块 — 1: 1 from encoding / nn / da _ att. py ( incl. ` ` max - energy ` ` ) / CAM_Module — 1:1 from encoding/nn/da_att.py (incl. ``max - energy``)
 # ====================================================================
 class CAM_Module(Module):
-    """Channel attention module (CVPR 2019, junfu1115/DANet)."""
+    """通道 注意力 模块 ( CVPR 2019, junfu1115 / DANet )。
+        Channel attention module (CVPR 2019, junfu1115/DANet)."""
 
     def __init__(self, in_dim):
         super().__init__()
@@ -73,7 +76,7 @@ class CAM_Module(Module):
         proj_key = x.view(m_batchsize, C, -1).permute(0, 2, 1)
         energy = torch.bmm(proj_query, proj_key)
         # Official trick: subtract per-row max for numerical stability so that
-        # the channel similarity matrix focuses on the *relative* differences.
+        # the 通道 similarity 矩阵 focuses on the * 相对的 * differences / the channel similarity matrix focuses on the *relative* differences.
         energy_new = torch.max(energy, -1, keepdim=True)[0].expand_as(energy) - energy
         attention = self.softmax(energy_new)
         proj_value = x.view(m_batchsize, C, -1)
@@ -89,6 +92,7 @@ class CAM_Module(Module):
 @BOTTLENECK_REGISTRY.register("dual_attention")
 class DABottleneck(nn.Module):
     """Dual Attention bottleneck (DANet head, junfu1115/DANet, CVPR 2019).
+        Dual Attention 瓶颈层。
 
     Pipeline reproduced from ``DANetHead`` in
     ``encoding/models/sseg/danet.py``::
@@ -132,9 +136,9 @@ class DABottleneck(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # Project the fused dual-attention feature back to in_channels so that
-        # this module fulfils the project's BOTTLENECK_REGISTRY contract
-        # (input and output channel counts are equal).
+        # Project the fused dual-attention 特征 back to in _ 通道 so that / Project the fused dual-attention feature back to in_channels so that
+        # this 模块 fulfils the project's 瓶颈层 _ 注册表 contract / this module fulfils the project's BOTTLENECK_REGISTRY contract
+        # ( 输入 and 输出 通道 counts are equal ) / (input and output channel counts are equal).
         self.proj_out = nn.Sequential(
             nn.Conv2d(inter_channels, in_channels, 1, bias=False),
             nn.BatchNorm2d(in_channels),
@@ -147,17 +151,17 @@ class DABottleneck(nn.Module):
         return self._out_channels
 
     def forward(self, x):
-        # PAM branch
+        # PAM 分支 / PAM branch
         feat1 = self.conv5a(x)
         sa_feat = self.sa(feat1)
         sa_conv = self.conv51(sa_feat)
 
-        # CAM branch
+        # CAM 分支 / CAM branch
         feat2 = self.conv5c(x)
         sc_feat = self.sc(feat2)
         sc_conv = self.conv52(sc_feat)
 
-        # Fusion (element-wise sum, exactly as in DANetHead)
+        # 融合 ( element-wise sum, exactly as in DANetHead ) / Fusion (element-wise sum, exactly as in DANetHead)
         feat_sum = sa_conv + sc_conv
 
         return self.proj_out(feat_sum)

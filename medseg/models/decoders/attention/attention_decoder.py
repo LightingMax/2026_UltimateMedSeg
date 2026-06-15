@@ -1,4 +1,5 @@
 """Attention UNet Decoder with attention gates.
+    Attention UNet 解码器。
 Reference: Oktay et al. "Attention U-Net: Learning Where to Look for the Pancreas"
 
 Has its own internal skip mechanism (attention gates).
@@ -14,7 +15,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class AttentionGate(nn.Module):
-    """Standard attention gate from Attention U-Net (Oktay et al.)."""
+    """标准 注意力 gate from 注意力 U-Net ( Oktay et al. )。
+        Standard attention gate from Attention U-Net (Oktay et al.)."""
     def __init__(self, F_g, F_l, F_int):
         super().__init__()
         self.W_g = nn.Sequential(nn.Conv2d(F_g, F_int, 1, bias=True), nn.BatchNorm2d(F_int))
@@ -35,6 +37,7 @@ class AttentionGate(nn.Module):
 @DECODER_REGISTRY.register("attention")
 class AttentionDecoder(nn.Module):
     """Attention UNet decoder with built-in attention gates on skip connections.
+        Attention UNet 解码器。
 
     External skip_connection is IGNORED - attention gates ARE the skip mechanism.
     """

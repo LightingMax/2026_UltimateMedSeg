@@ -1,6 +1,7 @@
-# Reference: https://github.com/Junelin2333/LanGuideMedSeg-MICCAI2023
+# 参考: https: / / github. com / Junelin2333 / LanGuideMedSeg-MICCAI 2023 / Reference: https://github.com/Junelin2333/LanGuideMedSeg-MICCAI2023
 # Paper:     https://arxiv.org/abs/2307.03942
 """LanGuideMedSeg (Ariadne's Thread, MICCAI 2023) -- text-guided medical segmentation.
+    LanGuideMedSeg ( Ariadne's Thread, MICCAI 2023 ) - - text-guided 医学的 分割。
 
 Re-implementation following the paper (Zhong et al., "Ariadne's Thread:
 Using Text Prompts to Improve Segmentation of Infected Areas from Chest
@@ -46,12 +47,13 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 # ---------------------------------------------------------------------------
-# layers.py 1:1 port
+# layers. py 1: 1 移植 / layers.py 1:1 port
 # ---------------------------------------------------------------------------
 
 
 class PositionalEncoding(nn.Module):
-    """1:1 port of utils.layers.PositionalEncoding."""
+    """1: 1 移植 of utils. layers. PositionalEncoding。
+        1:1 port of utils.layers.PositionalEncoding."""
 
     def __init__(self, d_model: int, dropout: float = 0.0, max_len: int = 5000) -> None:
         super().__init__()
@@ -70,7 +72,8 @@ class PositionalEncoding(nn.Module):
 
 
 class GuideDecoderLayer(nn.Module):
-    """1:1 port of utils.layers.GuideDecoderLayer."""
+    """1: 1 移植 of utils. layers. GuideDecoderLayer。
+        1:1 port of utils.layers.GuideDecoderLayer."""
 
     def __init__(self, in_channels: int, output_text_len: int, input_text_len: int = 24, embed_dim: int = 768):
         super().__init__()
@@ -121,7 +124,8 @@ class GuideDecoderLayer(nn.Module):
 
 
 class GuideDecoder(nn.Module):
-    """1:1 port of utils.layers.GuideDecoder."""
+    """1: 1 移植 of utils. layers. GuideDecoder。
+        1:1 port of utils.layers.GuideDecoder."""
 
     def __init__(self, in_channels, out_channels, spatial_size, text_len) -> None:
         super().__init__()
@@ -149,6 +153,7 @@ class GuideDecoder(nn.Module):
 
 class BERTModel(nn.Module):
     """Text encoder block from the paper: a frozen HuggingFace BERT (the
+        Text 编码器。
     paper uses ``microsoft/BiomedVLP-CXR-BERT-specialized``) followed by a
     small projection head used for the contrastive loss.
 
@@ -171,7 +176,7 @@ class BERTModel(nn.Module):
             nn.GELU(),
             nn.Linear(project_dim, project_dim),
         )
-        # freeze the parameters (upstream behaviour)
+        # freeze the 参数 ( upstream behaviour ) / freeze the parameters (upstream behaviour)
         for param in self.model.parameters():
             param.requires_grad = False
 
@@ -191,6 +196,7 @@ class BERTModel(nn.Module):
 
 class VisionModel(nn.Module):
     """Vision encoder block from the paper: a ConvNeXt-tiny (the paper uses
+        Vision 编码器。
     ``facebook/convnext-tiny-224``) producing 4 hierarchical feature maps
     consumed by the multi-scale Guide-Decoders.
 
@@ -218,12 +224,13 @@ class VisionModel(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# main model
+# main 模型 / main model
 # ---------------------------------------------------------------------------
 
 
 class LanGuideMedSeg(nn.Module):
     """1:1 port of utils.model.LanGuideMedSeg.
+        1: 1 移植 of utils. 模型. LanGuideMedSeg。
 
     Args mirror upstream:
         bert_type:   HF model id for text encoder (e.g.
@@ -274,6 +281,7 @@ class LanGuideMedSeg(nn.Module):
 
     def forward(self, image: torch.Tensor, text: Any | None = None):
         """forward(image, text).
+            前向传播 ( 图像, text )。
 
         Args:
             image: (B, C, 224, 224); 1-channel inputs are repeated to 3 channels

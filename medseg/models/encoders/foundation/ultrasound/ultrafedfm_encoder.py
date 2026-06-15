@@ -1,4 +1,5 @@
 """UltraFedFM ultrasound foundation-model encoder.
+    UltraFedFM ultrasound foundation-model 编码器。
 
 Reference:
     Jiang et al., "From pretraining to privacy: federated ultrasound
@@ -41,12 +42,13 @@ _NUM_LAYERS = 12
 _NUM_HEADS = 12
 _INTERMEDIATE_SIZE = 3072  # 4 * embed_dim
 
-# MAE / federated checkpoint key prefixes to strip.
+# MAE / federated 检查点 key prefixes to strip / MAE / federated checkpoint key prefixes to strip.
 _PREFIX_STRIP = ("module.", "encoder.", "model.", "mae.", "backbone.")
 
 
 def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
     """Build a HF ViTModel skeleton (ViT-B/16) and load UltraFedFM weights.
+        Build a HF ViTModel skeleton ( ViT-B / 16 ) and 加载 UltraFedFM 权重。
 
     Returns a ``HuggingFaceViTWrapper``-compatible module.
     """
@@ -98,7 +100,7 @@ def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
                 break
         cleaned[nk] = v
     state = cleaned
-    # Remove decoder / MAE-specific keys.
+    # Remove 解码器 / Remove decoder / MAE-specific keys.
     state = {k: v for k, v in state.items()
              if not any(skip in k for skip in ("decoder", "mask_token", "head", "neck"))}
 
@@ -114,6 +116,7 @@ def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
 @ENCODER_REGISTRY.register("ultrafedfm")
 class UltraFedFMEncoder(BaseFoundationEncoder):
     """UltraFedFM federated ultrasound encoder (MAE ViT-B/16, ``embed_dim=768``).
+        UltraFedFM federated ultrasound 编码器。
 
     Parameters
     ----------
@@ -143,7 +146,7 @@ class UltraFedFMEncoder(BaseFoundationEncoder):
                          freeze=freeze, unfreeze_last_n=unfreeze_last_n,
                          inference_only=inference_only, **kwargs)
 
-        # Channel adapter for non-RGB inputs.
+        # 通道 适配器 for non-RGB inputs / Channel adapter for non-RGB inputs.
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
@@ -166,7 +169,7 @@ class UltraFedFMEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -189,7 +192,7 @@ class UltraFedFMEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

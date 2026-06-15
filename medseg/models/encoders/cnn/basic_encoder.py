@@ -1,4 +1,5 @@
 """Basic convolutional encoder (vanilla UNet-style).
+    Basic convolutional 编码器。
 
 A simple 4-stage convolutional encoder without pretrained weights.
 Each stage: DoubleConv (Conv3x3-BN-ReLU × 2) → MaxPool2x2.
@@ -14,7 +15,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 class DoubleConv(nn.Module):
-    """Two consecutive Conv3x3-BN-ReLU blocks."""
+    """两个连续 Conv3x3-BN-ReLU blocks。
+        Two consecutive Conv3x3-BN-ReLU blocks."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -34,6 +36,7 @@ class DoubleConv(nn.Module):
 @ENCODER_REGISTRY.register("basic")
 class BasicEncoder(nn.Module):
     """Vanilla UNet encoder with 4 down-sampling stages.
+        Vanilla UNet 编码器。
 
     Architecture:
         in → DoubleConv(in, 64) → pool → DoubleConv(64, 128) → pool →

@@ -26,8 +26,8 @@ class Registry:
             return self._registry[key]
 
         # 动态 timm 支持：以 timm_ 开头的 encoder 名自动创建 wrapper 类
-        # Dynamic timm support: encoder names starting with timm_ are
-        # auto-resolved to a TimmEncoder wrapper without pre-registration.
+        # Dynamic timm support: 编码器 / Dynamic timm support: encoder names starting with timm_ are
+        # auto-resolved to a TimmEncoder 封装器 without pre-registration / auto-resolved to a TimmEncoder wrapper without pre-registration.
         if self.name == "encoders" and key.startswith("timm_") and key != "timm":
             timm_model_name = key[5:]  # 去掉 "timm_" 前缀 / strip "timm_" prefix
             return self._make_timm_class(key, timm_model_name)

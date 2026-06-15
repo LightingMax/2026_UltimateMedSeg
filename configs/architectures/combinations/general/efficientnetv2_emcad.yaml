@@ -1,10 +1,10 @@
-# Architecture combination: encoder=efficientnetv2 + decoder=emcad
-# 架构组合：编码器=EfficientNetV2 + 解码器=EMCAD
+# Architecture combination: encoder=timm_efficientnetv2_s + decoder=emcad
+# 架构组合：编码器=timm_efficientnetv2_s + 解码器=EMCAD
 model:
   num_classes: 2
   img_size: 288
   encoder:
-    name: efficientnetv2
+    name: timm_efficientnetv2_s
     in_channels: 3
     pretrained: true
     params: {}

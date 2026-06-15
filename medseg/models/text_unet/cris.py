@@ -1,8 +1,9 @@
 # CRIS (CVPR 2022)
-# Reference: https://github.com/DerrickWang005/CRIS.pytorch
+# 参考: https: / / github. com / DerrickWang005 / CRIS. pytorch / Reference: https://github.com/DerrickWang005/CRIS.pytorch
 # Paper: https://arxiv.org/abs/2111.15174
 # Implemented from paper formulas; not a copy of the official repo.
 """CRIS: CLIP-Driven Referring Image Segmentation.
+    CRIS: CLIP-Driven Referring 图像 分割。
 
 Algorithm (faithful to the paper, NOT copied from the repo):
 
@@ -45,7 +46,7 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 # ---------------------------------------------------------------------------
-# optional HF dependency
+# 可选 HF dependency / optional HF dependency
 # ---------------------------------------------------------------------------
 try:
     from transformers import CLIPModel, CLIPTokenizer  # type: ignore
@@ -55,10 +56,11 @@ except Exception:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Visual backbone (torchvision ResNet50, 1:1 stage signature with CLIP-RN50)
+# Visual 骨干网络 ( torchvision ResNet50, 1: 1 阶段 signature with CLIP-RN 50 ) / Visual backbone (torchvision ResNet50, 1:1 stage signature with CLIP-RN50)
 # ---------------------------------------------------------------------------
 class _ResNet50Backbone(nn.Module):
-    """ResNet-50 stages: C2(/8) C3(/16) C4(/32). Output channels (512, 1024, 2048)."""
+    """ResNet - 50 阶段: C2 ( / 8 ) C3 ( / 16 ) C4 ( / 32 ). 输出 通道 ( 512, 1024, 2048 )。
+        ResNet-50 stages: C2(/8) C3(/16) C4(/32). Output channels (512, 1024, 2048)."""
 
     out_channels = (512, 1024, 2048)
 
@@ -88,7 +90,7 @@ class _ResNet50Backbone(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Text encoder (CLIP-style Transformer, optionally seeded from HF CLIP)
+# Text 编码器 / Text encoder (CLIP-style Transformer, optionally seeded from HF CLIP)
 # ---------------------------------------------------------------------------
 class _CLIPTextEncoder(nn.Module):
     """CLIP-style text transformer.
@@ -139,7 +141,7 @@ class _CLIPTextEncoder(nn.Module):
                 "transformers is required for CRIS(pretrained=True). "
                 "Install: pip install transformers"
             )
-        # strict load — no silent fallback
+        # strict 加载 — no silent fallback / strict load — no silent fallback
         hf = hf_from_pretrained(CLIPModel, hf_name)
         text_model = hf.text_model
         with torch.no_grad():
@@ -153,7 +155,8 @@ class _CLIPTextEncoder(nn.Module):
         return mask
 
     def forward(self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None):
-        """input_ids: (B, L). Returns word_feats (B, L, D_proj) and sent_feat (B, D_proj)."""
+        """输入 _ ids: ( B, L ). 返回 word _ feats ( B, L, D _ proj ) and sent _ feat ( B, D _ proj )。
+            input_ids: (B, L). Returns word_feats (B, L, D_proj) and sent_feat (B, D_proj)."""
         B, L = input_ids.shape
         if L > self.context_length:
             raise ValueError(f"input_ids length {L} exceeds context_length {self.context_length}")
@@ -162,8 +165,8 @@ class _CLIPTextEncoder(nn.Module):
         kpm = (attention_mask == 0) if attention_mask is not None else None
         x = self.transformer(x, mask=causal, src_key_padding_mask=kpm)
         x = self.ln_final(x)
-        # sentence pooling: argmax position of input_ids (per CLIP convention,
-        # the eot_token has the largest id within a tokenised caption)
+        # sentence 池化: argmax position of 输入 _ ids ( per CLIP convention / sentence pooling: argmax position of input_ids (per CLIP convention,
+        # the eot _ 标记 has the largest id within a tokenised caption ) / the eot_token has the largest id within a tokenised caption)
         eot = input_ids.argmax(dim=-1)
         sent = x[torch.arange(B, device=x.device), eot]
         sent = sent @ self.text_projection  # (B, embed_dim)
@@ -172,7 +175,7 @@ class _CLIPTextEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Cross-Modal Neck (FPN with text-fusion at the deepest stage)
+# Cross-Modal Neck ( FPN with text-fusion at the deepest 阶段 ) / Cross-Modal Neck (FPN with text-fusion at the deepest stage)
 # ---------------------------------------------------------------------------
 class _CrossModalNeck(nn.Module):
     def __init__(self, in_channels=(512, 1024, 2048), out_channels: int = 512, text_dim: int = 512):
@@ -197,7 +200,7 @@ class _CrossModalNeck(nn.Module):
         )
 
     def forward(self, c2, c3, c4, sent_feat):
-        # broadcast sentence feature over deepest map
+        # broadcast sentence 特征 over deepest 映射 / broadcast sentence feature over deepest map
         B, _, H, W = c4.shape
         s = self.text_proj(sent_feat).view(B, -1, 1, 1).expand(-1, -1, H, W)
         m4 = self.fuse4(torch.cat([c4, s], dim=1))
@@ -207,7 +210,7 @@ class _CrossModalNeck(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Vision-Language Decoder (transformer cross-attn: visual Q, text K/V)
+# Vision-Language 解码器 / Vision-Language Decoder (transformer cross-attn: visual Q, text K/V)
 # ---------------------------------------------------------------------------
 class _VLDecoderLayer(nn.Module):
     def __init__(self, d_model: int = 512, n_heads: int = 8):
@@ -222,7 +225,7 @@ class _VLDecoderLayer(nn.Module):
         )
 
     def forward(self, v_tokens: torch.Tensor, t_tokens: torch.Tensor, t_mask: Optional[torch.Tensor] = None):
-        # v_tokens: (B, HW, D); t_tokens: (B, L, D); t_mask: (B, L) where 1=keep
+        # v _ 标记: ( B, HW, D ); t _ 标记: ( B, L, D ); t _ 掩码: ( B, L ) where 1 = keep / v_tokens: (B, HW, D); t_tokens: (B, L, D); t_mask: (B, L) where 1=keep
         x = v_tokens
         y, _ = self.self_attn(self.norm1(x), self.norm1(x), self.norm1(x))
         x = x + y
@@ -252,10 +255,11 @@ class _VLDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class CRIS(nn.Module):
     """CRIS: CLIP-Driven Referring Image Segmentation.
+        CRIS: CLIP-Driven Referring 图像 分割。
 
     Args mirror paper hyper-parameters:
         in_channels:  input image channels.
@@ -307,15 +311,15 @@ class CRIS(nn.Module):
         )
         self.vl_decoder = _VLDecoder(d_model=neck_dim, n_heads=n_heads, n_layers=n_dec_layers)
 
-        # Projector (paper: per-pixel embedding head)
+        # Projector ( paper: per-pixel 嵌入 头部 ) / Projector (paper: per-pixel embedding head)
         self.projector = nn.Sequential(
             nn.Conv2d(neck_dim, neck_dim, 3, 1, 1, bias=False),
             nn.BatchNorm2d(neck_dim), nn.ReLU(inplace=True),
             nn.Conv2d(neck_dim, embed_dim, 1),
         )
-        # Per-class sentence projection W_s (broadcast to a tensor of size
+        # Per-class sentence projection W _ s ( broadcast to a 张量 of 大小 / Per-class sentence projection W_s (broadcast to a tensor of size
         # (num_classes, embed_dim)).  When the caller doesn't pass text, we
-        # also keep a learnable class embedding to drive the model.
+        # also keep a learnable class 嵌入 to drive the 模型 / also keep a learnable class embedding to drive the model.
         self.W_s = nn.Linear(embed_dim, embed_dim, bias=False)
         self.class_text_embedding = nn.Parameter(torch.zeros(num_classes, embed_dim))
         nn.init.trunc_normal_(self.class_text_embedding, std=0.02)
@@ -325,6 +329,7 @@ class CRIS(nn.Module):
     # ------------------------------------------------------------------
     def _resolve_text(self, image: torch.Tensor, text: Any):
         """Return (word_feats, sent_feats_per_class) where:
+            返回 ( word _ feats, sent _ feats _ per _ class ) where。
             word_feats: (B, L, D) used by the VL decoder
             sent_feats_per_class: (B, num_classes, D) — one sentence per class
         """
@@ -337,7 +342,7 @@ class CRIS(nn.Module):
                 self._auto_text = AutoTextEncoder("openai/clip-vit-base-patch32", max_length=77, tokenizer_type="clip")
             text = self._auto_text(text, device=image.device, batch_size=image.shape[0])
         if text is None:
-            # learnable class embeddings broadcast across batch
+            # learnable class 嵌入 broadcast across 批次 / learnable class embeddings broadcast across batch
             sent = self.class_text_embedding.unsqueeze(0).expand(B, -1, -1)
             word = sent  # use the same vectors as word features
             return word, sent, None
@@ -348,12 +353,12 @@ class CRIS(nn.Module):
             if mask is not None:
                 mask = mask.to(device).long()
             words, sent = self.text(ids, mask)
-            # single sentence per sample -> broadcast to num_classes
+            # single sentence per 样本 - > broadcast to num _ classes / single sentence per sample -> broadcast to num_classes
             sent = sent.unsqueeze(1).expand(-1, self.num_classes, -1)
             return words, sent, mask
 
         if isinstance(text, torch.Tensor):
-            # accept pre-computed sentence embeddings (B, num_classes, D) or
+            # accept pre-computed sentence 嵌入 ( B, num _ classes, D ) or / accept pre-computed sentence embeddings (B, num_classes, D) or
             # (num_classes, D)
             t = text.to(device)
             if t.dim() == 2:
@@ -377,6 +382,7 @@ class CRIS(nn.Module):
 
     def forward(self, image: torch.Tensor, text: Any = None) -> torch.Tensor:
         """forward(image, text=None) -> (B, num_classes, H, W) mask logits.
+            前向传播 ( 图像, text = None ) - > ( B, num _ classes, H, W ) 掩码 logits。
 
         ``text`` may be:
             * None — use learnable class embeddings.
@@ -393,18 +399,18 @@ class CRIS(nn.Module):
         word, sent_per_class, t_mask = self._resolve_text(image, text)
 
         # ------ Cross-Modal Neck (uses class-averaged sentence as the
-        # broadcast signal — multi-class predictions still happen at the
-        # contrastive head)
+        # broadcast signal — 多类的 预测 still happen at the / broadcast signal — multi-class predictions still happen at the
+        # 对比的 头部 ) / contrastive head)
         sent_pool = sent_per_class.mean(dim=1)
         F_m = self.neck(c2, c3, c4, sent_pool)         # (B, neck_dim, H/8, W/8)
 
-        # ------ Vision-Language Decoder
+        # ------ Vision-Language 解码器 / ------ Vision-Language Decoder
         B, D, Hm, Wm = F_m.shape
         v_tokens = F_m.flatten(2).transpose(1, 2)       # (B, Hm*Wm, D)
         v_tokens = self.vl_decoder(v_tokens, word, t_mask)
         F_m = v_tokens.transpose(1, 2).reshape(B, D, Hm, Wm)
 
-        # ------ Projector + contrastive head
+        # - - - - - - Projector + 对比的 头部 / ------ Projector + contrastive head
         F_p = self.projector(F_m)                       # (B, D, Hm, Wm)
         F_p = F.normalize(F_p, dim=1)
 
@@ -415,7 +421,7 @@ class CRIS(nn.Module):
         sim = torch.einsum("bcd,bdhw->bchw", sent_proj, F_p)
         sim = sim * self.logit_scale.exp()
 
-        # Upsample to input resolution (paper uses 4× upsample)
+        # 上采样 to 输入 分辨率 ( paper uses 4 × 上采样 ) / Upsample to input resolution (paper uses 4× upsample)
         logits = F.interpolate(sim, size=(H, W), mode="bilinear", align_corners=False)
         return logits
 

@@ -1,4 +1,5 @@
 """MUSK pathology foundation-model encoder.
+    MUSK pathology foundation-model 编码器。
 
 Reference: Xiang et al. (Bo Wang lab), "A vision-language foundation model for
 computational pathology", Nature Methods, 2024.
@@ -36,6 +37,7 @@ PRIMARY_BACKBONE_NAME = _PRIMARY_HF_NAME
 @ENCODER_REGISTRY.register("musk")
 class MUSKEncoder(BaseFoundationEncoder):
     """MUSK (pathology BEiT-3 ViT-L/16) encoder with DPT-style multi-block pyramid.
+        MUSK (pathology BEiT-3 ViT-L/16) 编码器。
 
     The vision tower is a BEiT-3 ViT-Large/16 (``embed_dim=1024``,
     ``patch_size=16``) pretrained at ``384x384`` on a large pathology
@@ -60,7 +62,7 @@ class MUSKEncoder(BaseFoundationEncoder):
                          inference_only=inference_only, **kwargs)
 
         # ------------------------------------------------------------------
-        # Backbone (MUSK) — loaded via transformers AutoModel
+        # 骨干网络 ( MUSK ) — loaded via transformers AutoModel / Backbone (MUSK) — loaded via transformers AutoModel
         # ------------------------------------------------------------------
         if pretrained:
             try:
@@ -71,8 +73,8 @@ class MUSKEncoder(BaseFoundationEncoder):
                     model_cls_name="AutoModel",
                 )
             except Exception:
-                # Fallback: download vision weights from the full MUSK model
-                # and load into a fresh HF ViT-L/16 skeleton.
+                # Fallback: download vision 权重 from the full MUSK 模型 / Fallback: download vision weights from the full MUSK model
+                # and 加载 into a fresh HF ViT-L / 16 skeleton / and load into a fresh HF ViT-L/16 skeleton.
                 import transformers
                 _skel = transformers.ViTModel(transformers.ViTConfig(
                     hidden_size=1024, num_hidden_layers=24,
@@ -111,7 +113,7 @@ class MUSKEncoder(BaseFoundationEncoder):
         # DPT-style multi-block projector
         # ------------------------------------------------------------------
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -133,7 +135,7 @@ class MUSKEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

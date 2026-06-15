@@ -1,4 +1,5 @@
 """ViT Pyramid Adapter: converts single-resolution ViT features to multi-scale pyramid.
+    ViT 金字塔 适配器: converts single-resolution ViT 特征 to 多尺度 金字塔。
 
 For Vision Transformers (DINO, CLIP, SAM, etc.) that output a single spatial resolution,
 this wrapper progressively downsamples the features to create a UNet-compatible pyramid.
@@ -23,6 +24,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 class ViTPyramidAdapter(nn.Module):
     """Progressive downsampling adapter to convert single-res ViT features to pyramid.
+        Progressive 下采样 适配器 to convert single-res ViT 特征 to 金字塔。
 
     Takes the ViT output at a single resolution and progressively applies
     stride-2 convolutions to create a feature pyramid at multiple scales.
@@ -44,17 +46,17 @@ class ViTPyramidAdapter(nn.Module):
         super().__init__()
         self.pyramid_scales = pyramid_scales
 
-        # Determine target channels
+        # Determine 目标 通道 / Determine target channels
         if out_channels is not None:
             assert len(out_channels) == pyramid_scales, \
                 f"out_channels len={len(out_channels)} != pyramid_scales={pyramid_scales}"
             target_chs = out_channels
         else:
-            # Default: double channels at each level
+            # 默认值: double 通道 at each level / Default: double channels at each level
             target_chs = [in_channels * (2 ** i) for i in range(pyramid_scales)]
 
-        # Progressive downsampling layers
-        # First layer: channel projection for stage 0 (high-res)
+        # Progressive 下采样 layers / Progressive downsampling layers
+        # First 层: 通道 projection for 阶段 0 ( high-res ) / First layer: channel projection for stage 0 (high-res)
         self.projection = None
         if target_chs[0] != in_channels:
             self.projection = nn.Conv2d(in_channels, target_chs[0], 1, bias=False)
@@ -69,14 +71,15 @@ class ViTPyramidAdapter(nn.Module):
             ))
             prev_ch = target_chs[i + 1]
 
-        # Output channels at each pyramid level
+        # 输出 通道 at each 金字塔 level / Output channels at each pyramid level
         self._out_channels = [target_chs[0]]
         for i in range(pyramid_scales - 1):
             self._out_channels.append(target_chs[i + 1])
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        """Create pyramid from single-resolution input."""
-        # Project channels for stage 0 if needed
+        """Create 金字塔 from single-resolution 输入。
+            Create pyramid from single-resolution input."""
+        # Project 通道 for 阶段 0 if needed / Project channels for stage 0 if needed
         x = self.projection(x) if self.projection is not None else x
         features = [x]
         for ds in self.downsample:
@@ -90,6 +93,7 @@ class ViTPyramidAdapter(nn.Module):
 
 class VitPyramidEncoder(nn.Module):
     """ViT encoder with pyramid adapter for UNet compatibility.
+        ViT 编码器。
 
     Combines a timm ViT model (via features_only) with a progressive
     downsampling adapter to produce multi-scale features suitable for
@@ -122,7 +126,7 @@ class VitPyramidEncoder(nn.Module):
     ):
         super().__init__()
 
-        # Create timm ViT with features_only
+        # Create timm ViT with 特征 _ only / Create timm ViT with features_only
         create_kwargs = dict(
             model_name=model_name,
             pretrained=pretrained,
@@ -144,7 +148,7 @@ class VitPyramidEncoder(nn.Module):
         self.vit = timm.create_model(**create_kwargs)
         vit_channels = self.vit.feature_info.channels()[-1]  # Use last stage channels
 
-        # Pyramid adapter
+        # 金字塔 适配器 / Pyramid adapter
         self.adapter = ViTPyramidAdapter(vit_channels, pyramid_scales, out_channels)
 
     @property
@@ -153,25 +157,27 @@ class VitPyramidEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Extract multi-scale features.
+            提取 多尺度 特征。
 
         Returns:
             List of feature tensors from high-res to low-res.
         """
-        # Get single-resolution features from ViT
+        # Get single-resolution 特征 from ViT / Get single-resolution features from ViT
         vit_features = self.vit(x)
-        # Use the deepest feature (last in the list)
+        # Use the deepest 特征 ( last in the list ) / Use the deepest feature (last in the list)
         deepest = vit_features[-1]
 
-        # Convert to pyramid
+        # Convert to 金字塔 / Convert to pyramid
         return self.adapter(deepest)
 
 
 # ============================================================
-# Register ViT pyramid encoders for popular pretrained models
+# 注册 ViT 金字塔 encoders for popular 预训练 models / Register ViT pyramid encoders for popular pretrained models
 # ============================================================
 
 def _register_vit_pyramid(registry_name: str, timm_model_name: str, pyramid_scales: int = 4):
-    """Helper to register a ViT pyramid encoder."""
+    """Helper to register a ViT pyramid 编码器。
+        Helper to register a ViT pyramid encoder."""
 
     @ENCODER_REGISTRY.register(registry_name)
     class _VitPyramidEnc(VitPyramidEncoder):
@@ -214,22 +220,22 @@ _register_vit_pyramid("timm_vit_dinov3_huge_plus", "vit_huge_plus_patch16_dinov3
 _register_vit_pyramid("timm_vit_dinov3_7b", "vit_7b_patch16_dinov3.lvd1689m")
 
 # --- CLIP ViT ---
-# WARNING: the _ft_in1k variants have been fine-tuned on ImageNet classification,
-# which BREAKS the original CLIP vision-text alignment space.
-# Use these only for pure classification / non-text-guided tasks.
+# 警告: the _ ft _ in1k variants have been fine-tuned on ImageNet 分类 / WARNING: the _ft_in1k variants have been fine-tuned on ImageNet classification,
+# which BREAKS the original CLIP vision-text 对齐 space / which BREAKS the original CLIP vision-text alignment space.
+# Use these only for 纯 分类 / non-text-guided tasks / Use these only for pure classification / non-text-guided tasks.
 _register_vit_pyramid("timm_vit_clip_base", "vit_base_patch16_clip_224.laion2b_ft_in1k")
 _register_vit_pyramid("timm_vit_clip_large", "vit_large_patch14_clip_224.openai_ft_in12k_in1k")
 _register_vit_pyramid("timm_vit_clip_huge", "vit_huge_patch14_clip_224.laion2b_ft_in1k")
 
-# --- CLIP ViT (aligned — original weights, no ImageNet fine-tune) ---
-# These preserve the CLIP contrastive alignment space between visual features
-# and CLIPTextModel embeddings.  Required for text-guided segmentation
-# (TextPromptUNet cross-attention assumes aligned spaces).
+# - - - CLIP ViT ( aligned — original 权重, no ImageNet fine-tune ) - - - / --- CLIP ViT (aligned — original weights, no ImageNet fine-tune) ---
+# These preserve the CLIP 对比的 对齐 space between visual 特征 / These preserve the CLIP contrastive alignment space between visual features
+# and CLIPTextModel 嵌入. Required for text-guided 分割 / and CLIPTextModel embeddings.  Required for text-guided segmentation
+# ( TextPromptUNet 交叉注意力 assumes aligned spaces ) / (TextPromptUNet cross-attention assumes aligned spaces).
 #
 # vit_base_patch32_clip_256: OpenAI ViT-B/32 at native 256×256, embed_dim=512
-#   → matches openai/clip-vit-base-patch32 text encoder (hidden_size=512)
+# → matches openai/clip-vit-base-patch32 text 编码器 / → matches openai/clip-vit-base-patch32 text encoder (hidden_size=512)
 # vit_large_patch14_clip_224: OpenAI ViT-L/14 at 224×224, embed_dim=768
-#   → matches openai/clip-vit-large-patch14 text encoder (hidden_size=768)
+# → matches openai/clip-vit-large-patch14 text 编码器 / → matches openai/clip-vit-large-patch14 text encoder (hidden_size=768)
 _register_vit_pyramid("timm_vit_clip_base_p32_256", "vit_base_patch32_clip_256")
 _register_vit_pyramid("timm_vit_clip_large_p14_224", "vit_large_patch14_clip_224")
 

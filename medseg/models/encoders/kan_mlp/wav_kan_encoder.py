@@ -1,4 +1,5 @@
 """Wav-KAN Encoder.
+    Wav-KAN 编码器。
 
 Standalone encoder extracted from
 ``medseg.models.networks.kan_mlp.wav_kan_unet.WavKANUNet``.
@@ -35,6 +36,7 @@ from medseg.models.networks.kan_mlp.wav_kan_unet import (
 @ENCODER_REGISTRY.register("wav_kan")
 class WavKANEncoder(nn.Module):
     """Wav-KAN encoder.
+        Wav-KAN 编码器。
 
     Returns 5 multi-scale features (shallow -> deep, deepest LAST):
         [t1 @ H/2, t2 @ H/4, t3 @ H/8, t4 @ H/16, t5 @ H/32]
@@ -69,7 +71,7 @@ class WavKANEncoder(nn.Module):
         self.dims = dims
         self.img_size = img_size
 
-        # Optional 1x1 stem for non-RGB inputs.
+        # 可选 1x1 主干 for non-RGB inputs / Optional 1x1 stem for non-RGB inputs.
         if in_channels != 3:
             self.in_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             stem_in = 3
@@ -77,12 +79,12 @@ class WavKANEncoder(nn.Module):
             self.in_proj = nn.Identity()
             stem_in = in_channels
 
-        # ---- Encoder: 3 conv stages (downsample via max-pool in forward) ----
+        # ---- 编码器 / ---- Encoder: 3 conv stages (downsample via max-pool in forward) ----
         self.encoder1 = _ConvLayer(stem_in, dims[0])
         self.encoder2 = _ConvLayer(dims[0], dims[1])
         self.encoder3 = _ConvLayer(dims[1], dims[2])
 
-        # ---- Encoder: 2 Wav-KAN stages (stride-2 patch embed each) ----
+        # ---- 编码器 / ---- Encoder: 2 Wav-KAN stages (stride-2 patch embed each) ----
         self.patch_embed4 = _PatchEmbed(
             dims[2], dims[3], patch_size=3, stride=2)
         self.patch_embed5 = _PatchEmbed(
@@ -92,7 +94,7 @@ class WavKANEncoder(nn.Module):
         self.norm4 = nn.LayerNorm(dims[3])
         self.norm5 = nn.LayerNorm(dims[4])
 
-        # Channel list for each returned feature (deepest LAST).
+        # 通道 list for each returned 特征 ( deepest LAST ) / Channel list for each returned feature (deepest LAST).
         self.out_channels: List[int] = list(dims)
 
         self._pretrained_requested = bool(pretrained)
@@ -101,7 +103,7 @@ class WavKANEncoder(nn.Module):
         x = self.in_proj(x)
         B = x.shape[0]
 
-        # ---- Conv encoder stages ----
+        # ---- Conv 编码器 / ---- Conv encoder stages ----
         out = F.relu(F.max_pool2d(self.encoder1(x), 2, 2))
         t1 = out                                  # dims[0], H/2
         out = F.relu(F.max_pool2d(self.encoder2(out), 2, 2))
@@ -109,14 +111,14 @@ class WavKANEncoder(nn.Module):
         out = F.relu(F.max_pool2d(self.encoder3(out), 2, 2))
         t3 = out                                  # dims[2], H/8
 
-        # ---- Wav-KAN stage 4 ----
+        # - - - - Wav-KAN 阶段 4 - - - - / ---- Wav-KAN stage 4 ----
         out, H, W = self.patch_embed4(out)        # dims[3], H/16
         out = self.block4(out, H, W)
         out = self.norm4(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         t4 = out
 
-        # ---- Wav-KAN bottleneck (stage 5) ----
+        # ---- Wav-KAN 瓶颈层 / ---- Wav-KAN bottleneck (stage 5) ----
         out, H, W = self.patch_embed5(out)        # dims[4], H/32
         out = self.block5(out, H, W)
         out = self.norm5(out)

@@ -1,4 +1,5 @@
 """Timm encoder wrapper — supports ANY model in the timm library as encoder.
+    Timm encoder wrapper — supports ANY model in the timm library as 编码器。
 
 In yaml, write ``name: timm_<timm_model_name>`` (no pre-registration needed).
 
@@ -46,7 +47,8 @@ def _create_timm_features_model(
     create_kwargs: dict,
     img_size: Optional[int],
 ) -> nn.Module:
-    """Create a timm features_only model with cached / HF / optional ModelScope weights."""
+    """Create a timm 特征 _ only 模型 with cached / HF / 可选 ModelScope 权重。
+        Create a timm features_only model with cached / HF / optional ModelScope weights."""
 
     def _build(kwargs: dict) -> nn.Module:
         if img_size is not None:
@@ -99,7 +101,8 @@ def _create_timm_features_model(
 
 
 class TimmEncoder(nn.Module):
-    """Generic timm model feature extractor using ``features_only=True``."""
+    """Generic timm 模型 特征 extractor using ` ` 特征 _ only = True ` `。
+        Generic timm model feature extractor using ``features_only=True``."""
 
     def __init__(
         self,
@@ -153,7 +156,7 @@ def _register_timm_encoder(registry_name: str, timm_model_name: str):
 
 
 # ============================================================
-# Register popular timm encoders
+# 注册 popular timm encoders / Register popular timm encoders
 # ============================================================
 
 _register_timm_encoder("timm_resnet18", "resnet18")

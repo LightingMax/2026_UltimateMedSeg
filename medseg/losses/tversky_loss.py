@@ -1,4 +1,5 @@
-"""Tversky Loss."""
+"""Tversky 损失。
+    Tversky Loss."""
 
 import torch
 import torch.nn as nn
@@ -8,7 +9,8 @@ from medseg.registry import LOSS_REGISTRY
 
 @LOSS_REGISTRY.register("tversky")
 class TverskyLoss(nn.Module):
-    """Tversky loss: generalization of Dice with alpha/beta for FP/FN weighting."""
+    """Tversky 损失。
+        Tversky loss: generalization of Dice with alpha/beta for FP/FN weighting."""
     def __init__(self, alpha=0.3, beta=0.7, smooth=1.0, **kwargs):
         super().__init__()
         self.alpha = alpha
@@ -16,7 +18,8 @@ class TverskyLoss(nn.Module):
         self.smooth = smooth
 
     def forward(self, pred, target):
-        """pred: B,C,H,W  target: B,H,W"""
+        """pred: B, C, H, W 目标: B, H, W。
+            pred: B,C,H,W  target: B,H,W"""
         num_classes = pred.shape[1]
         pred_soft = F.softmax(pred, dim=1)
         target_onehot = F.one_hot(target.long(), num_classes).permute(0, 3, 1, 2).float()

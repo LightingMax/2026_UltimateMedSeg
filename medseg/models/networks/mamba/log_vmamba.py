@@ -1,4 +1,5 @@
 """LoG-VMamba: Local-Global Vision Mamba for Medical Image Segmentation.
+    LoG-VMamba: Local-Global Vision Mamba for 医学的 图像 分割。
 
 Combines local convolution features with global Mamba SSM in a dual-branch
 design for enhanced medical image segmentation.
@@ -16,23 +17,24 @@ from typing import List, Optional
 
 
 class _LoGBlock(nn.Module):
-    """Local-Global block: conv branch + SSM branch fused."""
+    """Local-Global 块: conv 分支 + SSM 分支 fused。
+        Local-Global block: conv branch + SSM branch fused."""
 
     def __init__(self, dim, d_state=16):
         super().__init__()
-        # Local branch: conv
+        # 局部的 分支: conv / Local branch: conv
         self.local_norm = nn.BatchNorm2d(dim)
         self.local_conv = nn.Sequential(
             nn.Conv2d(dim, dim, 3, 1, 1, groups=dim),
             nn.GELU(),
             nn.Conv2d(dim, dim, 1),
         )
-        # Global branch: SSM-like
+        # 全局的 分支: SSM-like / Global branch: SSM-like
         self.global_norm = nn.LayerNorm(dim)
         self.global_proj = nn.Linear(dim, dim * 2)
         self.global_gate = nn.Sigmoid()
         self.global_out = nn.Linear(dim, dim)
-        # Fusion
+        # 融合 / Fusion
         self.fuse = nn.Conv2d(dim * 2, dim, 1)
         self.ffn = nn.Sequential(
             nn.LayerNorm(dim),
@@ -42,15 +44,15 @@ class _LoGBlock(nn.Module):
     def forward(self, x):
         B, C, H, W = x.shape
         res = x
-        # Local
+        # 局部的 / Local
         local_feat = self.local_conv(self.local_norm(x))
-        # Global
+        # 全局的 / Global
         tokens = x.flatten(2).transpose(1, 2)
         kv = self.global_proj(self.global_norm(tokens))
         k, v = kv.chunk(2, dim=-1)
         global_out = self.global_out(self.global_gate(k) * v)
         global_feat = global_out.transpose(1, 2).view(B, C, H, W)
-        # Fuse
+        # 融合 / Fuse
         fused = self.fuse(torch.cat([local_feat, global_feat], dim=1))
         # FFN
         tokens = fused.flatten(2).transpose(1, 2)

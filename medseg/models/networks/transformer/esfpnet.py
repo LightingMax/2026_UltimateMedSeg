@@ -1,4 +1,5 @@
 """ESFPNet: Efficient Sparse Feature Pyramid Network (2023).
+    ESFPNet: 高效的 稀疏的 特征金字塔 网络 ( 2023 )。
 
 Self-contained port for medical / polyp segmentation. The original work
 (Chang et al., "ESFPNet: efficient deep learning architecture for real-time
@@ -32,8 +33,8 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# Linear Prediction (LP) head from the official ESFPNet repo.
-# Light wrapper: flatten -> Linear -> reshape back to NCHW.
+# Linear 预测 ( LP ) 头部 from the official ESFPNet repo / Linear Prediction (LP) head from the official ESFPNet repo.
+# Light 封装器: 展平 - > Linear - > 重塑 back to NCHW / Light wrapper: flatten -> Linear -> reshape back to NCHW.
 # ---------------------------------------------------------------------------
 class _LP(nn.Module):
     def __init__(self, input_dim: int, embed_dim: int):
@@ -48,7 +49,7 @@ class _LP(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# 1x1 Conv + BN + ReLU fuse module (stand-in for mmcv.cnn.ConvModule).
+# 1x1 Conv + BN + ReLU 融合 模块 ( stand-in for mmcv. cnn. ConvModule ) / 1x1 Conv + BN + ReLU fuse module (stand-in for mmcv.cnn.ConvModule).
 # ---------------------------------------------------------------------------
 class _ConvBNReLU(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 1):
@@ -63,8 +64,8 @@ class _ConvBNReLU(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Hierarchical Transformer encoder via timm. MiT-B2 channels = pvt_v2_b2
-# channels = [64, 128, 320, 512] with strides [4, 8, 16, 32].
+# Hierarchical Transformer 编码器 / Hierarchical Transformer encoder via timm. MiT-B2 channels = pvt_v2_b2
+# 通道 = [ 64, 128, 320, 512 ] with strides [ 4, 8, 16, 32 ] / channels = [64, 128, 320, 512] with strides [4, 8, 16, 32].
 # ---------------------------------------------------------------------------
 def _build_backbone(in_channels: int = 3, pretrained: bool = True):
     import timm
@@ -81,10 +82,11 @@ def _build_backbone(in_channels: int = 3, pretrained: bool = True):
 
 
 # ---------------------------------------------------------------------------
-# Public model.
+# Public 模型 / Public model.
 # ---------------------------------------------------------------------------
 class ESFPNet(nn.Module):
     """Efficient Sparse Feature Pyramid Network.
+        高效的 稀疏的 特征金字塔 网络。
 
     Args:
         in_channels: number of input channels (default 3).
@@ -107,39 +109,39 @@ class ESFPNet(nn.Module):
         self.num_classes = num_classes
         self.img_size = img_size
 
-        # Hierarchical Transformer encoder. Channel widths match MiT-B2.
+        # Hierarchical Transformer 编码器 / Hierarchical Transformer encoder. Channel widths match MiT-B2.
         self.backbone = _build_backbone(in_channels=in_channels,
                                         pretrained=pretrained)
         embed_dims = list(self.backbone.feature_info.channels())
-        # Some backbones may yield >4 stages; we only need the 4 stride-4/8/16/32 ones.
+        # Some backbones may yield > 4 阶段; we only need the 4 步长 - 4 / 8 / 16 / 32 ones / Some backbones may yield >4 stages; we only need the 4 stride-4/8/16/32 ones.
         assert len(embed_dims) >= 4, 'Backbone must expose at least 4 feature stages'
         embed_dims = embed_dims[:4]
         self.embed_dims = embed_dims
 
-        # Determine alignment requirement (pvt_v2/MiT use 4x4 patch + 3 strided
-        # downsamples -> stride 32, so input H/W should be divisible by 32).
+        # Determine 对齐 requirement ( pvt _ v2 / MiT use 4x4 图块 + 3 strided / Determine alignment requirement (pvt_v2/MiT use 4x4 patch + 3 strided
+        # downsamples - > 步长 32, so 输入 H / W should be divisible by 32 ) / downsamples -> stride 32, so input H/W should be divisible by 32).
         self._stride = 32
 
         # --- ESFP decoder ---------------------------------------------------
         c1, c2, c3, c4 = embed_dims
 
-        # Per-stage Linear Prediction heads (same width as input stage).
+        # Per-stage Linear 预测 heads ( same width as 输入 阶段 ) / Per-stage Linear Prediction heads (same width as input stage).
         self.LP_1 = _LP(c1, c1)
         self.LP_2 = _LP(c2, c2)
         self.LP_3 = _LP(c3, c3)
         self.LP_4 = _LP(c4, c4)
 
-        # 1x1 fuse modules combining adjacent levels (top-down path).
+        # 1x1 融合 modules combining adjacent levels ( top-down path ) / 1x1 fuse modules combining adjacent levels (top-down path).
         self.linear_fuse34 = _ConvBNReLU(c3 + c4, c3, kernel_size=1)
         self.linear_fuse23 = _ConvBNReLU(c2 + c3, c2, kernel_size=1)
         self.linear_fuse12 = _ConvBNReLU(c1 + c2, c1, kernel_size=1)
 
-        # Refined Linear Prediction heads after fusion.
+        # Refined Linear 预测 heads after 融合 / Refined Linear Prediction heads after fusion.
         self.LP_12 = _LP(c1, c1)
         self.LP_23 = _LP(c2, c2)
         self.LP_34 = _LP(c3, c3)
 
-        # Final 1x1 prediction across concatenated multi-scale features.
+        # Final 1x1 预测 across concatenated 多尺度 特征 / Final 1x1 prediction across concatenated multi-scale features.
         self.linear_pred = nn.Conv2d(c1 + c2 + c3 + c4, num_classes,
                                      kernel_size=1)
 
@@ -167,7 +169,7 @@ class ESFPNet(nn.Module):
         lp_3 = self.LP_3(out_3)
         lp_4 = self.LP_4(out_4)
 
-        # Top-down fuse with bilinear upsampling and LP refinement.
+        # Top-down 融合 with bilinear 上采样 and LP refinement / Top-down fuse with bilinear upsampling and LP refinement.
         lp_34 = self.LP_34(self.linear_fuse34(torch.cat([
             lp_3,
             F.interpolate(lp_4, size=lp_3.shape[-2:], mode='bilinear',
@@ -186,7 +188,7 @@ class ESFPNet(nn.Module):
                           align_corners=False),
         ], dim=1)))
 
-        # Bring all refined maps to the stride-4 resolution and concat.
+        # Bring all refined 映射 to the 步长 - 4 分辨率 and concat / Bring all refined maps to the stride-4 resolution and concat.
         target_size = lp_12.shape[-2:]
         lp4_resized = F.interpolate(lp_4, size=target_size, mode='bilinear',
                                     align_corners=False)
@@ -198,7 +200,7 @@ class ESFPNet(nn.Module):
         out = self.linear_pred(torch.cat(
             [lp_12, lp2_resized, lp3_resized, lp4_resized], dim=1))
 
-        # Upsample logits back to original input resolution and crop padding.
+        # 上采样 logits back to original 输入 分辨率 and crop 填充 / Upsample logits back to original input resolution and crop padding.
         out = F.interpolate(out, size=(h_in, w_in), mode='bilinear',
                             align_corners=False)
         if (h_in, w_in) != (orig_h, orig_w):

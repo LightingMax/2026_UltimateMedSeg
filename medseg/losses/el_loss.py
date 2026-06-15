@@ -1,4 +1,5 @@
 """Exponential Logarithmic Loss.
+    Exponential Logarithmic 损失。
 
 Faithful reimplementation of:
     Wong et al., "3D Segmentation with Exponential Logarithmic Loss
@@ -25,7 +26,8 @@ from medseg.registry import LOSS_REGISTRY
 
 @LOSS_REGISTRY.register("el_loss")
 class ELLoss(nn.Module):
-    """Exponential Logarithmic Loss (Wong et al., MICCAI 2018)."""
+    """Exponential Logarithmic 损失。
+        Exponential Logarithmic Loss (Wong et al., MICCAI 2018)."""
 
     def __init__(
         self,
@@ -46,7 +48,8 @@ class ELLoss(nn.Module):
         self.ignore_index = ignore_index
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """pred: (B, C, H, W) logits.  target: (B, H, W) long."""
+        """pred: ( B, C, H, W ) logits. 目标: ( B, H, W ) long。
+            pred: (B, C, H, W) logits.  target: (B, H, W) long."""
         B, C, H, W = pred.shape
         target = target.long()
         probs = F.softmax(pred, dim=1)
@@ -64,13 +67,13 @@ class ELLoss(nn.Module):
             intersection = (p_c * t_c).sum()
             denom = p_c.sum() + t_c.sum()
             dice_c = (2.0 * intersection + self.smooth) / (denom + self.smooth)
-            # clamp to (eps, 1) to avoid log(0).
+            # 截断 to ( eps, 1 ) to avoid log ( 0 ) / clamp to (eps, 1) to avoid log(0).
             dice_c = dice_c.clamp(min=self.smooth, max=1.0)
             dice_terms.append((-torch.log(dice_c)).pow(self.gamma_dice))
         L_exp_dice = torch.stack(dice_terms).mean() if dice_terms else pred.new_zeros(())
 
         # ----- L_exp_ce -----
-        # Per-class frequency weight: ( max_freq / freq_c )^0.5
+        # Per-class frequency 权重: ( max _ freq / freq _ c ) ^ 0. 5 / Per-class frequency weight: ( max_freq / freq_c )^0.5
         with torch.no_grad():
             freq = target_oh.sum(dim=(0, 2, 3))
             freq_max = freq.max().clamp_min(1.0)

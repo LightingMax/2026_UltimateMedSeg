@@ -1,4 +1,5 @@
-"""PPM (Pyramid Pooling Module) bottleneck from PSPNet."""
+"""PPM (Pyramid Pooling Module) 瓶颈层。
+    PPM (Pyramid Pooling Module) bottleneck from PSPNet."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -9,7 +10,8 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 @BOTTLENECK_REGISTRY.register("ppm")
 class PPMBottleneck(nn.Module):
-    """Pyramid Pooling Module bottleneck."""
+    """Pyramid Pooling Module 瓶颈层。
+        Pyramid Pooling Module bottleneck."""
     def __init__(self, in_channels, pool_sizes=(1, 2, 3, 6), **kwargs):
         super().__init__()
         out_ch = in_channels // len(pool_sizes)

@@ -1,4 +1,5 @@
 """RWKV-UNet: Improving UNet with Long-Range Cooperation for Medical Image Segmentation.
+    RWKV-UNet: Improving UNet with Long-Range Cooperation for 医学的 图像 分割。
 
 Faithful self-contained port of:
   https://github.com/juntaoJianggavin/RWKV-UNet  (arxiv 2025)
@@ -115,7 +116,8 @@ class SE(nn.Module):
 # ---------------------------------------------------------------------------
 
 def q_shift(input, shift_pixel=1, gamma=1 / 4, patch_resolution=None):
-    """Bidirectional spatial q-shift used by VRWKV_SpatialMix."""
+    """Bidirectional 空间的 q-shift used by VRWKV _ SpatialMix。
+        Bidirectional spatial q-shift used by VRWKV_SpatialMix."""
     assert gamma <= 1 / 4
     B, N, C = input.shape
     H, W = patch_resolution
@@ -211,7 +213,7 @@ class VRWKV_ChannelMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# GLSP (Global-Local Spatial Perception, 1:1 with official)
+# GLSP ( Global-Local 空间的 Perception, 1: 1 with official ) / GLSP (Global-Local Spatial Perception, 1:1 with official)
 # ---------------------------------------------------------------------------
 
 class GLSP(nn.Module):
@@ -250,7 +252,7 @@ class GLSP(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# UpBlock (decoder, 1:1 with official — NO SKAttention)
+# UpBlock ( 解码, 1: 1 with official — NO SKAttention ) / UpBlock (decoder, 1:1 with official — NO SKAttention)
 # ---------------------------------------------------------------------------
 
 class UpBlock(nn.Module):
@@ -290,9 +292,9 @@ class CCMix(nn.Module):
         super().__init__()
         self.in_dims = list(in_dims)
         self.target_dim = target_dim
-        # `target_size` is kept only for backwards compat / introspection;
+        # ` 目标 _ 大小 ` is kept only for 向后 compat / introspection / `target_size` is kept only for backwards compat / introspection;
         # actual interpolation targets are derived per-forward from the
-        # runtime skip tensors so the module works for any input resolution.
+        # runtime 跳跃连接 / runtime skip tensors so the module works for any input resolution.
         self.target_size = target_size
         self.projections = nn.ModuleList(
             [nn.Conv2d(c, target_dim, 1) for c in self.in_dims])
@@ -304,12 +306,12 @@ class CCMix(nn.Module):
             [nn.Conv2d(target_dim, c, 1) for c in self.in_dims])
 
     def forward(self, features):
-        # Capture each skip's original H/W at runtime so chunks can be
-        # restored to the exact shape the decoder expects to concatenate with.
+        # Capture each 跳跃连接 / Capture each skip's original H/W at runtime so chunks can be
+        # restored to the exact shape the 解码器 / restored to the exact shape the decoder expects to concatenate with.
         original_sizes = [tuple(feat.shape[-2:]) for feat in features]
-        # Use the largest (last / shallowest) skip as the common interpolation
-        # target — matches the original behaviour where target_size mirrored
-        # the shallowest encoder feature (img_size // 2 for the default stem).
+        # Use the largest (last / shallowest) 跳跃连接 / Use the largest (last / shallowest) skip as the common interpolation
+        # 目标 — matches the original behaviour where 目标 _ 大小 mirrored / target — matches the original behaviour where target_size mirrored
+        # the shallowest 编码器 / the shallowest encoder feature (img_size // 2 for the default stem).
         target_hw = original_sizes[-1]
 
         upsampled = []
@@ -338,7 +340,7 @@ class CCMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder (T / S / B presets, 1:1 with official RWKV_UNet_encoder)
+# 编码器 ( T / S / B presets, 1: 1 with official RWKV _ UNet _ 编码器 ) / Encoder (T / S / B presets, 1:1 with official RWKV_UNet_encoder)
 # ---------------------------------------------------------------------------
 
 _PRESETS = {
@@ -370,7 +372,7 @@ class _Encoder(nn.Module):
         self.embed_dims = embed_dims
         dprs = [x.item() for x in torch.linspace(0, drop_path, sum(depths))]
 
-        # Stage 0: stem GLSP (no spatial attn, se_ratio=1)
+        # 阶段 0: 主干 GLSP ( no 空间的 attn, se _ 比率 = 1 ) / Stage 0: stem GLSP (no spatial attn, se_ratio=1)
         self.stage0 = nn.ModuleList([GLSP(
             3, stem_dim, norm_in=False, has_skip=False, exp_ratio=1,
             norm_layer=norm_layers[0], act_layer=act_layers[0], dw_ks=dw_kss[0],
@@ -429,7 +431,7 @@ class _Encoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# RWKV_UNet (full model, 1:1 with official)
+# RWKV _ UNet ( full 模型, 1: 1 with official ) / RWKV_UNet (full model, 1:1 with official)
 # ---------------------------------------------------------------------------
 
 class _RWKVUNet(nn.Module):
@@ -449,7 +451,7 @@ class _RWKVUNet(nn.Module):
         self.final_conv = nn.Conv2d(24, num_classes, 1)
 
     def forward(self, x):
-        # Project to 3 channels
+        # Project to 3 通道 / Project to 3 channels
         if x.shape[1] == 1:
             x3 = x.repeat(1, 3, 1, 1)
         elif x.shape[1] == 3:
@@ -460,7 +462,7 @@ class _RWKVUNet(nn.Module):
 
         bottleneck, enc3, enc2, enc1 = self.encoder(x3)
 
-        # CCMix: [deep, mid, shallow] -> fused
+        # CCMix: [ 深度, mid, 浅层 ] - > fused / CCMix: [deep, mid, shallow] -> fused
         enc3_m, enc2_m, enc1_m = self.ccm([enc3, enc2, enc1])
 
         dec3 = self.decoder1(bottleneck)
@@ -472,11 +474,12 @@ class _RWKVUNet(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Public wrapper with standard interface
+# Public 封装器 with 标准 interface / Public wrapper with standard interface
 # ---------------------------------------------------------------------------
 
 class RWKVUNet(nn.Module):
     """RWKV-UNet (arxiv 2025) with standard segmentation interface.
+        RWKV-UNet ( arxiv 2025 ) with 标准 分割 interface。
 
     Args:
         in_channels: Input channels (1 or 3 typical).

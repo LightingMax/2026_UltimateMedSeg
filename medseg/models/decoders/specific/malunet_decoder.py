@@ -1,4 +1,5 @@
 """MALUNet Decoder: 5-stage decoder with DGA + EABlock + Conv.
+    MALUNet Decoder: 5-stage 解码器。
 MALUNet 解码器：5 阶段解码器，前 3 阶段 DGA+EABlock，后 2 阶段 Conv3x3。
 
 Stages / 各阶段:
@@ -12,7 +13,7 @@ Has internal skip connections (additive fusion with encoder features).
 
 out_channels: c_list[0] = 8 (default)
 """
-# Reference: https://github.com/JCruan519/MALUNet
+# 参考: https: / / github. com / JCruan519 / MALUNet / Reference: https://github.com/JCruan519/MALUNet
 
 import math
 import torch
@@ -30,6 +31,7 @@ from medseg.registry import DECODER_REGISTRY
 
 class DepthWiseConv2d(nn.Module):
     """Depthwise separable convolution: depthwise conv + GroupNorm + pointwise conv.
+        Depthwise separable 卷积: depthwise conv + GroupNorm + pointwise conv。
     深度可分离卷积：深度卷积 + GroupNorm + 逐点卷积。
     """
     def __init__(self, dim_in, dim_out, kernel_size=3, padding=1, stride=1, dilation=1):
@@ -49,6 +51,7 @@ class DepthWiseConv2d(nn.Module):
 
 class GatedAttentionUnit(nn.Module):
     """Gated Attention Unit: dual-branch gating + output projection.
+        Gated 注意力 Unit: dual-branch gating + 输出 projection。
     门控注意力单元：双分支门控 + 输出投影。
     """
     def __init__(self, in_c, out_c, kernel_size):
@@ -74,6 +77,7 @@ class GatedAttentionUnit(nn.Module):
 
 class DilatedGatedAttention(nn.Module):
     """Multi-dilation grouped depthwise conv + Gated Attention Unit.
+        Multi-dilation grouped depthwise conv + Gated 注意力 Unit。
     多膨胀率分组深度卷积 + 门控注意力单元。
     """
     def __init__(self, in_c, out_c, k_size=3, dilated_ratio=(7, 5, 2, 1)):
@@ -100,6 +104,7 @@ class DilatedGatedAttention(nn.Module):
 
 class EABlock(nn.Module):
     """External Attention: low-rank linear attention.
+        External 注意力: low-rank linear 注意力。
     外部注意力：低秩线性注意力。
     """
     def __init__(self, in_c):
@@ -132,6 +137,7 @@ class EABlock(nn.Module):
 
 class _ChannelAttBridge(nn.Module):
     """Channel attention bridge for skip connection fusion.
+        Channel attention bridge for 跳跃连接。
     通道注意力桥，用于跳跃连接融合。
     """
     def __init__(self, c_list, split_att='fc'):
@@ -166,6 +172,7 @@ class _ChannelAttBridge(nn.Module):
 
 class _SpatialAttBridge(nn.Module):
     """Spatial attention bridge for skip connection fusion.
+        Spatial attention bridge for 跳跃连接。
     空间注意力桥，用于跳跃连接融合。
     """
     def __init__(self):
@@ -185,6 +192,7 @@ class _SpatialAttBridge(nn.Module):
 
 class SCABridge(nn.Module):
     """Spatial-Channel Attention Bridge for skip connection enhancement.
+        Spatial-Channel Attention Bridge for 跳跃连接。
     空间-通道注意力桥，用于增强跳跃连接。
     """
     def __init__(self, c_list, split_att='fc'):
@@ -210,6 +218,7 @@ class SCABridge(nn.Module):
 @DECODER_REGISTRY.register("malunet")
 class MALUNetDecoder(nn.Module):
     """MALUNet decoder: 5-stage with DGA + EABlock + Conv.
+        MALUNet 解码器。
     MALUNet 解码器：5 阶段，前 3 阶段为注意力模块，后 2 阶段为卷积。
 
     Has internal skip connections (additive fusion).
@@ -243,7 +252,7 @@ class MALUNetDecoder(nn.Module):
 
         self.bridge = bridge
 
-        # Project encoder features to c_list channels if mismatch
+        # Project 编码器 / Project encoder features to c_list channels if mismatch
         self.projections = nn.ModuleList()
         self.bottleneck_proj = None
         if encoder_channels is not None and len(encoder_channels) == 5:
@@ -289,6 +298,7 @@ class MALUNetDecoder(nn.Module):
 
     def _init_weights(self, m):
         """Weight initialization following MALUNet convention.
+            权重 initialization following MALUNet convention。
         按 MALUNet 惯例初始化权重。"""
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
@@ -306,6 +316,7 @@ class MALUNetDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor, skip_features: List[torch.Tensor]) -> torch.Tensor:
         """Decode bottleneck + skip features to output feature map.
+            Decode bottleneck + 跳跃连接。
         将瓶颈特征 + 跳跃连接特征解码为输出特征图。
 
         Args:
@@ -317,7 +328,7 @@ class MALUNetDecoder(nn.Module):
 
         Returns: Decoded feature map (c0 channels). / 解码后的特征图。
         """
-        # Apply projections if encoder channels don't match decoder channels
+        # Apply projections if 编码器 / Apply projections if encoder channels don't match decoder channels
         if self.projections is not None:
             skip_features = [proj(feat) for proj, feat in zip(self.projections, skip_features)]
         if self.bottleneck_proj is not None:

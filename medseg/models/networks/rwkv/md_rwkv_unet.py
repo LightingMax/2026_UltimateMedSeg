@@ -1,4 +1,5 @@
 """MD-RWKV-UNet: Multi-Directional RWKV UNet for Medical Image Segmentation.
+    MD-RWKV-UNet: Multi-Directional RWKV UNet for 医学的 图像 分割。
 
 Faithful self-contained port of:
   https://github.com/fzy-eng/MD-RWKV-UNet  (md_rwkv_unet.py)
@@ -111,7 +112,7 @@ class SE(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# DeformableShift (learnable spatial shift via grid_sample)
+# DeformableShift ( learnable 空间的 shift via grid _ 样本 ) / DeformableShift (learnable spatial shift via grid_sample)
 # ---------------------------------------------------------------------------
 
 class DeformableShift(nn.Module):
@@ -225,7 +226,7 @@ class VRWKV_ChannelMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SKAttention (Selective Kernel Attention)
+# SKAttention ( Selective 卷积核 注意力 ) / SKAttention (Selective Kernel Attention)
 # ---------------------------------------------------------------------------
 
 class SKAttention(nn.Module):
@@ -266,7 +267,7 @@ class SKAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# iR_RWKV (main encoder block: parallel SK + VRWKV branches)
+# iR_RWKV (main 编码器 / iR_RWKV (main encoder block: parallel SK + VRWKV branches)
 # ---------------------------------------------------------------------------
 
 class iR_RWKV(nn.Module):
@@ -337,7 +338,7 @@ class iR_RWKV(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# UpBlock (decoder block with SK attention)
+# UpBlock ( 解码 块 with SK 注意力 ) / UpBlock (decoder block with SK attention)
 # ---------------------------------------------------------------------------
 
 class UpBlock(nn.Module):
@@ -397,11 +398,11 @@ class CCMix(nn.Module):
         self.original_sizes = [target_size // 4, target_size // 2, target_size]
 
     def forward(self, features):
-        # Derive shapes from the actual skip tensors at forward time so the
-        # module works for any input resolution regardless of what
-        # ``target_size`` was passed at construction time.
+        # Derive shapes from the actual 跳跃连接 / Derive shapes from the actual skip tensors at forward time so the
+        # 模块 works for any 输入 分辨率 regardless of what / module works for any input resolution regardless of what
+        # ` ` 目标 _ 大小 ` ` was passed at construction time / ``target_size`` was passed at construction time.
         original_sizes = [tuple(f.shape[-2:]) for f in features]
-        # The shared mixing grid is the largest skip (last entry == enc1).
+        # The shared mixing grid is the largest 跳跃连接 / The shared mixing grid is the largest skip (last entry == enc1).
         target_h, target_w = original_sizes[-1]
 
         upsampled = []
@@ -429,7 +430,7 @@ class CCMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MD_RWKV_UNet Encoder (T / S / B presets, 1:1 with official)
+# MD_RWKV_UNet 编码器 / MD_RWKV_UNet Encoder (T / S / B presets, 1:1 with official)
 # ---------------------------------------------------------------------------
 
 _PRESETS = {
@@ -449,7 +450,8 @@ _SHARED = dict(
 
 
 class _Encoder(nn.Module):
-    """MD_RWKV_UNet_encoder (B/S/T variant)."""
+    """MD _ RWKV _ UNet _ 编码器 ( B / S / T variant )。
+        MD_RWKV_UNet_encoder (B/S/T variant)."""
 
     def __init__(self, variant="b", img_size=224, drop_path=0.05,
                  sk_use=True, sk_reduction=16):
@@ -465,7 +467,7 @@ class _Encoder(nn.Module):
         self.stem_dim = stem_dim
         dprs = [x.item() for x in torch.linspace(0, drop_path, sum(depths))]
 
-        # Stage 0: stem (no spatial attn, no SK, se_ratio=1)
+        # 阶段 0: 主干 ( no 空间的 attn, no SK, se _ 比率 = 1 ) / Stage 0: stem (no spatial attn, no SK, se_ratio=1)
         self.stage0 = nn.ModuleList([iR_RWKV(
             3, stem_dim, norm_in=False, has_skip=False, exp_ratio=1,
             norm_layer=norm_layers[0], act_layer=act_layers[0], dw_ks=dw_kss[0],
@@ -531,7 +533,7 @@ class _Encoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MD_RWKV_UNet (full segmentation model, 1:1 with official)
+# MD _ RWKV _ UNet ( full 分割 模型, 1: 1 with official ) / MD_RWKV_UNet (full segmentation model, 1:1 with official)
 # ---------------------------------------------------------------------------
 
 class _MDRWKVUNet(nn.Module):
@@ -554,7 +556,7 @@ class _MDRWKVUNet(nn.Module):
         self.final_conv = nn.Conv2d(24, num_classes, 1)
 
     def forward(self, x):
-        # Project to 3 channels for encoder
+        # Project to 3 channels for 编码器 / Project to 3 channels for encoder
         if x.shape[1] == 1:
             x3 = x.repeat(1, 3, 1, 1)
         elif x.shape[1] == 3:
@@ -564,7 +566,7 @@ class _MDRWKVUNet(nn.Module):
 
         bottleneck, enc3, enc2, enc1, enc0 = self.encoder(x3)
 
-        # CCMix: [deep, mid, shallow] -> [deep', mid', shallow']
+        # CCMix: [ 深度, mid, 浅层 ] - > [ 深度 ', mid ', 浅层 ' ] / CCMix: [deep, mid, shallow] -> [deep', mid', shallow']
         enc3_m, enc2_m, enc1_m = self.ccm([enc3, enc2, enc1])
 
         dec3 = self.decoder1(bottleneck)
@@ -576,11 +578,12 @@ class _MDRWKVUNet(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Public wrapper with standard interface
+# Public 封装器 with 标准 interface / Public wrapper with standard interface
 # ---------------------------------------------------------------------------
 
 class MDRWKVUNet(nn.Module):
     """MD-RWKV-UNet with standard segmentation interface.
+        MD-RWKV-UNet with 标准 分割 interface。
 
     Args:
         in_channels: Input channels (1 or 3 typical).

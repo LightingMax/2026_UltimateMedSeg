@@ -1,4 +1,5 @@
 """Standard UNet Decoder (Ronneberger et al., MICCAI 2015).
+    Standard UNet 解码器。
 
 Reference: https://github.com/milesial/Pytorch-UNet
 Paper: https://arxiv.org/abs/1505.04597
@@ -15,7 +16,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class _DoubleConv(nn.Module):
-    """Two consecutive 3x3 conv-BN-ReLU blocks (UNet building block)."""
+    """两个连续 3x3 conv-BN-ReLU blocks ( UNet building 块 )。
+        Two consecutive 3x3 conv-BN-ReLU blocks (UNet building block)."""
 
     def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
@@ -35,6 +37,7 @@ class _DoubleConv(nn.Module):
 @DECODER_REGISTRY.register("unet")
 class UNetDecoder(nn.Module):
     """Standard UNet decoder with transposed convolution upsampling.
+        Standard UNet 解码器。
 
     Architecture per stage:
         1. ConvTranspose2d (2x upsample, halve channels)
@@ -64,7 +67,7 @@ class UNetDecoder(nn.Module):
         super().__init__()
         self.skip_connection = skip_connection
 
-        # Decoder stages go from deep to shallow
+        # 解码 阶段 go from 深度 to 浅层 / Decoder stages go from deep to shallow
         skip_channels = list(reversed(encoder_channels))
 
         if decoder_channels is not None:
@@ -79,13 +82,13 @@ class UNetDecoder(nn.Module):
         for i, skip_ch in enumerate(skip_channels):
             out_ch = out_channels_list[i]
 
-            # Transposed convolution for 2x upsample
+            # Transposed 卷积 for 2x 上采样 / Transposed convolution for 2x upsample
             self.up_convs.append(
                 nn.ConvTranspose2d(in_ch, in_ch // 2, kernel_size=2, stride=2)
             )
 
-            # After upconv, channels = in_ch // 2
-            # After concat with skip, channels = in_ch // 2 + skip_ch
+            # After upconv, 通道 = in _ ch / / 2 / After upconv, channels = in_ch // 2
+            # After concat with 跳跃连接 / After concat with skip, channels = in_ch // 2 + skip_ch
             if skip_connection is not None:
                 merged_ch = skip_connection.get_out_channels(in_ch // 2, skip_ch)
             else:
@@ -108,7 +111,7 @@ class UNetDecoder(nn.Module):
             x = up(x)
             skip = skips[i]
 
-            # Handle size mismatch (pad if needed, as in original UNet)
+            # Handle 大小 mismatch ( pad if needed, as in original UNet ) / Handle size mismatch (pad if needed, as in original UNet)
             if x.shape[2:] != skip.shape[2:]:
                 diff_h = skip.shape[2] - x.shape[2]
                 diff_w = skip.shape[3] - x.shape[3]

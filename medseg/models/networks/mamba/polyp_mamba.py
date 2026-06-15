@@ -1,4 +1,5 @@
 """PolypMamba (2024) — Mamba-based polyp segmentation network.
+    PolypMamba ( 2024 ) — Mamba-based 息肉 分割 网络。
 
 Reference: PolypMamba — https://github.com/zh-Tan/PolypMamba
 
@@ -62,6 +63,7 @@ class _BasicConv2d(nn.Module):
 
 class _RFB(nn.Module):
     """Receptive Field Block — channel reduction to ``out_ch`` with
+        Receptive Field 块 — 通道 reduction to ` ` out _ ch ` ` with。
     multi-branch dilated convolutions, as used in PraNet / PolypMamba.
     """
 
@@ -101,6 +103,7 @@ class _RFB(nn.Module):
 
 class _FFM(nn.Module):
     """Frequency Fusion Module — element-wise multiplication of an
+        Frequency 融合 模块 — element-wise multiplication of an。
     upsampled deep feature with a same-resolution skip feature, followed by
     a residual conv refinement.
 
@@ -115,7 +118,7 @@ class _FFM(nn.Module):
         )
 
     def forward(self, deep, skip):
-        # Align spatial dims (skip should already match; bilinear if not).
+        # Align 空间的 dims ( 跳跃 should already match; bilinear if not ) / Align spatial dims (skip should already match; bilinear if not).
         if deep.shape[-2:] != skip.shape[-2:]:
             deep = F.interpolate(deep, size=skip.shape[-2:], mode='bilinear', align_corners=False)
         fused = deep * skip + skip  # multiplicative fusion with additive skip
@@ -123,7 +126,8 @@ class _FFM(nn.Module):
 
 
 class _Encoder(nn.Module):
-    """VMamba-Tiny hierarchical encoder using project's SS2D blocks."""
+    """VMamba-Tiny hierarchical 编码器。
+        VMamba-Tiny hierarchical encoder using project's SS2D blocks."""
 
     def __init__(
         self,
@@ -173,11 +177,12 @@ class _Encoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Top-level PolypMamba network.
+# Top-level PolypMamba 网络 / Top-level PolypMamba network.
 # ---------------------------------------------------------------------------
 
 class PolypMamba(nn.Module):
     """PolypMamba (2024) — Mamba-based polyp segmentation network.
+        PolypMamba ( 2024 ) — Mamba-based 息肉 分割 网络。
 
     Args:
         in_channels: number of input image channels (default 3).
@@ -206,7 +211,7 @@ class PolypMamba(nn.Module):
         self.img_size = img_size
         self.stride = 32  # patch 4 * 3 merges -> 32
 
-        # Encoder.
+        # 编码器 / Encoder.
         self.encoder = _Encoder(
             in_channels=in_channels,
             patch_size=4,
@@ -217,18 +222,18 @@ class PolypMamba(nn.Module):
         )
         enc_dims = list(dims)
 
-        # RFB channel reduction to ``decoder_ch`` per stage.
+        # RFB 通道 reduction to ` ` 解码 _ ch ` ` per 阶段 / RFB channel reduction to ``decoder_ch`` per stage.
         self.rfb1 = _RFB(enc_dims[0], decoder_ch)
         self.rfb2 = _RFB(enc_dims[1], decoder_ch)
         self.rfb3 = _RFB(enc_dims[2], decoder_ch)
         self.rfb4 = _RFB(enc_dims[3], decoder_ch)
 
-        # Frequency Fusion Modules — one per decoder upsampling step.
+        # Frequency Fusion Modules — one per 解码器 / Frequency Fusion Modules — one per decoder upsampling step.
         self.ffm3 = _FFM(decoder_ch)
         self.ffm2 = _FFM(decoder_ch)
         self.ffm1 = _FFM(decoder_ch)
 
-        # Final segmentation head.
+        # Final 分割 头部 / Final segmentation head.
         self.head = nn.Conv2d(decoder_ch, num_classes, kernel_size=1)
 
         self._init_weights()
@@ -251,6 +256,7 @@ class PolypMamba(nn.Module):
     # ------------------------------------------------------------------
     def _pad_to_multiple(self, x: torch.Tensor):
         """Pad ``x`` so H, W are multiples of ``self.stride``.
+            Pad ` ` x ` ` so H, W are multiples of ` ` self. 步长 ` `。
 
         Returns (padded_x, (pad_h, pad_w)).
         """
@@ -269,17 +275,17 @@ class PolypMamba(nn.Module):
         B, _, H, W = x.shape
         x_pad, (pad_h, pad_w) = self._pad_to_multiple(x)
 
-        # Encoder.
+        # 编码器 / Encoder.
         feats = self.encoder(x_pad)
         f1, f2, f3, f4 = feats  # strides 4/8/16/32
 
-        # Channel reduction to 64.
+        # 通道 reduction to 64 / Channel reduction to 64.
         r1 = self.rfb1(f1)
         r2 = self.rfb2(f2)
         r3 = self.rfb3(f3)
         r4 = self.rfb4(f4)
 
-        # Decoder: progressive 2x upsample + FFM fusion.
+        # 解码: progressive 2x 上采样 + FFM 融合 / Decoder: progressive 2x upsample + FFM fusion.
         d3 = F.interpolate(r4, size=r3.shape[-2:], mode='bilinear', align_corners=False)
         d3 = self.ffm3(d3, r3)
 
@@ -289,7 +295,7 @@ class PolypMamba(nn.Module):
         d1 = F.interpolate(d2, size=r1.shape[-2:], mode='bilinear', align_corners=False)
         d1 = self.ffm1(d1, r1)
 
-        # Head + bilinear upsample back to padded input H/W, then crop.
+        # 头部 + bilinear 上采样 back to padded 输入 H / W, then crop / Head + bilinear upsample back to padded input H/W, then crop.
         logits = self.head(d1)
         logits = F.interpolate(logits, size=x_pad.shape[-2:], mode='bilinear', align_corners=False)
         if pad_h or pad_w:

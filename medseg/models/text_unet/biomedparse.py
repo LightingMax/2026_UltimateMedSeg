@@ -1,8 +1,9 @@
 # BiomedParse (Nature Methods 2024)
-# Reference: https://github.com/microsoft/BiomedParse
+# 参考: https: / / github. com / microsoft / BiomedParse / Reference: https://github.com/microsoft/BiomedParse
 # Paper: https://arxiv.org/abs/2405.12971
 # Implemented from paper formulas; not a copy of the official repo.
 """BiomedParse: a biomedical foundation model for joint segmentation,
+    BiomedParse: a biomedical foundation 模型 for joint 分割。
 detection and recognition across nine modalities.
 
 BiomedParse couples a Focal/Swin-based vision encoder with a text encoder
@@ -53,7 +54,7 @@ except Exception:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Vision encoder: hierarchical CNN-Transformer (4 stages, swin-like)
+# Vision 编码器 / Vision encoder: hierarchical CNN-Transformer (4 stages, swin-like)
 # ---------------------------------------------------------------------------
 class _ConvStem(nn.Module):
     def __init__(self, in_channels: int, out_channels: int):
@@ -71,7 +72,8 @@ class _ConvStem(nn.Module):
 
 
 class _TransformerStage(nn.Module):
-    """A stage of N transformer blocks operating on flattened tokens."""
+    """A 阶段 of N Transformer blocks operating on flattened 标记。
+        A stage of N transformer blocks operating on flattened tokens."""
 
     def __init__(self, dim: int, depth: int, num_heads: int):
         super().__init__()
@@ -83,7 +85,7 @@ class _TransformerStage(nn.Module):
         self.norm = nn.LayerNorm(dim)
 
     def forward(self, x):
-        # x: (B, C, H, W) -> tokens (B, H*W, C)
+        # x: ( B, C, H, W ) - > 标记 ( B, H * W, C ) / x: (B, C, H, W) -> tokens (B, H*W, C)
         B, C, H, W = x.shape
         t = x.flatten(2).transpose(1, 2)
         t = self.blocks(t)
@@ -106,6 +108,7 @@ class _DownSample(nn.Module):
 
 class _HierVisionEncoder(nn.Module):
     """4-stage hierarchical encoder.
+        4-stage hierarchical 编码器。
 
     Stage channels follow Swin-T: (96, 192, 384, 768).
     Depth   per stage: (2, 2, 6, 2).
@@ -138,10 +141,11 @@ class _HierVisionEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Text encoder (HF wrapped, with strict loading)
+# Text 编码器 / Text encoder (HF wrapped, with strict loading)
 # ---------------------------------------------------------------------------
 class _BiomedTextEncoder(nn.Module):
     """Wraps a HuggingFace BERT / CLIP-text into a fixed-size prompt vector.
+        Wraps a HuggingFace BERT / CLIP-text into a fixed-size prompt 向量。
 
     No fallback: if HF transformers is missing or the snapshot fails, the
     constructor raises.  When ``hf_name`` is None we instead build a small
@@ -162,7 +166,7 @@ class _BiomedTextEncoder(nn.Module):
             self.encoder = hf_from_pretrained(AutoModel, hf_name)
             in_dim = self.encoder.config.hidden_size
         else:
-            # explicit "no pretrained" mode — random init compact BERT
+            # explicit " no 预训练 " mode — random init compact BERT / explicit "no pretrained" mode — random init compact BERT
             from torch.nn import TransformerEncoder, TransformerEncoderLayer
             self.vocab = nn.Embedding(30522, embed_dim)
             self.pos = nn.Embedding(512, embed_dim)
@@ -170,8 +174,8 @@ class _BiomedTextEncoder(nn.Module):
             self.encoder = TransformerEncoder(layer, num_layers=6)
             in_dim = embed_dim
         self.project = nn.Linear(in_dim, embed_dim)
-        # the upstream paper freezes the text encoder during the first
-        # pretraining stage; mirror that default behaviour
+        # the upstream paper freezes the text 编码器 / the upstream paper freezes the text encoder during the first
+        # pretraining 阶段; mirror that 默认值 behaviour / pretraining stage; mirror that default behaviour
         for p in self.encoder.parameters():
             p.requires_grad = False
 
@@ -199,7 +203,7 @@ class _BiomedTextEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Prompt-conditioned mask decoder (SEEM-flavoured)
+# Prompt-conditioned mask 解码器 / Prompt-conditioned mask decoder (SEEM-flavoured)
 # ---------------------------------------------------------------------------
 class _PromptMaskDecoderLayer(nn.Module):
     def __init__(self, dim: int, heads: int):
@@ -230,6 +234,7 @@ class _PromptMaskDecoder(nn.Module):
 
     def forward(self, mem: torch.Tensor, prompt: torch.Tensor):
         """mem: (B, N, D) flattened multi-scale tokens.
+            mem: ( B, N, D ) flattened 多尺度 标记。
         prompt: (B, D) text prompt embedding (broadcast and added to every query).
         Returns query embeddings (B, K, D).
         """
@@ -241,7 +246,7 @@ class _PromptMaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# BiomedParse main module
+# BiomedParse main 模块 / BiomedParse main module
 # ---------------------------------------------------------------------------
 class BiomedParse(nn.Module):
     """BiomedParse — text-prompted biomedical foundation segmenter."""
@@ -268,11 +273,11 @@ class BiomedParse(nn.Module):
 
         self.visual = _HierVisionEncoder(in_channels=in_channels)
 
-        # projections for every scale -> decoder_dim
+        # projections for every scale - > 解码 _ dim / projections for every scale -> decoder_dim
         self.scale_proj = nn.ModuleList([
             nn.Conv2d(c, decoder_dim, 1) for c in self.visual.out_channels
         ])
-        # learnable scale embeddings
+        # learnable scale 嵌入 / learnable scale embeddings
         self.scale_embed = nn.Parameter(torch.zeros(len(self.visual.out_channels), decoder_dim))
         nn.init.trunc_normal_(self.scale_embed, std=0.02)
 
@@ -284,7 +289,7 @@ class BiomedParse(nn.Module):
             n_layers=n_dec_layers, heads=n_heads,
         )
 
-        # high-res pixel embedding (use stage0 -> decoder_dim, upsample x4)
+        # high-res pixel 嵌入 ( use stage0 - > 解码 _ dim, 上采样 x4 ) / high-res pixel embedding (use stage0 -> decoder_dim, upsample x4)
         self.pixel_embed = nn.Sequential(
             nn.Conv2d(self.visual.out_channels[0], decoder_dim, 3, 1, 1),
             nn.GroupNorm(1, decoder_dim), nn.GELU(),
@@ -296,8 +301,8 @@ class BiomedParse(nn.Module):
         self.query_to_sim = nn.Linear(decoder_dim, decoder_dim)
         self.text_to_sim = nn.Linear(decoder_dim, decoder_dim)
 
-        # Learnable embeddings used when no text prompt is supplied: one per
-        # class (open-vocab semantics replaced by closed-set classification).
+        # Learnable 嵌入 used when no text prompt is supplied: one per / Learnable embeddings used when no text prompt is supplied: one per
+        # class ( open-vocab semantics replaced by closed-set 分类 ) / class (open-vocab semantics replaced by closed-set classification).
         self.class_prompt = nn.Parameter(torch.zeros(num_classes, decoder_dim))
         nn.init.trunc_normal_(self.class_prompt, std=0.02)
 
@@ -333,7 +338,8 @@ class BiomedParse(nn.Module):
         raise TypeError(f"Unsupported text type: {type(text)}")
 
     def forward(self, image: torch.Tensor, text: Any = None) -> torch.Tensor:
-        """forward(image, text=None) -> (B, num_classes, H, W) logits."""
+        """前向传播 ( 图像, text = None ) - > ( B, num _ classes, H, W ) logits。
+            forward(image, text=None) -> (B, num_classes, H, W) logits."""
         # 如果 text=None 且 yaml 里配了 text_prompts，自动使用
         # If text=None and text_prompts configured in yaml, use them automatically
         if text is None and hasattr(self, '_default_text_prompts') and self._default_text_prompts:
@@ -341,7 +347,7 @@ class BiomedParse(nn.Module):
         H, W = image.shape[-2:]
         feats = self.visual(image)
 
-        # Flatten + project all scales + add scale embedding
+        # 展平 + project all scales + add scale 嵌入 / Flatten + project all scales + add scale embedding
         tokens = []
         for i, f in enumerate(feats):
             t = self.scale_proj[i](f)
@@ -365,7 +371,7 @@ class BiomedParse(nn.Module):
             sim = (q_sim * p_sim).sum(-1)                 # (B, K)
             weights = sim.softmax(dim=-1).unsqueeze(-1)   # soft-pick top query
             chosen = (q * weights).sum(dim=1)             # (B, D)
-            # mask = chosen ⋅ pixel_embed
+            # 掩码 = chosen ⋅ pixel _ embed / mask = chosen ⋅ pixel_embed
             m = torch.einsum("bd,bdhw->bhw", chosen, pix)
             all_logits.append(m.unsqueeze(1))
 

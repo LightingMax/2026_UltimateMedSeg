@@ -59,7 +59,7 @@ class GroundingDINOGrounder(MLLMGrounder):
 
     # ------------------------------------------------------------
     def _load_model(self) -> None:
-        # Strict: re-raise any load failure (the inner detector now also
+        # Strict: re-raise any 加载 failure ( the inner detector now also / Strict: re-raise any load failure (the inner detector now also
         # raises rather than auto-mocking).
         from medseg.grounding_dino_wrapper import GroundingDINODetector
         self._detector = GroundingDINODetector(
@@ -86,7 +86,8 @@ class GroundingDINOGrounder(MLLMGrounder):
 
     # ------------------------------------------------------------
     def _detect_single_class(self, image: np.ndarray, class_name: str) -> List[BBox]:
-        """Single-class entry point (the multi-class ``detect()`` is preferred)."""
+        """Single-class entry point ( the 多类的 ` ` detect ( ) ` ` is preferred )。
+            Single-class entry point (the multi-class ``detect()`` is preferred)."""
         if self.mock_mode:
             return self._mock_detect_single_class(image, class_name)
         if self._detector is None:
@@ -121,7 +122,7 @@ class GroundingDINOGrounder(MLLMGrounder):
         if self._detector is None:
             raise RuntimeError("GroundingDINO detector is None.")
 
-        # Strict: no inference-time mock fallback; let errors propagate.
+        # Strict: no inference-time mock fallback; let errors 传播 / Strict: no inference-time mock fallback; let errors propagate.
         text_prompt = self._build_text_prompt(class_names)
         boxes, scores, phrases = self._detector.detect(
             image=image,

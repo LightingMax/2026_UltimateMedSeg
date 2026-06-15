@@ -1,4 +1,5 @@
 """BiomedCLIP image encoder (foundation-model encoder).
+    BiomedCLIP image encoder (foundation-model 编码器。
 
 BiomedCLIP (Microsoft, 2023) is a ViT-B/16 image tower paired with a
 PubMedBERT text tower, contrastively pre-trained on ~15M biomedical
@@ -32,18 +33,19 @@ from medseg.registry import ENCODER_REGISTRY
 from medseg.models.encoders.foundation._base import DPTHead, BaseFoundationEncoder, load_with_ssl_fallback, hf_hub_download_vision_weights
 
 
-# Canonical embed dim / patch for BiomedCLIP (ViT-B/16).
+# Canonical embed dim / 图块 for BiomedCLIP ( ViT-B / 16 ) / Canonical embed dim / patch for BiomedCLIP (ViT-B/16).
 _EMBED_DIM = 768
 _PATCH_SIZE = 16
 
 # BiomedCLIP vision tower is ViT-B/16 from open_clip.
-# Official HF artifact: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224.
+# Official HF 伪影: microsoft / BiomedCLIP-PubMedBERT _ 256-vit _ base _ patch16 _ 224 / Official HF artifact: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224.
 PRIMARY_BACKBONE_NAME = "microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
 
 
 @ENCODER_REGISTRY.register("biomedclip")
 class BiomedCLIPEncoder(BaseFoundationEncoder):
     """BiomedCLIP ViT-B/16 image encoder with DPT-style multi-block multi-scale output.
+        BiomedCLIP ViT-B/16 image 编码器。
 
     Constructor follows the BaseFoundationEncoder contract. Auto-downloads
     BiomedCLIP weights from HuggingFace Hub.
@@ -61,8 +63,8 @@ class BiomedCLIPEncoder(BaseFoundationEncoder):
         self.embed_dim = _EMBED_DIM
         self.patch_size = _PATCH_SIZE
 
-        # Load the BiomedCLIP vision tower via open_clip (native loading).
-        # No silent fallback: raises RuntimeError if weights cannot be obtained.
+        # 加载 the BiomedCLIP vision tower via open _ clip ( native loading ) / Load the BiomedCLIP vision tower via open_clip (native loading).
+        # No silent fallback: raises RuntimeError if 权重 cannot be obtained / No silent fallback: raises RuntimeError if weights cannot be obtained.
         if pretrained:
             try:
                 import open_clip
@@ -101,17 +103,17 @@ class BiomedCLIPEncoder(BaseFoundationEncoder):
             self.patch_size = int(_ps)
         self.num_prefix_tokens = int(getattr(self.backbone, "num_prefix_tokens", 1))
 
-        # Adapter for non-RGB inputs (BiomedCLIP expects 3 channels).
+        # 适配器 for non-RGB inputs ( BiomedCLIP expects 3 通道 ) / Adapter for non-RGB inputs (BiomedCLIP expects 3 channels).
         if in_channels != 3:
             self.input_adapter = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # DPT-style multi-block: project the token grid (B, dim, h, w) to four
-        # pyramid stages with channels [dim/8, dim/4, dim/2, dim].
+        # DPT-style multi-block: project the 标记 grid ( B, dim, h, w ) to four / DPT-style multi-block: project the token grid (B, dim, h, w) to four
+        # 金字塔 阶段 with 通道 [ dim / 8, dim / 4, dim / 2, dim ] / pyramid stages with channels [dim/8, dim/4, dim/2, dim].
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -134,7 +136,7 @@ class BiomedCLIPEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

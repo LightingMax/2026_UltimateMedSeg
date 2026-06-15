@@ -1,4 +1,5 @@
 """EnsembleModel: logit averaging over multiple segmentation models.
+    EnsembleModel: logit averaging over multiple 分割 models。
 
 Supports two operation modes (controlled implicitly by ``requires_grad``):
 
@@ -41,14 +42,15 @@ logger = logging.getLogger(__name__)
 
 
 def _to_main_logits(out) -> torch.Tensor:
-    """Pick the main segmentation logits from a model output."""
+    """Pick the main 分割 logits from a 模型 输出。
+        Pick the main segmentation logits from a model output."""
     if isinstance(out, (list, tuple)):
         return out[0]
     if isinstance(out, dict):
         for key in ("out", "logits", "pred", "main"):
             if key in out:
                 return out[key]
-        # fallback: first tensor value
+        # fallback: first 张量 value / fallback: first tensor value
         for v in out.values():
             if isinstance(v, torch.Tensor):
                 return v
@@ -57,6 +59,7 @@ def _to_main_logits(out) -> torch.Tensor:
 
 class EnsembleModel(nn.Module):
     """Logit-averaging ensemble of multiple segmentation models.
+        Logit-averaging 集成 of multiple 分割 models。
 
     Args:
         models: Iterable of ``nn.Module``. All must accept the same input
@@ -148,7 +151,8 @@ class EnsembleModel(nn.Module):
 
     # ------------------------------------------------------------------
     def forward_per_model(self, x: torch.Tensor) -> List[torch.Tensor]:
-        """Return main logits from every sub-model (no averaging)."""
+        """返回 main logits from every sub-model ( no averaging )。
+            Return main logits from every sub-model (no averaging)."""
         outs: List[torch.Tensor] = []
         for m in self.models:
             outs.append(_to_main_logits(m(x)))
@@ -157,7 +161,7 @@ class EnsembleModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         outs = self.forward_per_model(x)
 
-        # Align spatial size
+        # Align 空间的 大小 / Align spatial size
         sizes = [o.shape[-2:] for o in outs]
         unique_sizes = {tuple(s) for s in sizes}
         if len(unique_sizes) > 1:
@@ -199,6 +203,7 @@ class EnsembleModel(nn.Module):
 # ----------------------------------------------------------------------
 def build_ensemble_from_config(cfg: dict, build_one_fn) -> EnsembleModel:
     """Build an EnsembleModel from a yaml-style config dict.
+        Build an EnsembleModel from a yaml-style 配置 dict。
 
     Expected schema::
 
@@ -233,6 +238,7 @@ def build_ensemble_from_config(cfg: dict, build_one_fn) -> EnsembleModel:
 
 def _wrap_member(member: dict) -> dict:
     """Normalise a member dict so build_model can consume it.
+        Normalise a member dict so build _ 模型 can consume it。
 
     Accepts both ``{ encoder: ..., decoder: ..., ... }`` (model-only) or
     ``{ model: { ... } }`` style.
@@ -253,6 +259,7 @@ def load_ensemble_from_checkpoints(
     strict: bool = True,
 ) -> EnsembleModel:
     """Build an inference-time ensemble by loading frozen sub-models.
+        Build an inference-time 集成 by loading frozen sub-models。
 
     Args:
         member_cfgs: One dict per sub-model (passed to ``build_one_fn``).

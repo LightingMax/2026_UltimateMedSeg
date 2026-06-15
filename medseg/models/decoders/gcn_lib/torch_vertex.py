@@ -1,4 +1,5 @@
 """Graph convolution vertex operations (Grapher / GCB block).
+    Graph 卷积 vertex operations ( Grapher / GCB 块 )。
 
 Source: https://github.com/SLDGroup/G-CASCADE (lib/gcn_lib/torch_vertex.py)
 Adapted from ViG (Huawei, 2022).
@@ -24,7 +25,8 @@ except ImportError as e:
 
 
 class MRConv2d(nn.Module):
-    """Max-Relative Graph Convolution for dense data type."""
+    """Max-Relative Graph 卷积 for 密集的 数据 type。
+        Max-Relative Graph Convolution for dense data type."""
 
     def __init__(self, in_channels, out_channels, act='relu', norm=None,
                  bias=True, kernel_size=1, padding=0, groups=4):
@@ -45,7 +47,8 @@ class MRConv2d(nn.Module):
 
 
 class EdgeConv2d(nn.Module):
-    """Edge convolution layer for dense data type."""
+    """边缘 卷积 层 for 密集的 数据 type。
+        Edge convolution layer for dense data type."""
 
     def __init__(self, in_channels, out_channels, act='relu', norm=None, bias=True):
         super().__init__()
@@ -63,7 +66,8 @@ class EdgeConv2d(nn.Module):
 
 
 class GraphSAGE(nn.Module):
-    """GraphSAGE Graph Convolution for dense data type."""
+    """GraphSAGE Graph 卷积 for 密集的 数据 type。
+        GraphSAGE Graph Convolution for dense data type."""
 
     def __init__(self, in_channels, out_channels, act='relu', norm=None, bias=True):
         super().__init__()
@@ -80,7 +84,8 @@ class GraphSAGE(nn.Module):
 
 
 class GINConv2d(nn.Module):
-    """GIN Graph Convolution for dense data type."""
+    """GIN Graph 卷积 for 密集的 数据 type。
+        GIN Graph Convolution for dense data type."""
 
     def __init__(self, in_channels, out_channels, act='relu', norm=None, bias=True):
         super().__init__()
@@ -97,7 +102,8 @@ class GINConv2d(nn.Module):
 
 
 class GraphConv2d(nn.Module):
-    """Static graph convolution layer."""
+    """静态的 graph 卷积 层。
+        Static graph convolution layer."""
 
     def __init__(self, in_channels, out_channels, conv='edge', act='relu',
                  norm=None, bias=True, kernel_size=1, padding=0, groups=4):
@@ -119,7 +125,8 @@ class GraphConv2d(nn.Module):
 
 
 class DyGraphConv2d(GraphConv2d):
-    """Dynamic graph convolution layer with KNN graph construction."""
+    """动态的 graph 卷积 层 with KNN graph construction。
+        Dynamic graph convolution layer with KNN graph construction."""
 
     def __init__(self, in_channels, out_channels, kernel_size=9, dilation=1,
                  conv='edge', act='relu', norm=None, bias=True,
@@ -146,6 +153,7 @@ class DyGraphConv2d(GraphConv2d):
 
 class Grapher(nn.Module):
     """Grapher module with graph convolution and fc layers (GCB block).
+        Grapher 模块 with graph 卷积 and fc layers ( GCB 块 )。
 
     This is the core building block of G-CASCADE decoder.
     """

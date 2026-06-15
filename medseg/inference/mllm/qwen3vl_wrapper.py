@@ -1,4 +1,5 @@
 """Qwen3-VL grounding wrapper.
+    Qwen3-VL grounding 封装器。
 
 # Reference: https://github.com/QwenLM/Qwen3-VL
 # Reference: https://huggingface.co/Qwen/Qwen3-VL-7B-Instruct
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class Qwen3VLGrounder(Qwen2VLGrounder):
     """Qwen3-VL grounding wrapper.
+        Qwen3-VL grounding 封装器。
 
     Inherits all parsing / prompt / mock behaviour from
     :class:`Qwen2VLGrounder`; only the HuggingFace model class is
@@ -61,6 +63,7 @@ class Qwen3VLGrounder(Qwen2VLGrounder):
     # ------------------------------------------------------------
     def _load_model(self) -> None:
         """Load Qwen3-VL via transformers. Raises on any failure.
+            加载 Qwen3-VL via transformers. Raises on any failure。
 
         We deliberately do **not** substitute ``AutoModelForVision2Seq`` on
         ImportError — the generic wrapper drops Qwen3-VL-specific forward

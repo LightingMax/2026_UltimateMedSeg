@@ -1,4 +1,5 @@
 """MISSFormer – self-contained port from github.com/ZhifangDeng/MISSFormer.
+    MISSFormer – self-contained 移植 from github. com / ZhifangDeng / MISSFormer。
 
 MISSFormer: An Effective Transformer for Medical Image Segmentation.
 Architecture: MiT (Mix Transformer) encoder + Bridge blocks (multi-scale
@@ -14,7 +15,7 @@ from einops import rearrange
 
 
 # ---------------------------------------------------------------------------
-# MiT encoder building blocks
+# MiT 编码器 / MiT encoder building blocks
 # ---------------------------------------------------------------------------
 class _DWConv(nn.Module):
     def __init__(self, dim):
@@ -56,7 +57,8 @@ class _EfficientSelfAtten(nn.Module):
 
 
 class _M_EfficientSelfAtten(nn.Module):
-    """Multi-scale efficient self-attention with scale reduction."""
+    """Multi-scale 高效的 自注意力 with scale reduction。
+        Multi-scale efficient self-attention with scale reduction."""
 
     def __init__(self, dim, head, reduction_ratio, spatial_sizes=None,
                  ch_mults=(1, 2, 5, 8)):
@@ -86,6 +88,7 @@ class _M_EfficientSelfAtten(nn.Module):
 
 class _ScaleReduce(nn.Module):
     """Spatial reduction for multi-scale attention (faithful to original).
+        空间的 reduction for 多尺度 注意力 ( 忠实 to original )。
 
     Splits the concatenated multi-scale sequence by per-scale token counts
     (h*w*ch_mult for each scale), applies strided Conv2d to reduce spatial
@@ -120,13 +123,13 @@ class _ScaleReduce(nn.Module):
         mults = self.ch_mults
         n = len(ss)
         if n == 4:
-            # Token counts per scale (h*w*mult)
+            # 标记 counts per scale ( h * w * mult ) / Token counts per scale (h*w*mult)
             n0 = ss[0][0] * ss[0][1] * mults[0]
             n1 = ss[1][0] * ss[1][1] * mults[1]
             n2 = ss[2][0] * ss[2][1] * mults[2]
-            # Reshape to 2D: effective spatial grid is (h, w*mult) because
-            # flattening to C=dims absorbs extra channels into the W dimension.
-            # Faithful to original: reshape interprets 1568 tokens as 56x28
+            # 重塑 to 2D: effective 空间的 grid is ( h, w * mult ) because / Reshape to 2D: effective spatial grid is (h, w*mult) because
+            # flattening to C = dims absorbs extra 通道 into the W 维度 / flattening to C=dims absorbs extra channels into the W dimension.
+            # 忠实 to original: 重塑 interprets 1568 标记 as 56x28 / Faithful to original: reshape interprets 1568 tokens as 56x28
             # (not 28x28), etc.
             tem0 = x[:, :n0, :].reshape(B, ss[0][0], ss[0][1] * mults[0], C).permute(0, 3, 1, 2)
             tem1 = x[:, n0:n0+n1, :].reshape(B, ss[1][0], ss[1][1] * mults[1], C).permute(0, 3, 1, 2)
@@ -204,7 +207,7 @@ class _TransformerBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MiT (Mix Transformer) encoder
+# MiT (Mix Transformer) 编码器 / MiT (Mix Transformer) encoder
 # ---------------------------------------------------------------------------
 class _MiT(nn.Module):
     def __init__(self, img_size=224, in_ch=3, dims=(64, 128, 320, 512),
@@ -244,11 +247,12 @@ class _MiT(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Bridge blocks – faithful to original BridegeBlock_4 / BridgeLayer_4
-# (multi-scale joint self-attention across ALL concatenated scales)
+# Bridge blocks – 忠实 to original BridegeBlock _ 4 / BridgeLayer _ 4 / Bridge blocks – faithful to original BridegeBlock_4 / BridgeLayer_4
+# ( 多尺度 joint 自注意力 across ALL concatenated scales ) / (multi-scale joint self-attention across ALL concatenated scales)
 # ---------------------------------------------------------------------------
 class _BridgeLayer4(nn.Module):
     """Faithful to original BridgeLayer_4.
+        忠实 to original BridgeLayer _ 4。
 
     Original flattens ALL encoder features to C=dims[0] channels, absorbing
     extra channels into the token count (e.g. c2 with 128ch at 28x28 becomes
@@ -262,9 +266,9 @@ class _BridgeLayer4(nn.Module):
         self.spatial_sizes = spatial_sizes
         self.dims = dims
         self.channel_dims = list(channel_dims)
-        # Channel multipliers relative to base dims
+        # 通道 multipliers 相对的 to base dims / Channel multipliers relative to base dims
         self.ch_mults = [ch // dims for ch in channel_dims]
-        # Token counts after flattening to C=dims: h*w*mult
+        # 标记 counts after flattening to C = dims: h * w * mult / Token counts after flattening to C=dims: h*w*mult
         self.token_counts = [h * w * m
                              for (h, w), m in zip(spatial_sizes, self.ch_mults)]
         self.cum_indices = [0]
@@ -275,7 +279,7 @@ class _BridgeLayer4(nn.Module):
         self.attn = _M_EfficientSelfAtten(dims, head, reduction_ratios,
                                           spatial_sizes, self.ch_mults)
         self.norm2 = nn.LayerNorm(dims)
-        # Per-scale MixFFN_skip with native channel dims (original)
+        # Per-scale MixFFN _ 跳跃 with native 通道 dims ( original ) / Per-scale MixFFN_skip with native channel dims (original)
         self.mixffn1 = _MixFFN_skip(dims, dims * 4)
         self.mixffn2 = _MixFFN_skip(dims * 2, dims * 8)
         self.mixffn3 = _MixFFN_skip(dims * 5, dims * 20)
@@ -286,9 +290,9 @@ class _BridgeLayer4(nn.Module):
         ch_mults = [ch // C for ch in self.channel_dims]
 
         if isinstance(inputs, list):
-            # First call: flatten 4D encoder features all to C=dims channels,
-            # absorbing extra channels into the token (sequence) dimension.
-            # This is faithful to original BridgeLayer_4 behavior.
+            # First call: flatten 4D 编码器 / First call: flatten 4D encoder features all to C=dims channels,
+            # absorbing extra 通道 into the 标记 ( 序列 ) 维度 / absorbing extra channels into the token (sequence) dimension.
+            # This is 忠实 to original BridgeLayer _ 4 behavior / This is faithful to original BridgeLayer_4 behavior.
             flat = []
             for feat in inputs:
                 B, Ch, _, _ = feat.shape
@@ -299,19 +303,19 @@ class _BridgeLayer4(nn.Module):
             combined = inputs
             B, _, C = combined.shape
 
-        # Multi-scale self-attention + residual
+        # Multi-scale 自注意力 + 残差 / Multi-scale self-attention + residual
         tx1 = combined + self.attn(self.norm1(combined))
         tx = self.norm2(tx1)
 
-        # Split back to per-scale tokens (still C=dims channels each)
+        # Split back to per-scale 标记 ( still C = dims 通道 each ) / Split back to per-scale tokens (still C=dims channels each)
         splits = []
         for i in range(len(self.spatial_sizes)):
             start = self.cum_indices[i]
             end = self.cum_indices[i + 1]
             splits.append(tx[:, start:end, :])
 
-        # Reshape each split to native channel dims (C*mult) for per-scale MixFFN,
-        # matching original: tem.reshape(B, -1, C*mult)
+        # 重塑 each split to native 通道 dims ( C * mult ) for per-scale MixFFN / Reshape each split to native channel dims (C*mult) for per-scale MixFFN,
+        # matching original: tem. 重塑 ( B, - 1, C * mult ) / matching original: tem.reshape(B, -1, C*mult)
         h0, w0 = self.spatial_sizes[0]
         h1, w1 = self.spatial_sizes[1]
         h2, w2 = self.spatial_sizes[2]
@@ -321,7 +325,7 @@ class _BridgeLayer4(nn.Module):
         tem3 = splits[2].reshape(B, -1, C * ch_mults[2])
         tem4 = splits[3].reshape(B, -1, C * ch_mults[3])
 
-        # Per-scale MixFFN_skip with skip connection
+        # Per-scale MixFFN_skip with 跳跃连接 / Per-scale MixFFN_skip with skip connection
         m1 = self.mixffn1(tem1, h0, w0).reshape(B, -1, C)
         m2 = self.mixffn2(tem2, h1, w1).reshape(B, -1, C)
         m3 = self.mixffn3(tem3, h2, w2).reshape(B, -1, C)
@@ -333,6 +337,7 @@ class _BridgeLayer4(nn.Module):
 
 class _BridegeBlock4(nn.Module):
     """Faithful to original BridegeBlock_4: 4 BridgeLayer_4 stages,
+        忠实 to original BridegeBlock _ 4: 4 BridgeLayer _ 4 阶段。
     then split and reshape back to 4D spatial features with native channels."""
 
     def __init__(self, dims, head, reduction_ratios, spatial_sizes,
@@ -363,7 +368,7 @@ class _BridegeBlock4(nn.Module):
         bridge3 = self.bridge_layer3(bridge2)
         bridge4 = self.bridge_layer4(bridge3)
 
-        # Split flat tensor back to 4D features with native channel dims
+        # Split flat 张量 back to 4D 特征 with native 通道 dims / Split flat tensor back to 4D features with native channel dims
         B, _, C = bridge4.shape
         outs = []
         for i in range(len(self.spatial_sizes)):
@@ -377,7 +382,7 @@ class _BridegeBlock4(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder (PatchExpand + TransformerBlock)
+# 解码 ( PatchExpand + TransformerBlock ) / Decoder (PatchExpand + TransformerBlock)
 # ---------------------------------------------------------------------------
 class _PatchExpand(nn.Module):
     def __init__(self, input_resolution, dim, dim_scale=2,
@@ -423,6 +428,7 @@ class _FinalPatchExpandX4(nn.Module):
 
 class _SegUDecoder(nn.Module):
     """Faithful to original SegU_decoder.
+        忠实 to original SegU _ 解码。
 
     Args:
         input_size: (H, W) for PatchExpand / FinalPatchExpand_X4.
@@ -494,6 +500,7 @@ class _SegUDecoder(nn.Module):
 # ---------------------------------------------------------------------------
 class MISSFormer(nn.Module):
     """MISSFormer: MiT encoder + Bridge blocks + SegU decoder.
+        MISSFormer: MiT 编码器。
 
     Faithful to original ZhifangDeng/MISSFormer.
 
@@ -510,35 +517,35 @@ class MISSFormer(nn.Module):
         heads = [1, 2, 5, 8]
         reduction_ratios = [8, 4, 2, 1]
 
-        # Encoder (MiT)
+        # 编码器 ( MiT ) / Encoder (MiT)
         self.encoder = _MiT(img_size, in_channels, dims, (2, 2, 2, 2),
                             'mix_skip')
 
-        # Spatial sizes at each encoder stage: img//4, img//8, img//16, img//32
+        # Spatial sizes at each 编码器 / Spatial sizes at each encoder stage: img//4, img//8, img//16, img//32
         base = img_size // 4  # 56 for 224
         spatial_sizes = [(base, base), (base // 2, base // 2),
                          (base // 4, base // 4), (base // 8, base // 8)]
 
-        # Bridge (multi-scale joint self-attention)
+        # Bridge ( 多尺度 joint 自注意力 ) / Bridge (multi-scale joint self-attention)
         self.bridge = _BridegeBlock4(dims[0], heads[0], [64, 32, 16, 8],
                                      spatial_sizes, dims)
 
-        # Decoder — bridge outputs as skip connections
-        # Token counts after bridge:
-        #   bridge_out[3]: 7*7=49 tokens of 512ch
-        #   bridge_out[2]: 14*14=196 tokens of 320ch
-        #   bridge_out[1]: 28*28=784 tokens of 128ch
-        #   bridge_out[0]: 56*56=3136 tokens of 64ch
+        # Decoder — bridge outputs as 跳跃连接 / Decoder — bridge outputs as skip connections
+        # 标记 counts after bridge / Token counts after bridge:
+        # bridge _ out [ 3 ]: 7 * 7 = 49 标记 of 512ch / bridge_out[3]: 7*7=49 tokens of 512ch
+        # bridge _ out [ 2 ]: 14 * 14 = 196 标记 of 320ch / bridge_out[2]: 14*14=196 tokens of 320ch
+        # bridge _ out [ 1 ]: 28 * 28 = 784 标记 of 128ch / bridge_out[1]: 28*28=784 tokens of 128ch
+        # bridge _ out [ 0 ]: 56 * 56 = 3136 标记 of 64ch / bridge_out[0]: 56*56=3136 tokens of 64ch
         #
-        # Decoder chain (PatchExpand 2x upsamples token count):
-        #   d4: in=49 tokens → concat with skip@196 → upsample → 196 tokens
-        #   d3: in=196 tokens → concat with skip@784 → upsample → 784 tokens
-        #   d2: in=784 tokens → concat with skip@3136 → upsample → 3136 tokens
-        #   d1: in=3136 tokens → concat with skip@3136 → FinalPatchExpandX4 → 50176
-        # Decoder output channel dims (after concat_linear)
+        # 解码 chain ( PatchExpand 2x upsamples 标记 count ) / Decoder chain (PatchExpand 2x upsamples token count):
+        # d4: in=49 tokens → concat with 跳跃连接 / d4: in=49 tokens → concat with skip@196 → upsample → 196 tokens
+        # d3: in=196 tokens → concat with 跳跃连接 / d3: in=196 tokens → concat with skip@784 → upsample → 784 tokens
+        # d2: in=784 tokens → concat with 跳跃连接 / d2: in=784 tokens → concat with skip@3136 → upsample → 3136 tokens
+        # d1: in=3136 tokens → concat with 跳跃连接 / d1: in=3136 tokens → concat with skip@3136 → FinalPatchExpandX4 → 50176
+        # 解码 输出 通道 dims ( after concat _ linear ) / Decoder output channel dims (after concat_linear)
         dec_out_dims = [dims[1], dims[1], dims[0], dims[0]]  # 128, 128, 64, 64
-        # Total concat input channels (= x1_ch + skip_ch for each decoder)
-        # Note: x1_ch = previous decoder out_dim // 2 (PatchExpand halves channels)
+        # Total concat input channels (= x1_ch + skip_ch for each 解码器 / Total concat input channels (= x1_ch + skip_ch for each decoder)
+        # Note: x1_ch = previous 解码器 / Note: x1_ch = previous decoder out_dim // 2 (PatchExpand halves channels)
         concat_in_dims = [dims[3] + dims[2],       # d4: 512+320=832
                           dims[1] // 2 + dims[1],   # d3: 64+128=192
                           dims[1] // 2 + dims[0],   # d2: 64+64=128
@@ -567,22 +574,22 @@ class MISSFormer(nn.Module):
             dec_heads[3], dec_rr[3], num_classes, is_last=True)
 
     def forward(self, x):
-        # Encode
+        # 编码 / Encode
         enc_features = self.encoder(x)
-        # Bridge (multi-scale joint self-attention)
+        # Bridge ( 多尺度 joint 自注意力 ) / Bridge (multi-scale joint self-attention)
         bridge_out = self.bridge(enc_features)
 
-        # Decode — bridge outputs as skip connections
-        # Token counts: bridge_out[3]=49, [2]=196, [1]=784, [0]=3136
-        # SegU_decoder concat requires matching token counts, so we
-        # interpolate the smaller input to match the skip connection.
+        # Decode — bridge outputs as 跳跃连接 / Decode — bridge outputs as skip connections
+        # 标记 counts: bridge _ out [ 3 ] = 49, [ 2 ] = 196, [ 1 ] = 784, [ 0 ] = 3136 / Token counts: bridge_out[3]=49, [2]=196, [1]=784, [0]=3136
+        # SegU _ 解码 concat requires matching 标记 counts, so we / SegU_decoder concat requires matching token counts, so we
+        # interpolate the smaller input to match the 跳跃连接 / interpolate the smaller input to match the skip connection.
         B = x.shape[0]
 
-        # Helper: flatten 4D to (B, L, C)
+        # Helper: 展平 4D to ( B, L, C ) / Helper: flatten 4D to (B, L, C)
         def _flat(feat):
             return feat.permute(0, 2, 3, 1).reshape(B, -1, feat.shape[1])
 
-        # Helper: align token counts by spatial interpolation
+        # Helper: align 标记 counts by 空间的 interpolation / Helper: align token counts by spatial interpolation
         def _align(src, target_h, target_w):
             B_s, L, C = src.shape
             src_h = src_w = int(L ** 0.5)
@@ -593,27 +600,27 @@ class MISSFormer(nn.Module):
                 return src_4d.permute(0, 2, 3, 1).reshape(B_s, -1, C)
             return src
 
-        # d4: bridge[3] → align to bridge[2] spatial → concat → upsample
+        # d4: bridge [ 3 ] → align to bridge [ 2 ] 空间的 → concat → 上采样 / d4: bridge[3] → align to bridge[2] spatial → concat → upsample
         x1 = _flat(bridge_out[3])
         skip2 = bridge_out[2].permute(0, 2, 3, 1)  # (B, 14, 14, 320)
         x1 = _align(x1, skip2.shape[1], skip2.shape[2])
         d4 = self.decoder4(x1, skip2)
 
-        # d3: d4_out → align to bridge[1] spatial → concat → upsample
+        # d3: d4 _ out → align to bridge [ 1 ] 空间的 → concat → 上采样 / d3: d4_out → align to bridge[1] spatial → concat → upsample
         skip1 = bridge_out[1].permute(0, 2, 3, 1)  # (B, 28, 28, 128)
         d4_aligned = _align(d4, skip1.shape[1], skip1.shape[2])
         d3 = self.decoder3(d4_aligned, skip1)
 
-        # d2: d3_out → align to bridge[0] spatial → concat → upsample
+        # d2: d3 _ out → align to bridge [ 0 ] 空间的 → concat → 上采样 / d2: d3_out → align to bridge[0] spatial → concat → upsample
         skip0 = bridge_out[0].permute(0, 2, 3, 1)  # (B, 56, 56, 64)
         d3_aligned = _align(d3, skip0.shape[1], skip0.shape[2])
         d2 = self.decoder2(d3_aligned, skip0)
 
-        # d1: d2_out → align to bridge[0] spatial → concat → FinalPatchExpandX4
+        # d1: d2 _ out → align to bridge [ 0 ] 空间的 → concat → FinalPatchExpandX4 / d1: d2_out → align to bridge[0] spatial → concat → FinalPatchExpandX4
         d2_aligned = _align(d2, skip0.shape[1], skip0.shape[2])
         out = self.decoder1(d2_aligned, skip0)
 
-        # Ensure output matches input size
+        # Ensure 输出 matches 输入 大小 / Ensure output matches input size
         if out.shape[-2:] != x.shape[-2:]:
             out = F.interpolate(out, size=x.shape[-2:], mode='bilinear',
                                 align_corners=True)

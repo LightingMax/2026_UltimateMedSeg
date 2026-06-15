@@ -1,4 +1,5 @@
 """R2U-Net - self-contained port from LeeJunHyun/Image_Segmentation.
+    R2U-Net - self-contained 移植 from LeeJunHyun / 图像 _ 分割。
 
 R2U-Net: Recurrent Residual Convolutional Neural Network based on U-Net
 (Alom et al., 2018).
@@ -21,10 +22,11 @@ import torch.nn.functional as F
 
 
 # ---------------------------------------------------------------------------
-# Recurrent / Recurrent-Residual blocks
+# 循环的 / Recurrent-Residual blocks / Recurrent / Recurrent-Residual blocks
 # ---------------------------------------------------------------------------
 class _RecurrentBlock(nn.Module):
     """Recurrent convolution: Conv3x3 + BN + ReLU iterated ``t`` times,
+        循环的 卷积: Conv3x3 + BN + ReLU iterated ` ` t ` ` times。
     adding the original input back to the accumulating activation at each
     iteration (RCNN cell from Alom et al., 2018).
     """
@@ -50,6 +52,7 @@ class _RecurrentBlock(nn.Module):
 
 class _RRCNNBlock(nn.Module):
     """Recurrent Residual CNN block.
+        循环的 残差 CNN 块。
 
     1x1 conv first projects the incoming features to ``ch_out`` channels,
     then two stacked recurrent conv blocks are applied. A residual skip
@@ -76,6 +79,7 @@ class _RRCNNBlock(nn.Module):
 # ---------------------------------------------------------------------------
 class R2UNet(nn.Module):
     """Recurrent Residual U-Net (R2U-Net).
+        循环的 残差 U-Net ( R2U-Net )。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -94,14 +98,14 @@ class R2UNet(nn.Module):
         self.Maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.Upsample = nn.Upsample(scale_factor=2)  # unused (kept for parity)
 
-        # Encoder
+        # 编码器 / Encoder
         self.RRCNN1 = _RRCNNBlock(in_channels, ch[0], t=t)
         self.RRCNN2 = _RRCNNBlock(ch[0], ch[1], t=t)
         self.RRCNN3 = _RRCNNBlock(ch[1], ch[2], t=t)
         self.RRCNN4 = _RRCNNBlock(ch[2], ch[3], t=t)
         self.RRCNN5 = _RRCNNBlock(ch[3], ch[4], t=t)
 
-        # Decoder (transposed conv upsample + RRCNN over concatenated skip)
+        # Decoder (transposed conv upsample + RRCNN over concatenated 跳跃连接 / Decoder (transposed conv upsample + RRCNN over concatenated skip)
         self.Up5 = nn.ConvTranspose2d(ch[4], ch[3], kernel_size=2, stride=2)
         self.Up_RRCNN5 = _RRCNNBlock(ch[4], ch[3], t=t)
 
@@ -114,7 +118,7 @@ class R2UNet(nn.Module):
         self.Up2 = nn.ConvTranspose2d(ch[1], ch[0], kernel_size=2, stride=2)
         self.Up_RRCNN2 = _RRCNNBlock(ch[1], ch[0], t=t)
 
-        # Output 1x1
+        # 输出 1x1 / Output 1x1
         self.Conv_1x1 = nn.Conv2d(ch[0], num_classes, kernel_size=1, stride=1,
                                   padding=0)
 
@@ -128,7 +132,7 @@ class R2UNet(nn.Module):
     def forward(self, x):
         in_size = x.shape[-2:]
 
-        # Encoder
+        # 编码器 / Encoder
         x1 = self.RRCNN1(x)
 
         x2 = self.Maxpool(x1)
@@ -143,7 +147,7 @@ class R2UNet(nn.Module):
         x5 = self.Maxpool(x4)
         x5 = self.RRCNN5(x5)
 
-        # Decoder
+        # 解码 / Decoder
         d5 = self.Up5(x5)
         d5 = self._match(d5, x4)
         d5 = torch.cat((x4, d5), dim=1)

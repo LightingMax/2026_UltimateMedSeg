@@ -1,4 +1,5 @@
 """DCSAU-Net Encoder: faithful port from https://github.com/xq141839/DCSAU-Net
+    DCSAU-Net 编码器。
 
 Reference: Xu et al., "DCSAU-Net: A Deeper and More Compact Split-Attention U-Net
            for Medical Image Segmentation"
@@ -98,7 +99,7 @@ class SplAtConv2d(nn.Module):
         return out.contiguous()
 
 
-# ============= Bottleneck (from resnet.py) =============
+# ============= 瓶颈层 / ============= Bottleneck (from resnet.py) =============
 class Bottleneck(nn.Module):
     expansion = 4
 
@@ -177,7 +178,8 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 
 class ResNet_CSA(nn.Module):
-    """ResNet backbone with Split-Attention (8 layers: 4 encoder + 4 decoder)."""
+    """ResNet backbone with Split-Attention (8 layers: 4 编码器。
+        ResNet backbone with Split-Attention (8 layers: 4 encoder + 4 decoder)."""
 
     def __init__(self, block, layers, radix=2, groups=1, bottleneck_width=64,
                  deep_stem=True, stem_width=32, avg_down=True,
@@ -190,7 +192,7 @@ class ResNet_CSA(nn.Module):
         self.avd_first = avd_first
         self.radix = radix
 
-        # Deep stem
+        # 深度 主干 / Deep stem
         if deep_stem:
             self.conv1 = nn.Sequential(
                 nn.Conv2d(3, stem_width, kernel_size=3, stride=2, padding=1, bias=False),
@@ -207,13 +209,13 @@ class ResNet_CSA(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        # Encoder layers
+        # 编码器 layers / Encoder layers
         self.layer1 = self._make_layer(block, 16, layers[0], norm_layer=norm_layer, is_first=False)
         self.layer2 = self._make_layer(block, 32, layers[1], stride=2, norm_layer=norm_layer)
         self.layer3 = self._make_layer(block, 64, layers[2], stride=2, norm_layer=norm_layer)
         self.layer4 = self._make_layer(block, 128, layers[3], stride=2, norm_layer=norm_layer)
 
-        # Decoder layers
+        # 解码 layers / Decoder layers
         self.layer5 = self._make_layer(block, 64, layers[3], stride=1, norm_layer=norm_layer)
         self.layer6 = self._make_layer(block, 32, layers[2], stride=1, norm_layer=norm_layer)
         self.layer7 = self._make_layer(block, 16, layers[1], stride=1, norm_layer=norm_layer)
@@ -288,10 +290,11 @@ class Up(nn.Module):
         return x
 
 
-# ============= DCSAU-Net Encoder =============
+# ============= DCSAU-Net 编码器 / ============= DCSAU-Net Encoder =============
 @ENCODER_REGISTRY.register("dcsaunet")
 class DCSAUNetEncoder(nn.Module):
     """DCSAU-Net Encoder: PFC + CSA ResNet backbone.
+        DCSAU-Net 编码器。
     Faithful to https://github.com/xq141839/DCSAU-Net
     """
 
@@ -316,7 +319,7 @@ class DCSAUNetEncoder(nn.Module):
         self.down3 = csa_block.layer3
         self.down4 = csa_block.layer4
 
-        # out channels: PFC=64, after CSA layers: 64, 128, 256, 512
+        # out 通道: PFC = 64, after CSA layers: 64, 128, 256, 512 / out channels: PFC=64, after CSA layers: 64, 128, 256, 512
         self._out_channels = [64, 64, 128, 256, 512]
 
         if pretrained and pretrained_path:

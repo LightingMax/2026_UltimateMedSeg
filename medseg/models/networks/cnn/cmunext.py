@@ -1,4 +1,5 @@
 """CMUNeXt: Efficient Medical Image Segmentation with Large Kernel + Skip Fusion.
+    CMUNeXt: Efficient Medical Image Segmentation with Large Kernel + 跳跃连接。
 
 Lightweight CNN-based architecture using large kernel convolutions and
 a skip fusion module for efficient medical image segmentation.
@@ -21,7 +22,8 @@ from typing import List, Optional
 
 
 class _ConvNeXtBlock(nn.Module):
-    """ConvNeXt-style block: DWConv(7x7) -> LN -> Linear -> GELU -> Linear."""
+    """ConvNeXt-style 块: DWConv ( 7x7 ) - > LN - > Linear - > GELU - > Linear。
+        ConvNeXt-style block: DWConv(7x7) -> LN -> Linear -> GELU -> Linear."""
 
     def __init__(self, dim, kernel_size=7):
         super().__init__()
@@ -45,7 +47,8 @@ class _ConvNeXtBlock(nn.Module):
 
 
 class _SkipFusion(nn.Module):
-    """Skip Fusion: channel attention to fuse encoder skip with decoder feature."""
+    """Skip Fusion: channel attention to fuse 编码器。
+        Skip Fusion: channel attention to fuse encoder skip with decoder feature."""
 
     def __init__(self, dim):
         super().__init__()
@@ -65,6 +68,7 @@ class _SkipFusion(nn.Module):
 
 class CMUNeXt(nn.Module):
     """CMUNeXt: Large kernel CNN + Skip Fusion.
+        CMUNeXt: Large kernel CNN + 跳跃连接。
 
     Args:
         in_channels: Input channels.
@@ -87,13 +91,13 @@ class CMUNeXt(nn.Module):
         embed_dims = embed_dims or [32, 64, 128, 256]
         depths = depths or [2, 2, 2, 2]
 
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0], 4, 4, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
         )
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc_stages = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         for i in range(len(embed_dims)):
@@ -105,7 +109,7 @@ class CMUNeXt(nn.Module):
                     nn.Conv2d(embed_dims[i], embed_dims[i + 1], 2, 2),
                 ))
 
-        # Decoder
+        # 解码 / Decoder
         self.upsamples = nn.ModuleList()
         self.fusions = nn.ModuleList()
         self.dec_stages = nn.ModuleList()
@@ -116,7 +120,7 @@ class CMUNeXt(nn.Module):
                 *[_ConvNeXtBlock(embed_dims[i - 1]) for _ in range(depths[i - 1])]
             ))
 
-        # Head: 4x upsample + conv
+        # 头部: 4x 上采样 + conv / Head: 4x upsample + conv
         self.head = nn.Sequential(
             nn.ConvTranspose2d(embed_dims[0], embed_dims[0], 4, 4),
             nn.Conv2d(embed_dims[0], num_classes, 1),

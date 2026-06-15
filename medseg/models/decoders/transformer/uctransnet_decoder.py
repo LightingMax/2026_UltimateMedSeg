@@ -1,4 +1,5 @@
 """UCTransNet decoder module.
+    UCTransNet 解码器。
 
 Extracted from networks/transformer/uctransnet_model.py for modular reuse.
 Faithful to the original: CCA (Channel-wise Cross Attention) skip +
@@ -39,7 +40,8 @@ class _Flatten(nn.Module):
 
 
 class _CCA(nn.Module):
-    """Channel-wise Cross Attention for skip connection gating."""
+    """Channel-wise Cross Attention for 跳跃连接。
+        Channel-wise Cross Attention for skip connection gating."""
 
     def __init__(self, F_g, F_x):
         super().__init__()
@@ -59,14 +61,15 @@ class _CCA(nn.Module):
 
 
 class _UpBlockAttention(nn.Module):
-    """Single decoder step: bilinear up -> CCA-gated skip -> concat -> N convs."""
+    """Single 解码器。
+        Single decoder step: bilinear up -> CCA-gated skip -> concat -> N convs."""
 
     def __init__(self, in_channels, out_channels, nb_Conv, activation='ReLU',
                  up_channels=None):
         super().__init__()
         self.up = nn.Upsample(scale_factor=2)
-        # up_channels: number of channels after upsample (before concat with skip)
-        # If not provided, assume in_channels is evenly split (original behavior)
+        # up_channels: number of channels after upsample (before concat with 跳跃连接 / up_channels: number of channels after upsample (before concat with skip)
+        # If not provided, assume in _ 通道 is evenly split ( original behavior ) / If not provided, assume in_channels is evenly split (original behavior)
         if up_channels is not None:
             self.coatt = _CCA(F_g=up_channels, F_x=out_channels)
         else:
@@ -84,6 +87,7 @@ class _UpBlockAttention(nn.Module):
 @DECODER_REGISTRY.register("uctransnet")
 class UCTransNetDecoder(nn.Module):
     """UCTransNet 4-stage decoder with CCA skip connections.
+        UCTransNet 4-stage 解码器。
 
     Standard interface: ``forward(bottleneck_feat, skip_features)``
     where skip_features = [x1, x2, x3, x4] (shallow→deep).
@@ -101,12 +105,12 @@ class UCTransNetDecoder(nn.Module):
                  **kwargs):
         super().__init__()
         bc = base_channel
-        # Derive channel sizes from encoder_channels if available
-        # UCTransNet original: bottleneck=1024, skips=[64, 128, 256, 512]
+        # Derive 通道 sizes from 编码器 _ 通道 if available / Derive channel sizes from encoder_channels if available
+        # UCTransNet original: 瓶颈层 / UCTransNet original: bottleneck=1024, skips=[64, 128, 256, 512]
         if encoder_channels is not None and len(encoder_channels) == 4:
-            # Use actual encoder channels for CCA input sizes
+            # Use actual 编码器 / Use actual encoder channels for CCA input sizes
             enc_chs = list(encoder_channels)
-            # up4: input=bottleneck(up=enc_chs[-1]), skip=enc_chs[-1] -> concat -> enc_chs[-1]
+            # up4: input=bottleneck(up=enc_chs[-1]), 跳跃连接 / up4: input=bottleneck(up=enc_chs[-1]), skip=enc_chs[-1] -> concat -> enc_chs[-1]
             self.up4 = _UpBlockAttention(bottleneck_channels + enc_chs[-1], enc_chs[-1], 2,
                                           up_channels=bottleneck_channels)
             self.up3 = _UpBlockAttention(enc_chs[-1] + enc_chs[-2], enc_chs[-2], 2,
@@ -129,7 +133,7 @@ class UCTransNetDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # skip_features: [x1, x2, x3, x4] shallow→deep
+        # 跳跃 _ 特征: [ x1, x2, x3, x4 ] 浅层 → 深度 / skip_features: [x1, x2, x3, x4] shallow→deep
         x1, x2, x3, x4 = (skip_features[0], skip_features[1],
                            skip_features[2], skip_features[3])
         x = self.up4(bottleneck_feat, x4)

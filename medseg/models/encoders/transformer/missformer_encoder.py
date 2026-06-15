@@ -1,4 +1,5 @@
 """MISSFormer Encoder: faithful port from https://github.com/ZhifangDeng/MISSFormer
+    MISSFormer 编码器。
 
 Reference: Huang et al., "MISSFormer: An Effective Transformer for 2D Medical Image Segmentation"
 Files: MISSFormer.py, segformer.py
@@ -78,7 +79,7 @@ class MixFFN(nn.Module):
         return out
 
 
-# ============= MixFFN_skip (from segformer.py) =============
+# = = = = = = = = = = = = = MixFFN _ 跳跃 ( from segformer. py ) = = = = = = = = = = = = = / ============= MixFFN_skip (from segformer.py) =============
 class MixFFN_skip(nn.Module):
     def __init__(self, c1, c2):
         super().__init__()
@@ -148,9 +149,10 @@ class TransformerBlock(nn.Module):
         return mx
 
 
-# ============= MiT Encoder (from segformer.py) =============
+# ============= MiT 编码器 / ============= MiT Encoder (from segformer.py) =============
 class MiT(nn.Module):
-    """Mix Transformer encoder from MISSFormer."""
+    """Mix Transformer 编码器。
+        Mix Transformer encoder from MISSFormer."""
 
     def __init__(self, image_size, dims, layers, token_mlp='mix_skip'):
         super().__init__()
@@ -160,7 +162,7 @@ class MiT(nn.Module):
         reduction_ratios = [8, 4, 2, 1]
         heads = [1, 2, 5, 8]
 
-        # Patch embeddings
+        # 图块 嵌入 / Patch embeddings
         self.patch_embed1 = OverlapPatchEmbeddings(image_size, patch_sizes[0], strides[0], padding_sizes[0], 3, dims[0])
         self.patch_embed2 = OverlapPatchEmbeddings(image_size // 4, patch_sizes[1], strides[1], padding_sizes[1], dims[0], dims[1])
         self.patch_embed3 = OverlapPatchEmbeddings(image_size // 8, patch_sizes[2], strides[2], padding_sizes[2], dims[1], dims[2])
@@ -183,7 +185,7 @@ class MiT(nn.Module):
         B = x.shape[0]
         outs = []
 
-        # Stage 1
+        # 阶段 1 / Stage 1
         x, H, W = self.patch_embed1(x)
         for blk in self.block1:
             x = blk(x, H, W)
@@ -191,7 +193,7 @@ class MiT(nn.Module):
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         outs.append(x)
 
-        # Stage 2
+        # 阶段 2 / Stage 2
         x, H, W = self.patch_embed2(x)
         for blk in self.block2:
             x = blk(x, H, W)
@@ -199,7 +201,7 @@ class MiT(nn.Module):
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         outs.append(x)
 
-        # Stage 3
+        # 阶段 3 / Stage 3
         x, H, W = self.patch_embed3(x)
         for blk in self.block3:
             x = blk(x, H, W)
@@ -207,7 +209,7 @@ class MiT(nn.Module):
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         outs.append(x)
 
-        # Stage 4
+        # 阶段 4 / Stage 4
         x, H, W = self.patch_embed4(x)
         for blk in self.block4:
             x = blk(x, H, W)
@@ -221,6 +223,7 @@ class MiT(nn.Module):
 @ENCODER_REGISTRY.register("missformer")
 class MISSFormerEncoder(nn.Module):
     """MISSFormer Encoder wrapper.
+        MISSFormer 编码器。
     Uses MiT backbone, returns 4 multi-scale features.
     """
 

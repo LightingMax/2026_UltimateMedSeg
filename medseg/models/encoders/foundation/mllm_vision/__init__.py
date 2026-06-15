@@ -1,4 +1,4 @@
-"""MLLM vision encoders (empty for now)."""
+"""MLLM视觉编码器 / MLLM vision encoders."""
 import sys as _sys
 for _stem in ('llava_med_vision_encoder', 'hulumed_vision_encoder', 'qwen3_vl_vision_encoder', 'lingshu_vision_encoder', 'qwen25_vl_vision_encoder', 'medgemma_vision_encoder', 'healthgpt_vision_encoder', 'huatuogpt_vision_encoder'):
     try:

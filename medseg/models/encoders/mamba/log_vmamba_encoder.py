@@ -1,4 +1,5 @@
 """LoG-VMamba Encoder.
+    LoG-VMamba 编码器。
 
 Standalone encoder extracted from ``medseg.models.networks.mamba.log_vmamba``.
 
@@ -22,7 +23,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
-    """Try a download/load, falling back to unverified SSL, then random init."""
+    """Try a download / 加载, falling back to unverified SSL, then random init。
+        Try a download/load, falling back to unverified SSL, then random init."""
     import ssl
     import warnings
     try:
@@ -41,27 +43,28 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 class _LoGBlock(nn.Module):
     """Local-Global block: conv branch + gated SSM-like branch fused.
+        Local-Global 块: conv 分支 + gated SSM-like 分支 fused。
 
     Mirrors the block used in the source ``LoGVMamba`` network.
     """
 
     def __init__(self, dim: int, d_state: int = 16):
         super().__init__()
-        # Local branch: depthwise 3x3 + pointwise.
+        # 局部的 分支: depthwise 3x3 + pointwise / Local branch: depthwise 3x3 + pointwise.
         self.local_norm = nn.BatchNorm2d(dim)
         self.local_conv = nn.Sequential(
             nn.Conv2d(dim, dim, 3, 1, 1, groups=dim),
             nn.GELU(),
             nn.Conv2d(dim, dim, 1),
         )
-        # Global branch: gated SSM-style projection on tokens.
+        # 全局的 分支: gated SSM-style projection on 标记 / Global branch: gated SSM-style projection on tokens.
         self.global_norm = nn.LayerNorm(dim)
         self.global_proj = nn.Linear(dim, dim * 2)
         self.global_gate = nn.Sigmoid()
         self.global_out = nn.Linear(dim, dim)
-        # Fusion.
+        # 融合 / Fusion.
         self.fuse = nn.Conv2d(dim * 2, dim, 1)
-        # Token-wise FFN with residual.
+        # Token-wise FFN with 残差 / Token-wise FFN with residual.
         self.ffn = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, dim * 4),
@@ -72,17 +75,17 @@ class _LoGBlock(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
         res = x
-        # Local branch
+        # 局部的 分支 / Local branch
         local_feat = self.local_conv(self.local_norm(x))
-        # Global branch
+        # 全局的 分支 / Global branch
         tokens = x.flatten(2).transpose(1, 2)  # (B, HW, C)
         kv = self.global_proj(self.global_norm(tokens))
         k, v = kv.chunk(2, dim=-1)
         global_out = self.global_out(self.global_gate(k) * v)
         global_feat = global_out.transpose(1, 2).view(B, C, H, W)
-        # Fuse local + global
+        # 融合 局部的 + 全局的 / Fuse local + global
         fused = self.fuse(torch.cat([local_feat, global_feat], dim=1))
-        # FFN with residual on tokens
+        # FFN with 残差 on 标记 / FFN with residual on tokens
         tokens = fused.flatten(2).transpose(1, 2)
         tokens = tokens + self.ffn(tokens)
         return tokens.transpose(1, 2).view(B, C, H, W) + res
@@ -91,6 +94,7 @@ class _LoGBlock(nn.Module):
 @ENCODER_REGISTRY.register("log_vmamba")
 class LoGVMambaEncoder(nn.Module):
     """LoG-VMamba encoder.
+        LoG-VMamba 编码器。
 
     Architecture:
         - Optional 1x1 input stem when ``in_channels != 3``.
@@ -126,7 +130,7 @@ class LoGVMambaEncoder(nn.Module):
         self.dims = tuple(dims)
         self.out_channels: List[int] = list(dims)
 
-        # Optional 1x1 stem to coerce arbitrary input channels to 3.
+        # 可选 1x1 主干 to coerce arbitrary 输入 通道 to 3 / Optional 1x1 stem to coerce arbitrary input channels to 3.
         if in_channels != 3:
             self.input_stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_in = 3
@@ -134,13 +138,13 @@ class LoGVMambaEncoder(nn.Module):
             self.input_stem = nn.Identity()
             stem_in = in_channels
 
-        # Stride-4 patch-embed stem.
+        # 步长 - 4 patch-embed 主干 / Stride-4 patch-embed stem.
         self.stem = nn.Sequential(
             nn.Conv2d(stem_in, dims[0], 4, 4, bias=False),
             nn.BatchNorm2d(dims[0]),
         )
 
-        # Stages + downsamples (3 strided downsamples between 4 stages).
+        # 阶段 + downsamples ( 3 strided downsamples between 4 阶段 ) / Stages + downsamples (3 strided downsamples between 4 stages).
         self.enc = nn.ModuleList()
         self.downs = nn.ModuleList()
         for i in range(len(depths)):
@@ -153,10 +157,11 @@ class LoGVMambaEncoder(nn.Module):
         if pretrained:
             _load_with_ssl_fallback(self._maybe_load_pretrained, pretrained_path)
 
-    # ---- Pretrained loading -------------------------------------------------
+    # - - - - 预训练 loading - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Pretrained loading -------------------------------------------------
 
     def _maybe_load_pretrained(self, pretrained_path: Optional[str] = None, **_):
-        """Best-effort local checkpoint load. No-op without an explicit path."""
+        """Best-effort 局部的 检查点 加载. No-op without an explicit path。
+            Best-effort local checkpoint load. No-op without an explicit path."""
         import warnings
         if not pretrained_path:
             warnings.warn(

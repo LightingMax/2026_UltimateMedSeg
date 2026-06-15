@@ -1,4 +1,5 @@
-"""Multi-scale skip connection."""
+"""Multi-scale 跳跃连接。
+    Multi-scale skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -9,7 +10,8 @@ from medseg.registry import SKIP_REGISTRY
 
 @SKIP_REGISTRY.register("multiscale")
 class MultiscaleSkip(nn.Module):
-    """Multi-scale skip: applies multi-scale convolutions to skip features before concat."""
+    """Multi-scale skip: applies multi-scale convolutions to 跳跃连接。
+        Multi-scale skip: applies multi-scale convolutions to skip features before concat."""
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -17,7 +19,7 @@ class MultiscaleSkip(nn.Module):
         return decoder_ch + skip_ch
 
     def forward(self, decoder_feat, skip_feat):
-        # Apply multi-scale pooling to skip features
+        # Apply multi-scale pooling to 跳跃连接 / Apply multi-scale pooling to skip features
         B, C, H, W = skip_feat.shape
         pool2 = F.adaptive_avg_pool2d(skip_feat, (H // 2, W // 2))
         pool2 = F.interpolate(pool2, size=(H, W), mode='bilinear', align_corners=False)

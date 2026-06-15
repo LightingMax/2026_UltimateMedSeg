@@ -1,4 +1,5 @@
 """FAT-Net Encoder: faithful port from https://github.com/SZUcsh/FAT-Net
+    FAT-Net 编码器。
 
 Reference: Wu et al., "FAT-Net: Feature Adaptive Transformers for Automated Skin Lesion Segmentation"
 All class/attribute names match the original for pretrained weight loading.
@@ -16,7 +17,8 @@ from medseg.registry import ENCODER_REGISTRY
 
 # ============= FAMBlock (from FAT_Net.py) =============
 class FAMBlock(nn.Module):
-    """Feature Adaptive Module Block."""
+    """特征 自适应的 模块 块。
+        Feature Adaptive Module Block."""
     def __init__(self, channels):
         super(FAMBlock, self).__init__()
         self.conv3 = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=3, padding=1)
@@ -35,7 +37,8 @@ class FAMBlock(nn.Module):
 
 # ============= SEBlock (from FAT_Net.py) =============
 class SEBlock(nn.Module):
-    """Squeeze-and-Excitation Block."""
+    """Squeeze-and-Excitation 块。
+        Squeeze-and-Excitation Block."""
     def __init__(self, channel, r=16):
         super(SEBlock, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
@@ -89,6 +92,7 @@ class DecoderBottleneckLayer(nn.Module):
 @ENCODER_REGISTRY.register("fatnet")
 class FATNetEncoder(nn.Module):
     """FAT-Net Encoder: ResNet34 + DeiT-Tiny dual path.
+        FAT-Net 编码器。
     Faithful to https://github.com/SZUcsh/FAT-Net
     
     Note: Original uses torch.hub to load deit_tiny_distilled_patch16_224.
@@ -106,7 +110,7 @@ class FATNetEncoder(nn.Module):
     ):
         super().__init__()
 
-        # ResNet34 encoder
+        # ResNet34 编码器 / ResNet34 encoder
         resnet = resnet_model.resnet34(pretrained=pretrained)
         self.firstconv = resnet.conv1
         self.firstbn = resnet.bn1
@@ -116,7 +120,7 @@ class FATNetEncoder(nn.Module):
         self.encoder3 = resnet.layer3  # 256 channels
         self.encoder4 = resnet.layer4  # 512 channels
 
-        # Transformer branch
+        # Transformer 分支 / Transformer branch
         try:
             if use_deit_pretrained:
                 transformer = torch.hub.load('facebookresearch/deit:main',
@@ -127,13 +131,13 @@ class FATNetEncoder(nn.Module):
             self.patch_embed = transformer.patch_embed
             self.transformers = nn.ModuleList([transformer.blocks[i] for i in range(12)])
         except Exception:
-            # Fallback: create simple transformer blocks
+            # Fallback: create 简单 Transformer blocks / Fallback: create simple transformer blocks
             from timm.models.vision_transformer import PatchEmbed, Block
             self.patch_embed = PatchEmbed(img_size=224, patch_size=16, in_chans=3, embed_dim=192)
             self.transformers = nn.ModuleList([
                 Block(dim=192, num_heads=3, mlp_ratio=4., qkv_bias=True) for _ in range(12)])
 
-        # Fusion layers
+        # 融合 layers / Fusion layers
         self.conv_seq_img = nn.Conv2d(in_channels=192, out_channels=512, kernel_size=1, padding=0)
         self.se = SEBlock(channel=1024)
         self.conv2d = nn.Conv2d(in_channels=1024, out_channels=512, kernel_size=1, padding=0)
@@ -173,12 +177,12 @@ class FATNetEncoder(nn.Module):
         feature_tf = feature_tf.view(b, 192, 14, 14)
         feature_tf = self.conv_seq_img(feature_tf)
 
-        # Fusion
+        # 融合 / Fusion
         feature_cat = torch.cat((feature_cnn, feature_tf), dim=1)
         feature_att = self.se(feature_cat)
         feature_out = self.conv2d(feature_att)
 
-        # Apply FAM blocks
+        # 应用 FAM blocks / Apply FAM blocks
         for i in range(2):
             e3 = self.FAM3[i](e3)
         for i in range(4):

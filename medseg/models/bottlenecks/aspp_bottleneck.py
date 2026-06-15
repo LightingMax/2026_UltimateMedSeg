@@ -1,4 +1,5 @@
-"""ASPP (Atrous Spatial Pyramid Pooling) bottleneck."""
+"""ASPP (Atrous Spatial Pyramid Pooling) 瓶颈层。
+    ASPP (Atrous Spatial Pyramid Pooling) bottleneck."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -9,7 +10,8 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 @BOTTLENECK_REGISTRY.register("aspp")
 class ASPPBottleneck(nn.Module):
-    """ASPP bottleneck from DeepLabV3+."""
+    """ASPP 瓶颈层。
+        ASPP bottleneck from DeepLabV3+."""
     def __init__(self, in_channels, out_channels=None, atrous_rates=(6, 12, 18), **kwargs):
         super().__init__()
         out_ch = out_channels or in_channels

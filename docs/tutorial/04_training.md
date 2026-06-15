@@ -1,4 +1,4 @@
-# Chapter 04: Training and Evaluation
+﻿# Chapter 04: Training and Evaluation
 
 [Previous: Data](03_data.md) | [中文文档](04_training_CN.md)
 
@@ -216,7 +216,7 @@ Logged metrics:
 
 ---
 
-## 4. Hands-On with UltimateMedSeg
+## 4. Hands-On with APRIL-MedSeg
 
 ### 4.1 Complete Training Workflow
 

@@ -1,4 +1,5 @@
 """TransNuSeg – pure Swin-Transformer nuclei segmentation.
+    TransNuSeg – 纯 Swin-Transformer 细胞核 分割。
 
 Ported from: https://github.com/zhenqi-he/transnuseg
 Paper: TransNuSeg: A Lightweight Multi-Task Transformer for Nuclei
@@ -73,7 +74,8 @@ class Mlp(nn.Module):
 
 
 class ShiftMLP(nn.Module):
-    """Shifted MLP for bottleneck block."""
+    """Shifted MLP for 瓶颈层。
+        Shifted MLP for bottleneck block."""
     def __init__(self, in_features, hidden_features=None, out_features=None,
                  act_layer=nn.GELU, drop=0., shift_size=5):
         super().__init__()
@@ -109,7 +111,8 @@ class ShiftMLP(nn.Module):
 
 
 class ShiftedBlock(nn.Module):
-    """Bottleneck block with shifted MLP."""
+    """瓶颈层 块 with shifted MLP。
+        Bottleneck block with shifted MLP."""
     def __init__(self, dim, num_heads, mlp_ratio=1., qkv_bias=False,
                  qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
                  norm_layer=nn.LayerNorm, sr_ratio=1, input_resolution=(1, 1)):
@@ -123,10 +126,11 @@ class ShiftedBlock(nn.Module):
         return x + self.drop_path(self.mlp(self.norm2(x), self.H, self.W))
 
 
-# ── Attention modules ────────────────────────────────────────────────────────
+# ─ ─ 注意力 modules ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Attention modules ────────────────────────────────────────────────────────
 
 class _BaseWindowAttn(nn.Module):
-    """Base class for window attention with relative position bias."""
+    """Base class for 窗口 注意力 with 相对的 position 偏置。
+        Base class for window attention with relative position bias."""
 
     def __init__(self, dim, window_size, num_heads, qk_scale=None,
                  attn_drop=0., proj_drop=0.):
@@ -173,7 +177,8 @@ class _BaseWindowAttn(nn.Module):
 
 
 class WindowAttention(_BaseWindowAttn):
-    """Standard window attention (encoder blocks)."""
+    """标准 窗口 注意力 ( 编码器 blocks )。
+        Standard window attention (encoder blocks)."""
     def __init__(self, dim, window_size, num_heads, qkv_bias=True,
                  qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__(dim, window_size, num_heads, qk_scale, attn_drop, proj_drop)
@@ -184,7 +189,8 @@ class WindowAttention(_BaseWindowAttn):
 
 
 class WindowAttentionUp(_BaseWindowAttn):
-    """Window attention for decoder (external qkv)."""
+    """Window attention for 解码器。
+        Window attention for decoder (external qkv)."""
     def __init__(self, dim, window_size, num_heads, qkv,
                  qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__(dim, window_size, num_heads, qk_scale, attn_drop, proj_drop)
@@ -195,7 +201,8 @@ class WindowAttentionUp(_BaseWindowAttn):
 
 
 class SharedWindowAttention(_BaseWindowAttn):
-    """Window attention with shared QKV heads across decoder branches."""
+    """Window attention with shared QKV heads across 解码器。
+        Window attention with shared QKV heads across decoder branches."""
     def __init__(self, dim, window_size, num_heads, qkv, shared_qkv,
                  qk_scale=None, attn_drop=0., proj_drop=0., shared_ratio=0.5):
         super().__init__(dim, window_size, num_heads, qk_scale, attn_drop, proj_drop)
@@ -240,7 +247,8 @@ def _make_attn_mask(input_resolution, window_size, shift_size):
 
 
 class SwinBlock(nn.Module):
-    """Standard Swin Transformer block (encoder)."""
+    """标准 Swin Transformer 块 ( 编码器 )。
+        Standard Swin Transformer block (encoder)."""
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., norm_layer=nn.LayerNorm):
@@ -273,7 +281,8 @@ class SwinBlock(nn.Module):
 
 
 class SwinBlockUp(nn.Module):
-    """Swin block with external qkv (decoder)."""
+    """Swin 块 with external qkv ( 解码 )。
+        Swin block with external qkv (decoder)."""
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., qkv=None, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., norm_layer=nn.LayerNorm):
@@ -306,7 +315,8 @@ class SwinBlockUp(nn.Module):
 
 
 class SharedSwinBlock(nn.Module):
-    """Swin block with shared QKV attention for multi-task decoder."""
+    """Swin block with shared QKV attention for multi-task 解码器。
+        Swin block with shared QKV attention for multi-task decoder."""
     def __init__(self, dim, input_resolution, num_heads, qkv, shared_qkv,
                  window_size=7, shift_size=0, mlp_ratio=4., qk_scale=None,
                  drop=0., attn_drop=0., drop_path=0., norm_layer=nn.LayerNorm,
@@ -487,6 +497,7 @@ class SharedBasicLayerUp(nn.Module):
 
 class TransNuSeg(nn.Module):
     """TransNuSeg: pure Swin-Transformer nuclei segmentation.
+        TransNuSeg: 纯 Swin-Transformer 细胞核 分割。
 
     Parameters
     ----------
@@ -527,7 +538,7 @@ class TransNuSeg(nn.Module):
         self.num_features_up = int(embed_dim * 2)
         self.mlp_ratio = mlp_ratio
 
-        # Patch embedding
+        # 图块 嵌入 / Patch embedding
         self.patch_embed = PatchEmbed(img_size, patch_size, in_channels, embed_dim,
                                       norm_layer if patch_norm else None)
         pr = self.patch_embed.patches_resolution
@@ -539,10 +550,10 @@ class TransNuSeg(nn.Module):
             trunc_normal_(self.absolute_pos_embed, std=.02)
         self.pos_drop = nn.Dropout(p=drop_rate)
 
-        # Stochastic depth
+        # Stochastic 深度 / Stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
 
-        # Encoder + bottleneck
+        # Encoder + 瓶颈层 / Encoder + bottleneck
         self.layers = nn.ModuleList()
         for i in range(self.num_layers):
             if i < self.num_layers - 1:
@@ -563,7 +574,7 @@ class TransNuSeg(nn.Module):
                     input_resolution=(pr[0] // (2 ** i), pr[1] // (2 ** i)))
             self.layers.append(layer)
 
-        # Decoder branches
+        # 解码 branches / Decoder branches
         self.layers_up = nn.ModuleList()
         self.layers_up2 = nn.ModuleList()
         self.layers_up3 = nn.ModuleList()
@@ -650,7 +661,7 @@ class TransNuSeg(nn.Module):
         self.norm3 = norm_layer(self.num_features)
         self.norm_up3 = norm_layer(embed_dim)
 
-        # Final 4× upsample + output heads
+        # Final 4 × 上采样 + 输出 heads / Final 4× upsample + output heads
         self.up = FinalPatchExpand_X4((pr[0], pr[1]), embed_dim, 4, norm_layer)
         self.output = nn.Conv2d(embed_dim, num_classes, 1, bias=False)
         self.up2 = FinalPatchExpand_X4((pr[0], pr[1]), embed_dim, 4, norm_layer)
@@ -710,6 +721,6 @@ class TransNuSeg(nn.Module):
         seg, edge, cluster = self.forward_up_features(seg, edge, seg_d, edge_d)
         H, W = self.patches_resolution
         B = seg.shape[0]
-        # Primary output (nuclei segmentation)
+        # Primary 输出 ( 细胞核 分割 ) / Primary output (nuclei segmentation)
         s = self.up(seg).view(B, 4 * H, 4 * W, -1).permute(0, 3, 1, 2)
         return self.output(s)

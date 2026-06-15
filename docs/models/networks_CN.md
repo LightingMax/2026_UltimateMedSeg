@@ -2,9 +2,9 @@
 
 [English](networks.md)
 
-本项目支持 128 个完整网络架构（136 注册，合并尺寸变体；123 个标准 + 13 个文本引导），通过 `architecture` 字段直接使用。
+本项目支持 146 个完整网络架构（145 注册，合并尺寸变体；133 个标准 + 13 个文本引导），通过 `architecture` 字段直接使用。
 
-## CNN (35)
+## CNN (37)
 
 卷积神经网络系列，经典 UNet 及其变体。
 
@@ -45,13 +45,21 @@
 | `stu_net` | STU-Net | arXiv 2023 | - | [stu_net.yaml](../../configs/architectures/networks/general/stu_net.yaml) |
 | `polyper` | Polyper | - | - | [polyper.yaml](../../configs/architectures/networks/general/polyper.yaml) |
 | `hovernet_lite` | HoverNet Lite | - | - | [hovernet_lite.yaml](../../configs/architectures/networks/general/hovernet_lite.yaml) |
+| `hrnet_w18` | HRNet（高分辨率网络，W18） | CVPR 2019 | - | [hrnet_w18.yaml](../../configs/architectures/networks/general/hrnet_w18.yaml) |
+| `hrnet_w32` | HRNet（高分辨率网络，W32） | CVPR 2019 | - | [hrnet_w32.yaml](../../configs/architectures/networks/general/hrnet_w32.yaml) |
 
-## Transformer (35)
+## Transformer (42)
 
 基于 Transformer 的分割网络。
 
 | 名称 | 论文 | 发表 | GitHub | YAML |
 |---|---|---|---|---|
+| `segformer_b0` | SegFormer (MiT-B0) | NeurIPS 2021 | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) | [segformer_b0.yaml](../../configs/architectures/networks/general/segformer_b0.yaml) |
+| `segformer_b1` | SegFormer (MiT-B1) | NeurIPS 2021 | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) | [segformer_b1.yaml](../../configs/architectures/networks/general/segformer_b1.yaml) |
+| `segformer_b2` | SegFormer (MiT-B2) | NeurIPS 2021 | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) | [segformer_b2.yaml](../../configs/architectures/networks/general/segformer_b2.yaml) |
+| `segformer_b3` | SegFormer (MiT-B3) | NeurIPS 2021 | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) | [segformer_b3.yaml](../../configs/architectures/networks/general/segformer_b3.yaml) |
+| `segformer_b4` | SegFormer (MiT-B4) | NeurIPS 2021 | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) | [segformer_b4.yaml](../../configs/architectures/networks/general/segformer_b4.yaml) |
+| `segformer_b5` | SegFormer (MiT-B5) | NeurIPS 2021 | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) | [segformer_b5.yaml](../../configs/architectures/networks/general/segformer_b5.yaml) |
 | `transunet` | TransUNet | arXiv 2021 | [Beckschen/TransUNet](https://github.com/Beckschen/TransUNet) | [transunet_cascade_full.yaml](../../configs/architectures/combinations/general/transunet_cascade_full.yaml) |
 | `swinunet` | Swin-UNet | ECCV 2022 | [HuCaoFighting/Swin-Unet](https://github.com/HuCaoFighting/Swin-Unet) | [swinunet_segformer.yaml](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 | `medt` | MedT (Medical Transformer) | MICCAI 2021 | [jeya-maria-jose/Medical-Transformer](https://github.com/jeya-maria-jose/Medical-Transformer) | [medt.yaml](../../configs/architectures/networks/general/medt.yaml) |
@@ -75,6 +83,7 @@
 | `cswin_unet` | CSWin-UNet | - | - | [cswin_unet.yaml](../../configs/architectures/networks/general/cswin_unet.yaml) |
 | `fcbformer` | FCBFormer | MICCAI 2022 | - | [fcbformer.yaml](../../configs/architectures/networks/general/fcbformer.yaml) |
 | `pvt_unet` | PVT-UNet | - | - | [pvtv2_emcad.yaml](../../configs/architectures/combinations/general/pvtv2_emcad.yaml), [pvtv2_cascade_full.yaml](../../configs/architectures/combinations/general/pvtv2_cascade_full.yaml), [pvtv2_cfm.yaml](../../configs/architectures/combinations/general/pvtv2_cfm.yaml) |
+| `pvtb2_emcad` | PVTb2-EMCAD | - | - | [pvtb2_emcad.yaml](../../configs/architectures/networks/general/pvtb2_emcad.yaml) |
 | `transnetr` | TransNetR | IEEE Access 2023 | - | [transnetr.yaml](../../configs/architectures/networks/general/transnetr.yaml) |
 | `polyp_pvt` | Polyp-PVT | MICCAI 2021 | - | [polyp_pvt.yaml](../../configs/architectures/networks/general/polyp_pvt.yaml) |
 | `cascade` | CASCADE | MICCAI 2023 | - | [cascade_resnet34.yaml](../../configs/architectures/combinations/general/cascade_resnet34.yaml) |
@@ -88,7 +97,7 @@
 | `ctnet` | CTNet | - | - | [ctnet.yaml](../../configs/architectures/networks/general/ctnet.yaml) |
 | `nulite` | NuLite | - | - | [nulite.yaml](../../configs/architectures/networks/general/nulite.yaml) |
 
-## Mamba / SSM (24)
+## Mamba / SSM (25)
 
 基于 Mamba (Selective State Space Model) 的网络。
 
@@ -120,7 +129,7 @@
 | `vim_unet` | ViM-UNet | arXiv 2024 | [vim_unet.yaml](../../configs/architectures/networks/general/vim_unet.yaml) |
 | `uu_mamba` | UU-Mamba | arXiv 2024 | [uu_mamba.yaml](../../configs/architectures/networks/general/uu_mamba.yaml) |
 
-## SAM (10)
+## SAM (12)
 
 基于 Segment Anything Model 的网络。
 
@@ -139,7 +148,7 @@
 | `auto_sam` | AutoSAM | arXiv 2023 | [auto_sam.yaml](../../configs/architectures/networks/general/auto_sam.yaml) |
 | `lite_medsam` | Lite-MedSAM | arXiv 2024 | [qata_covid19_lite_medsam.yaml](../../configs/architectures/foundation/sam/qata_covid19_lite_medsam.yaml) |
 
-## KAN / MLP (4)
+## KAN / MLP (7)
 
 | 名称 | 论文 | 发表 | YAML |
 |---|---|---|---|
@@ -150,17 +159,20 @@
 | `rolling_unet_s` | Rolling-UNet (small) | arXiv 2024 | [rolling_unet_s.yaml](../../configs/architectures/networks/general/rolling_unet_s.yaml) |
 | `rolling_unet_m` | Rolling-UNet (medium) | arXiv 2024 | [rolling_unet_m.yaml](../../configs/architectures/networks/general/rolling_unet_m.yaml) |
 | `rolling_unet_l` | Rolling-UNet (large) | arXiv 2024 | [rolling_unet_l.yaml](../../configs/architectures/networks/general/rolling_unet_l.yaml) |
+| `xlstm_unet_bot` | xLSTM-UNet (bottleneck) | arXiv 2024 | [xlstm_unet_bot.yaml](../../configs/architectures/networks/general/xlstm_unet_bot.yaml) |
+| `xlstm_unet_enc` | xLSTM-UNet (encoder) | arXiv 2024 | [xlstm_unet_enc.yaml](../../configs/architectures/networks/general/xlstm_unet_enc.yaml) |
 
-## RWKV (4)
+## RWKV (5)
 
 | 名称 | 论文 | 发表 | YAML |
 |---|---|---|---|
-| `u_rwkv` | U-RWKV | arXiv 2024 | [rwkv_unet.yaml](../../configs/architectures/combinations/general/rwkv_unet.yaml), [rwkv_unet_small.yaml](../../configs/architectures/combinations/general/rwkv_unet_small.yaml), [rwkv_unet_tiny.yaml](../../configs/architectures/combinations/general/rwkv_unet_tiny.yaml) |
+| `u_rwkv` | U-RWKV（MICCAI 2025，方向自适应） | MICCAI 2025 | [u_rwkv.yaml](../../configs/architectures/networks/general/u_rwkv.yaml), [rwkv_unet.yaml](../../configs/architectures/combinations/general/rwkv_unet.yaml), [rwkv_unet_small.yaml](../../configs/architectures/combinations/general/rwkv_unet_small.yaml), [rwkv_unet_tiny.yaml](../../configs/architectures/combinations/general/rwkv_unet_tiny.yaml) |
+| `u_rwkv_tip` | U-RWKV（TIP 2026，OmniShift + 卷积后 RWKV） | IEEE TIP 2026 | [u_rwkv_tip.yaml](../../configs/architectures/networks/general/u_rwkv_tip.yaml) |
 | `rwkv_unet` | RWKV-UNet | arXiv 2024 | [rwkv_emcad.yaml](../../configs/architectures/combinations/general/rwkv_emcad.yaml), [rwkv_cascade_full.yaml](../../configs/architectures/combinations/general/rwkv_cascade_full.yaml), [rwkv_cfm.yaml](../../configs/architectures/combinations/general/rwkv_cfm.yaml) |
 | `md_rwkv_unet` | MD-RWKV-UNet | arXiv 2024 | [md_rwkv_unet.yaml](../../configs/architectures/networks/general/md_rwkv_unet.yaml) |
 | `rir_zigzag` | RIR-Zigzag | arXiv 2024 | [rir_zigzag.yaml](../../configs/architectures/combinations/general/rir_zigzag.yaml) |
 
-## Linear Attention (3)
+## Linear Attention (4)
 
 | 名称 | 论文 | 发表 | YAML |
 |---|---|---|---|

@@ -1,4 +1,5 @@
-"""BiFusion (TransFuse-style) parallel-branch skip connection."""
+"""BiFusion (TransFuse-style) parallel-branch 跳跃连接。
+    BiFusion (TransFuse-style) parallel-branch skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("bifusion")
 class BiFusionSkip(nn.Module):
     """Parallel-branch BiFusion skip.
+        Parallel-branch BiFusion 跳跃连接。
 
     Fuses decoder and skip features by combining:
       - channel-attention weights from concat(decoder, skip) via GAP + 2 FC
@@ -21,7 +23,7 @@ class BiFusionSkip(nn.Module):
     def __init__(self, reduction=16, **kwargs):
         super().__init__()
         self.reduction = reduction
-        # Lazily-built submodules keyed by (decoder_ch, skip_ch)
+        # Lazily-built submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazily-built submodules keyed by (decoder_ch, skip_ch)
         self._channel_attns = nn.ModuleDict()
         self._spatial_attns = nn.ModuleDict()
         self._dec_projs = nn.ModuleDict()
@@ -41,13 +43,13 @@ class BiFusionSkip(nn.Module):
         unified = max(decoder_ch, skip_ch)
         r = self.reduction
 
-        # Project both branches to unified channels so element-wise ops align
+        # Project both branches to 统一的 通道 so element-wise ops align / Project both branches to unified channels so element-wise ops align
         dec_proj = (nn.Conv2d(decoder_ch, unified, kernel_size=1)
                     if decoder_ch != unified else nn.Identity())
         skip_proj = (nn.Conv2d(skip_ch, unified, kernel_size=1)
                      if skip_ch != unified else nn.Identity())
 
-        # Channel attention on concat(decoder, skip): GAP + 2 FC -> sigmoid
+        # Channel attention on concat(decoder, 跳跃连接 / Channel attention on concat(decoder, skip): GAP + 2 FC -> sigmoid
         concat_ch = unified * 2
         channel_attn = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
@@ -58,13 +60,13 @@ class BiFusionSkip(nn.Module):
             nn.Sigmoid(),
         )
 
-        # Spatial attention on concat: 1x1 conv -> sigmoid (per-pixel scalar)
+        # 空间的 注意力 on concat: 1x1 conv - > sigmoid ( per-pixel 标量 ) / Spatial attention on concat: 1x1 conv -> sigmoid (per-pixel scalar)
         spatial_attn = nn.Sequential(
             nn.Conv2d(concat_ch, 1, kernel_size=1),
             nn.Sigmoid(),
         )
 
-        # Final 1x1 conv to unified channel count
+        # Final 1x1 conv to 统一的 通道 count / Final 1x1 conv to unified channel count
         out_conv = nn.Conv2d(unified, unified, kernel_size=1)
 
         self._dec_projs[key] = dec_proj.to(device)
@@ -74,7 +76,7 @@ class BiFusionSkip(nn.Module):
         self._out_convs[key] = out_conv.to(device)
 
     def forward(self, decoder_feat, skip_feat):
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[-2:] != decoder_feat.shape[-2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[-2:],
@@ -91,9 +93,9 @@ class BiFusionSkip(nn.Module):
 
         concat = torch.cat([d, s], dim=1)
 
-        # Channel attention weights -> (B, C, 1, 1)
+        # 通道 注意力 权重 - > ( B, C, 1, 1 ) / Channel attention weights -> (B, C, 1, 1)
         w_c = self._channel_attns[key](concat).unsqueeze(-1).unsqueeze(-1)
-        # Spatial attention weights -> (B, 1, H, W)
+        # 空间的 注意力 权重 - > ( B, 1, H, W ) / Spatial attention weights -> (B, 1, H, W)
         w_s = self._spatial_attns[key](concat)
 
         fused = w_c * (d + s) + w_s * (d * s)

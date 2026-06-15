@@ -24,6 +24,7 @@
 | `gated_attn` | `gated_attn_bottleneck.py` | 门控自注意力（轻量级 Transformer） |
 | `moe` | `moe_bottleneck.py` | 专家混合 + top-k 路由 (ICLR 2017) |
 | `coordconv` | `coordconv_bottleneck.py` | CoordConv：位置感知卷积 (NeurIPS 2018) |
+| `llm4seg` | `llm4seg_bottleneck.py` | LLM 引导语义瓶颈层 |
 
 ## YAML 配置用法
 

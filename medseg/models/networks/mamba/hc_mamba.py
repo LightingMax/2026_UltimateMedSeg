@@ -1,4 +1,5 @@
 """HC-Mamba: Hierarchical Conv-Mamba for Medical Image Segmentation (2024).
+    HC-Mamba: 层级的 Conv-Mamba for 医学的 图像 分割 ( 2024 )。
 
 Faithful reimplementation inspired by:
   https://github.com/JqxnnNn/HC-Mamba
@@ -38,7 +39,8 @@ from medseg.models.encoders.vmunet_encoder import (
 # ---------------------------------------------------------------------------
 
 class _DropPath(nn.Module):
-    """Per-sample stochastic depth."""
+    """Per-sample stochastic 深度。
+        Per-sample stochastic depth."""
     def __init__(self, drop_prob: float = 0.0):
         super().__init__()
         self.drop_prob = drop_prob
@@ -53,7 +55,8 @@ class _DropPath(nn.Module):
 
 
 class _LayerNorm2d(nn.Module):
-    """LayerNorm applied over channels of a (B,C,H,W) tensor."""
+    """LayerNorm applied over 通道 of a ( B, C, H, W ) 张量。
+        LayerNorm applied over channels of a (B,C,H,W) tensor."""
     def __init__(self, num_channels: int, eps: float = 1e-6):
         super().__init__()
         self.norm = nn.LayerNorm(num_channels, eps=eps)
@@ -65,7 +68,7 @@ class _LayerNorm2d(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# DDConv: depthwise dilated conv with parallel dilations [1, 2, 3], summed.
+# DDConv: depthwise dilated conv with 并行的 dilations [ 1, 2, 3 ], summed / DDConv: depthwise dilated conv with parallel dilations [1, 2, 3], summed.
 # ---------------------------------------------------------------------------
 
 class _DDConv(nn.Module):
@@ -110,7 +113,7 @@ class _FFN(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# HC-Mamba block: DDConv -> LN -> SS2D -> FFN
+# HC-Mamba 块: DDConv - > LN - > SS2D - > FFN / HC-Mamba block: DDConv -> LN -> SS2D -> FFN
 # Operates on (B, C, H, W) on the outside; SS2D needs (B, H, W, C).
 # ---------------------------------------------------------------------------
 
@@ -133,7 +136,7 @@ class _HCMambaBlock(nn.Module):
 
     def forward(self, x):
         """x: (B, C, H, W) -> (B, C, H, W)"""
-        # DDConv branch + residual
+        # DDConv 分支 + 残差 / DDConv branch + residual
         x = x + self.drop_path(self.dw_norm(self.ddconv(x)))
 
         # to (B, H, W, C) for LN, SS2D, FFN
@@ -145,7 +148,7 @@ class _HCMambaBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stage = stack of HC-Mamba blocks
+# 阶段 = stack of HC-Mamba blocks / Stage = stack of HC-Mamba blocks
 # ---------------------------------------------------------------------------
 
 class _HCStage(nn.Module):
@@ -168,7 +171,7 @@ class _HCStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Downsample (stride-2 3x3 conv) and PatchExpand (2x up via pixel shuffle)
+# 下采样 ( 步长 - 2 3x3 conv ) and PatchExpand ( 2x up via pixel shuffle ) / Downsample (stride-2 3x3 conv) and PatchExpand (2x up via pixel shuffle)
 # ---------------------------------------------------------------------------
 
 class _Downsample(nn.Module):
@@ -183,10 +186,11 @@ class _Downsample(nn.Module):
 
 
 class _PatchExpand(nn.Module):
-    """2x spatial upsample, then project to `out_dim` channels."""
+    """2x 空间的 上采样, then project to ` out _ dim ` 通道。
+        2x spatial upsample, then project to `out_dim` channels."""
     def __init__(self, in_dim: int, out_dim: int):
         super().__init__()
-        # Expand to 4x channels via 1x1, then pixel shuffle x2 -> in_dim channels.
+        # Expand to 4x 通道 via 1x1, then pixel shuffle x2 - > in _ dim 通道 / Expand to 4x channels via 1x1, then pixel shuffle x2 -> in_dim channels.
         self.expand = nn.Conv2d(in_dim, in_dim * 4, kernel_size=1, bias=False)
         self.shuffle = nn.PixelShuffle(2)
         self.norm = _LayerNorm2d(in_dim)
@@ -201,7 +205,7 @@ class _PatchExpand(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stem: stride-4 4x4 conv -> H/4, W/4
+# 主干: 步长 - 4 4x4 conv - > H / 4, W / 4 / Stem: stride-4 4x4 conv -> H/4, W/4
 # ---------------------------------------------------------------------------
 
 class _Stem(nn.Module):
@@ -215,11 +219,12 @@ class _Stem(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Top-level HC-Mamba segmentation network
+# Top-level HC-Mamba 分割 网络 / Top-level HC-Mamba segmentation network
 # ---------------------------------------------------------------------------
 
 class HCMamba(nn.Module):
     """HC-Mamba: Hierarchical Conv-Mamba U-shape network.
+        HC-Mamba: 层级的 Conv-Mamba U-shape 网络。
 
     Args:
         in_channels: number of input channels (default 3).
@@ -257,14 +262,14 @@ class HCMamba(nn.Module):
         self.depths = depths
         self.num_stages = len(dims)
 
-        # Stochastic depth schedule
+        # Stochastic 深度 schedule / Stochastic depth schedule
         total_blocks = sum(depths)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, max(total_blocks, 1))]
 
-        # Stem (stride-4)
+        # 主干 ( 步长 - 4 ) / Stem (stride-4)
         self.stem = _Stem(in_channels, dims[0])
 
-        # Encoder stages and downsamples
+        # 编码器 阶段 and downsamples / Encoder stages and downsamples
         self.enc_stages = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         cur = 0
@@ -282,12 +287,12 @@ class HCMamba(nn.Module):
             if i < self.num_stages - 1:
                 self.downsamples.append(_Downsample(dims[i], dims[i + 1]))
 
-        # Decoder: 3 up-stages mirroring the 3 downsamples
-        # Each: PatchExpand (in_dim=dims[i+1] -> out=dims[i]) + concat skip + 1x1 fuse + HCStage(dims[i])
+        # 解码: 3 up-stages mirroring the 3 downsamples / Decoder: 3 up-stages mirroring the 3 downsamples
+        # Each: PatchExpand (in_dim=dims[i+1] -> out=dims[i]) + concat 跳跃连接 / Each: PatchExpand (in_dim=dims[i+1] -> out=dims[i]) + concat skip + 1x1 fuse + HCStage(dims[i])
         self.ups = nn.ModuleList()
         self.fuses = nn.ModuleList()
         self.dec_stages = nn.ModuleList()
-        # Use a fresh (small) drop-path schedule for decoder to keep symmetric capacity
+        # Use a fresh (small) drop-path schedule for 解码器 / Use a fresh (small) drop-path schedule for decoder to keep symmetric capacity
         ddpr = [x.item() for x in torch.linspace(0, drop_path_rate,
                                                   sum(depths[:-1]) or 1)]
         dcur = 0
@@ -306,7 +311,7 @@ class HCMamba(nn.Module):
             )
             dcur += depths[i]
 
-        # Final: 4x upsample to original resolution + 1x1 head
+        # Final: 4x 上采样 to original 分辨率 + 1x1 头部 / Final: 4x upsample to original resolution + 1x1 head
         self.final_norm = _LayerNorm2d(dims[0])
         self.final_up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False)
         self.seg_head = nn.Conv2d(dims[0], num_classes, kernel_size=1)
@@ -330,7 +335,7 @@ class HCMamba(nn.Module):
                 nn.init.constant_(m.bias, 0.0)
 
     # ------------------------------------------------------------------
-    # Padding helper: ensure H, W are multiples of 32 (= 4 * 2^3)
+    # 填充 helper: ensure H, W are multiples of 32 ( = 4 * 2 ^ 3 ) / Padding helper: ensure H, W are multiples of 32 (= 4 * 2^3)
     # ------------------------------------------------------------------
     @staticmethod
     def _pad_to_multiple(x, multiple=32):
@@ -344,13 +349,13 @@ class HCMamba(nn.Module):
         return x, (0, pad_w, 0, pad_h)
 
     # ------------------------------------------------------------------
-    # Forward
+    # 前向传播 / Forward
     # ------------------------------------------------------------------
     def forward(self, x):
         B, _, H, W = x.shape
         x, pad = self._pad_to_multiple(x, multiple=32)
 
-        # Encoder
+        # 编码器 / Encoder
         x = self.stem(x)
         skips = []
         for i in range(self.num_stages):
@@ -359,11 +364,11 @@ class HCMamba(nn.Module):
                 skips.append(x)
                 x = self.downsamples[i](x)
 
-        # Decoder
+        # 解码 / Decoder
         for i, (up, fuse, stage) in enumerate(zip(self.ups, self.fuses, self.dec_stages)):
             x = up(x)
             skip = skips[-(i + 1)]
-            # Defensive: align spatial dims if off by one
+            # Defensive: align 空间的 dims if off by one / Defensive: align spatial dims if off by one
             if x.shape[-2:] != skip.shape[-2:]:
                 x = F.interpolate(x, size=skip.shape[-2:], mode='bilinear',
                                   align_corners=False)
@@ -371,12 +376,12 @@ class HCMamba(nn.Module):
             x = fuse(x)
             x = stage(x)
 
-        # Final upsample to original (padded) resolution & seg head
+        # Final 上采样 to original ( padded ) 分辨率 & seg 头部 / Final upsample to original (padded) resolution & seg head
         x = self.final_norm(x)
         x = self.final_up(x)
         logits = self.seg_head(x)
 
-        # Crop padding back to original size
+        # Crop 填充 back to original 大小 / Crop padding back to original size
         if pad != (0, 0, 0, 0):
             logits = logits[:, :, :H, :W]
         return logits

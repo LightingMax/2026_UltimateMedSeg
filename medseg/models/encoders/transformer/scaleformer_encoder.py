@@ -1,4 +1,5 @@
 """ScaleFormer Encoder.
+    ScaleFormer 编码器。
 
 Faithful 1:1 port of the official implementation in
     https://github.com/ZJUGiveLab/ScaleFormer
@@ -42,7 +43,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 # ---------------------------------------------------------------------------
-# Basic blocks (1:1 from official networks/ScaleFormer.py)
+# 基本 blocks ( 1: 1 from official networks / ScaleFormer. py ) / Basic blocks (1:1 from official networks/ScaleFormer.py)
 # ---------------------------------------------------------------------------
 
 
@@ -95,7 +96,8 @@ class DoubleConv(nn.Module):
 
 
 class DWCONV(nn.Module):
-    """Depthwise Convolution."""
+    """深度可分离卷积。
+        Depthwise Convolution."""
 
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
                  padding=1, groups=None):
@@ -111,15 +113,15 @@ class DWCONV(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# U-shape CNN encoder (5-stage)
+# U-shape CNN 编码器 / U-shape CNN encoder (5-stage)
 # ---------------------------------------------------------------------------
 
 
 class UEncoder(nn.Module):
     def __init__(self, in_channels: int = 3):
         super().__init__()
-        # Only the first DoubleConv's input dim is parameterised so that the
-        # encoder remains usable for non-RGB inputs. All other dims follow
+        # Only the first DoubleConv's 输入 dim is parameterised so that the / Only the first DoubleConv's input dim is parameterised so that the
+        # 编码器 remains usable for non-RGB inputs. All other dims follow / encoder remains usable for non-RGB inputs. All other dims follow
         # the paper exactly.
         self.res1 = DoubleConv(in_channels, 64)
         self.pool1 = nn.MaxPool2d(2)
@@ -144,7 +146,7 @@ class UEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Intra-scale Transformer Block (Dual-axis MHSA + IR-FFN with multi-LN)
+# Intra-scale Transformer 块 ( Dual-axis MHSA + IR-FFN with multi-LN ) / Intra-scale Transformer Block (Dual-axis MHSA + IR-FFN with multi-LN)
 # ---------------------------------------------------------------------------
 
 
@@ -224,7 +226,7 @@ class Dual_axis(nn.Module):
         attn_w = attn_w + self.Bw
         attn_w = torch.softmax(attn_w, dim=-1)
 
-        # Attention
+        # 注意力 / Attention
         result = torch.matmul(attn_h, v)
         result = result.view(b, self.heads, h, w, self.d_v).permute(0, 1, 2, 4, 3).contiguous()
         result = result.view(b, self.heads, h * self.d_v, w).contiguous()
@@ -270,11 +272,11 @@ class IntraTransBlock(nn.Module):
     def __init__(self, img_size, stride, d_h, d_v, d_w, num_heads,
                  R=4, in_channels=46):
         super().__init__()
-        # Lightweight MHSA
+        # 轻量级 MHSA / Lightweight MHSA
         self.SlayerNorm = nn.LayerNorm(in_channels, eps=1e-6)
         self.ElayerNorm = nn.LayerNorm(in_channels, eps=1e-6)
         self.lmhsa = Dual_axis(img_size, in_channels, d_h, d_v, d_w, num_heads, 0.0)
-        # Inverted Residual FFN
+        # Inverted 残差 FFN / Inverted Residual FFN
         self.irffn = FFN_MultiLN(in_channels, img_size, R)
 
     def forward(self, x):
@@ -297,7 +299,7 @@ class IntraTransBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Inter-scale Transformer (Spatial-Aware Group Attention)
+# Inter-scale Transformer ( Spatial-Aware Group 注意力 ) / Inter-scale Transformer (Spatial-Aware Group Attention)
 # ---------------------------------------------------------------------------
 
 
@@ -385,9 +387,9 @@ class SpatialAwareTrans(nn.Module):
         self.split_list = [8 * 8, 4 * 4, 2 * 2, 1 * 1]
 
     def forward(self, x):
-        # project channel dimension to dim
+        # project 通道 维度 to dim / project channel dimension to dim
         x = [self.fc_module[i](item.permute(0, 2, 3, 1)) for i, item in enumerate(x)]
-        # Patch Matching
+        # 图块 Matching / Patch Matching
         for j, item in enumerate(x):
             B, H, W, C = item.shape
             win_size = self.ini_win_size ** (self.depth - j - 1)
@@ -397,13 +399,13 @@ class SpatialAwareTrans(nn.Module):
             x[j] = item
         x = tuple(x)
         x = torch.cat(x, dim=-2)
-        # Scale fusion
+        # Scale 融合 / Scale fusion
         for i in range(self.num):
             x = self.group_attention[i](x)
 
         x = torch.split(x, self.split_list, dim=-2)
         x = list(x)
-        # patch reversion
+        # 图块 reversion / patch reversion
         for j, item in enumerate(x):
             B, num_blocks, _, N, C = item.shape
             win_size = self.ini_win_size ** (self.depth - j - 1)
@@ -417,7 +419,7 @@ class SpatialAwareTrans(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Parallel (CNN + Transformer) Encoder
+# Parallel (CNN + Transformer) 编码器 / Parallel (CNN + Transformer) Encoder
 # ---------------------------------------------------------------------------
 
 
@@ -522,13 +524,14 @@ class ParallEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder wrapper for project's 4-stage decoder pipeline
+# Encoder wrapper for project's 4-stage 解码器 / Encoder wrapper for project's 4-stage decoder pipeline
 # ---------------------------------------------------------------------------
 
 
 @ENCODER_REGISTRY.register("scaleformer")
 class ScaleFormerEncoder(nn.Module):
     """ScaleFormer encoder returning 4 deep stages.
+        ScaleFormer 编码器。
 
     The official ParallEncoder produces 6 ``skips`` at strides
     ``[1, 2, 4, 8, 16, 32]`` with channels ``[64, 128, 256, 512, 1024, 1024]``.
@@ -552,10 +555,10 @@ class ScaleFormerEncoder(nn.Module):
         self.encoder = ParallEncoder(in_channels=in_channels)
         self.out_channels = [256, 512, 1024, 1024]
 
-        # First conv of UEncoder absorbs ``in_channels`` directly, so no
-        # silent 1->3 channel replication is performed here. Upstream is
-        # expected to feed tensors whose channel count matches
-        # ``in_channels``.
+        # First conv of UEncoder absorbs ` ` in _ 通道 ` ` directly, so no / First conv of UEncoder absorbs ``in_channels`` directly, so no
+        # silent 1 - > 3 通道 replication is performed here. Upstream is / silent 1->3 channel replication is performed here. Upstream is
+        # expected to feed 张量 whose 通道 count matches / expected to feed tensors whose channel count matches
+        # ` ` in _ 通道 ` ` / ``in_channels``.
         self._in_channels = in_channels
 
         if pretrained and pretrained_path:
@@ -566,7 +569,7 @@ class ScaleFormerEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         if x.size(1) != self._in_channels and x.size(1) == 1 and self._in_channels == 3:
-            # Convenience auto-replication for single-channel medical inputs.
+            # Convenience auto-replication for single-channel 医学的 inputs / Convenience auto-replication for single-channel medical inputs.
             x = x.repeat(1, 3, 1, 1)
         skips = self.encoder(x)
         # skips: [s/1 (64), s/2 (128), s/4 (256), s/8 (512), s/16 (1024), s/32 (1024)]

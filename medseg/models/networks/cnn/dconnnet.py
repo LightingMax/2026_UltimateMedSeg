@@ -1,4 +1,5 @@
 """DconnNet: Directional Connectivity-based Network for Medical Image Segmentation.
+    DconnNet: Directional Connectivity-based 网络 for 医学的 图像 分割。
 
 Faithful self-contained reimplementation from:
   https://github.com/Zyun-Y/DconnNet  (IEEE TMI 2024)
@@ -28,11 +29,12 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# ResNet34 encoder (torchvision wrapper)
+# ResNet34 编码器 / ResNet34 encoder (torchvision wrapper)
 # ---------------------------------------------------------------------------
 
 class _ResNet34Encoder(nn.Module):
     """Torchvision ResNet34 surfaced as a 5-stage feature extractor.
+        Torchvision ResNet34 surfaced as a 5-stage 特征 extractor。
 
     Returns features at strides 2, 4, 8, 16, 32 with channel counts
     (64, 64, 128, 256, 512) given a 3-channel input. For other in_channels,
@@ -77,11 +79,12 @@ class _ResNet34Encoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Position / Channel attention (DANet, used in SDE)
+# Position / 通道 注意力 ( DANet, used in SDE ) / Position / Channel attention (DANet, used in SDE)
 # ---------------------------------------------------------------------------
 
 class _PAM(nn.Module):
-    """Position attention module (SAGAN/DANet style)."""
+    """Position 注意力 模块 ( SAGAN / DANet style )。
+        Position attention module (SAGAN/DANet style)."""
 
     def __init__(self, in_dim):
         super().__init__()
@@ -102,7 +105,8 @@ class _PAM(nn.Module):
 
 
 class _CAM(nn.Module):
-    """Channel attention module (DANet style)."""
+    """通道 注意力 模块 ( DANet style )。
+        Channel attention module (DANet style)."""
 
     def __init__(self, in_dim):
         super().__init__()
@@ -122,7 +126,7 @@ class _CAM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# DANet head used inside the SDE module
+# DANet 头部 used inside the SDE 模块 / DANet head used inside the SDE module
 # ---------------------------------------------------------------------------
 
 class _DANetHead(nn.Module):
@@ -154,11 +158,12 @@ class _DANetHead(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Sub-path Directional Excitation (SDE) module
+# Sub-path Directional Excitation ( SDE ) 模块 / Sub-path Directional Excitation (SDE) module
 # ---------------------------------------------------------------------------
 
 class _SDEModule(nn.Module):
     """Splits the deepest feature into 8 directional groups, each refined by a
+        Splits the deepest 特征 into 8 directional groups, each refined by a。
     DANet head conditioned on the directional prior encoded from the GAP.
     """
 
@@ -196,7 +201,7 @@ class _SDEModule(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Space-aware block: scene-context gated feature refinement
+# Space-aware 块: scene-context gated 特征 refinement / Space-aware block: scene-context gated feature refinement
 # ---------------------------------------------------------------------------
 
 class _SpaceBlock(nn.Module):
@@ -228,7 +233,7 @@ class _SpaceBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Lightweight multi-scale decoder (LWdecoder) aggregating pyramid features
+# Lightweight multi-scale 解码器 / Lightweight multi-scale decoder (LWdecoder) aggregating pyramid features
 # ---------------------------------------------------------------------------
 
 class _ConvBnRelu(nn.Module):
@@ -295,7 +300,7 @@ class _LWDecoder(nn.Module):
         outs = []
         for block, feat in zip(self.blocks, feat_list):
             outs.append(block(feat))
-        # Align all to the same spatial size (smallest output of the stack).
+        # Align all to the same 空间的 大小 ( smallest 输出 of the stack ) / Align all to the same spatial size (smallest output of the stack).
         target = outs[0].shape[-2:]
         for i in range(1, len(outs)):
             if outs[i].shape[-2:] != target:
@@ -310,6 +315,7 @@ class _LWDecoder(nn.Module):
 
 class DconnNet(nn.Module):
     """Directional Connectivity Network for medical image segmentation.
+        Directional Connectivity 网络 for 医学的 图像 分割。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -328,13 +334,13 @@ class DconnNet(nn.Module):
 
         out_planes = num_classes * 8  # 8 direction maps per class
 
-        # --- Encoder ---
+        # --- 编码器 / --- Encoder ---
         self.backbone = _ResNet34Encoder(in_channels=in_channels, pretrained=pretrained)
 
-        # --- SDE module on the deepest feature (c5: 512 channels) ---
+        # - - - SDE 模块 on the deepest 特征 ( c5: 512 通道 ) - - - / --- SDE module on the deepest feature (c5: 512 channels) ---
         self.sde_module = _SDEModule(512, 512, out_planes)
 
-        # --- Decoder feature blocks (upsample-conv) ---
+        # --- 解码器 / --- Decoder feature blocks (upsample-conv) ---
         self.fb5 = _FeatureBlock(512, 256, relu=False, last=True)   # 1/32 -> 1/16
         self.fb4 = _FeatureBlock(256, 128, relu=False)              # 1/16 -> 1/8
         self.fb3 = _FeatureBlock(128, 64, relu=False)               # 1/8  -> 1/4
@@ -349,12 +355,12 @@ class DconnNet(nn.Module):
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.relu = nn.ReLU(inplace=True)
 
-        # --- Lightweight multi-scale decoder ---
+        # --- Lightweight multi-scale 解码器 / --- Lightweight multi-scale decoder ---
         self.final_decoder = _LWDecoder(
             in_channels=[64, 64, 128, 256], out_channels=32,
             in_feat_output_strides=(4, 8, 16, 32), out_feat_output_stride=4)
 
-        # --- Connectivity head: produces 8-direction connectivity map ---
+        # - - - Connectivity 头部: produces 8-direction connectivity 映射 - - - / --- Connectivity head: produces 8-direction connectivity map ---
         self.cls_pred_conv_2 = nn.Conv2d(32, out_planes, 1)
         self.upsample2x = nn.UpsamplingBilinear2d(scale_factor=2)
         self.channel_mapping = nn.Sequential(
@@ -364,13 +370,13 @@ class DconnNet(nn.Module):
         )
         self.direc_reencode = nn.Conv2d(out_planes, out_planes, 1)
 
-        # --- Segmentation head: aggregates 8-direction map -> num_classes ---
-        # A simple 1x1 conv that learns to combine the 8 directional channels
-        # of each class into a single per-class score map.
+        # - - - 分割 头部: 聚合 8-direction 映射 - > num _ classes - - - / --- Segmentation head: aggregates 8-direction map -> num_classes ---
+        # A 简单 1x1 conv that learns to 组合 the 8 directional 通道 / A simple 1x1 conv that learns to combine the 8 directional channels
+        # of each class into a single per-class score 映射 / of each class into a single per-class score map.
         self.seg_head = nn.Conv2d(out_planes, num_classes, 1)
 
     # ------------------------------------------------------------------
-    # Padding / cropping to encoder stride
+    # Padding / cropping to 编码器 / Padding / cropping to encoder stride
     # ------------------------------------------------------------------
 
     def _pad_to_multiple(self, x):
@@ -389,7 +395,7 @@ class DconnNet(nn.Module):
 
         c1, c2, c3, c4, c5 = self.backbone(x)
 
-        # Directional Prior from deepest feature.
+        # Directional Prior from deepest 特征 / Directional Prior from deepest feature.
         directional_c5 = self.channel_mapping(c5)
         mapped_c5 = F.interpolate(directional_c5, scale_factor=32,
                                   mode='bilinear', align_corners=True)
@@ -399,7 +405,7 @@ class DconnNet(nn.Module):
         # SDE on c5.
         c5 = self.sde_module(c5, d_prior)
 
-        # Space-aware decoder path.
+        # Space-aware 解码器 / Space-aware decoder path.
         c6 = self.gap(c5)
         r5 = self.sb1(c6, c5)                              # 512, 1/32
         d4 = self.relu(self.fb5(r5) + c4)                  # 256, 1/16
@@ -414,14 +420,14 @@ class DconnNet(nn.Module):
         feat_list = [d1, d2, d3, d4]
         final_feat = self.final_decoder(feat_list)
 
-        # Connectivity output: 8 * num_classes channels.
+        # Connectivity 输出: 8 * num _ classes 通道 / Connectivity output: 8 * num_classes channels.
         conn = self.cls_pred_conv_2(final_feat)
         conn = self.upsample2x(conn)
 
-        # Segmentation output: aggregate 8 directions per class.
+        # 分割 输出: 聚合 8 directions per class / Segmentation output: aggregate 8 directions per class.
         seg = self.seg_head(conn)
 
-        # Match input size exactly.
+        # Match 输入 大小 exactly / Match input size exactly.
         if seg.shape[-2] != orig_h or seg.shape[-1] != orig_w:
             seg = F.interpolate(seg, size=(orig_h, orig_w),
                                 mode='bilinear', align_corners=True)

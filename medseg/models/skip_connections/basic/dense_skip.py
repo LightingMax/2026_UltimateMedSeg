@@ -1,4 +1,5 @@
-"""Dense skip connection."""
+"""Dense 跳跃连接。
+    Dense skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -8,7 +9,8 @@ from medseg.registry import SKIP_REGISTRY
 
 @SKIP_REGISTRY.register("dense")
 class DenseSkip(nn.Module):
-    """Dense skip connection: concat with a learned projection to reduce channels."""
+    """Dense 跳跃连接。
+        Dense skip connection: concat with a learned projection to reduce channels."""
     def __init__(self, **kwargs):
         super().__init__()
 

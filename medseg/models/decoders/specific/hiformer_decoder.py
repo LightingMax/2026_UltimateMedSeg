@@ -1,4 +1,5 @@
 """HiFormer decoder module.
+    HiFormer 解码器。
 
 Extracted from networks/transformer/hiformer_model.py for modular reuse.
 Faithful to the original: ConvUpsample layers (Conv-GroupNorm-ReLU-Upsample
@@ -13,7 +14,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class _ConvUpsample(nn.Module):
-    """Multi-layer Conv-GroupNorm-ReLU with optional bilinear upsampling."""
+    """Multi-layer Conv-GroupNorm-ReLU with 可选 bilinear 上采样。
+        Multi-layer Conv-GroupNorm-ReLU with optional bilinear upsampling."""
 
     def __init__(self, in_chans=384, out_chans=(128,), upsample=True):
         super().__init__()
@@ -38,6 +40,7 @@ class _ConvUpsample(nn.Module):
 @DECODER_REGISTRY.register("hiformer")
 class HiFormerDecoder(nn.Module):
     """HiFormer decoder: ConvUpsample + conv_pred + seg_head.
+        HiFormer 解码器。
 
     Standard interface: ``forward(bottleneck_feat, skip_features)``
     where bottleneck_feat is the deepest embedding and skip_features
@@ -57,7 +60,7 @@ class HiFormerDecoder(nn.Module):
                  num_classes=2,
                  **kwargs):
         super().__init__()
-        # Derive channel sizes from encoder_channels (default to original HiFormer values)
+        # Derive 通道 sizes from 编码器 _ 通道 ( 默认值 to original HiFormer values ) / Derive channel sizes from encoder_channels (default to original HiFormer values)
         shallow_ch = encoder_channels[0] if encoder_channels else 96
         deep_ch = bottleneck_channels if bottleneck_channels else 384
         self.conv_up_s = _ConvUpsample(deep_ch, [128, 128], upsample=True)
@@ -76,8 +79,8 @@ class HiFormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # bottleneck_feat = deep embedding (384ch, patch_size=16)
-        # skip_features[0] = shallow embedding (96ch, patch_size=4)
+        # 瓶颈层 _ feat = 深度 嵌入 ( 384ch, 图块 _ 大小 = 16 ) / bottleneck_feat = deep embedding (384ch, patch_size=16)
+        # 跳跃 _ 特征 [ 0 ] = 浅层 嵌入 ( 96ch, 图块 _ 大小 = 4 ) / skip_features[0] = shallow embedding (96ch, patch_size=4)
         shallow = skip_features[0] if skip_features else bottleneck_feat
         deep = bottleneck_feat
         r0 = self.conv_up_l(shallow)

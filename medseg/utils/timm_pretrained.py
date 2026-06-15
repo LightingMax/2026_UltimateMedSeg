@@ -1,4 +1,5 @@
 """Local cache helpers for timm ImageNet pretrained weights.
+    局部的 cache helpers for timm ImageNet 预训练 权重。
 
 Default workflow (international): timm downloads from Hugging Face Hub at runtime,
 or users pre-cache weights with ``huggingface-cli download`` / the optional
@@ -38,7 +39,8 @@ def weight_cache_root() -> Path:
 
 
 def timm_hf_hub_id(model_name: str) -> Optional[str]:
-    """Return timm hub id such as ``timm/resnet50.a1_in1k``."""
+    """返回 timm hub id such as ` ` timm / resnet50. a1 _ in1k ` `。
+        Return timm hub id such as ``timm/resnet50.a1_in1k``."""
     model = timm.create_model(model_name, pretrained=False)
     cfg = getattr(model, "default_cfg", None) or {}
     hub_id = cfg.get("hf_hub_id")
@@ -51,7 +53,8 @@ def timm_cache_dir(hub_id: str) -> Path:
 
 
 def find_weight_file(directory: Path) -> Optional[Path]:
-    """Pick the first usable checkpoint file under ``directory``."""
+    """Pick the first usable 检查点 file under ` ` directory ` `。
+        Pick the first usable checkpoint file under ``directory``."""
     directory = Path(directory)
     for name in _WEIGHT_NAMES:
         path = directory / name
@@ -65,7 +68,8 @@ def find_weight_file(directory: Path) -> Optional[Path]:
 
 
 def cached_timm_weight_path(model_name: str) -> Optional[Path]:
-    """Return a cached weight file for ``model_name``, if present."""
+    """返回 a cached 权重 file for ` ` 模型 _ name ` `, if present。
+        Return a cached weight file for ``model_name``, if present."""
     hub_id = timm_hf_hub_id(model_name)
     if not hub_id:
         return None
@@ -80,7 +84,8 @@ def pretrained_kwargs_from_file(weight_path: Path) -> dict:
 
 
 def load_timm_cached_pretrained_kwargs(model_name: str) -> Optional[dict]:
-    """Build create_model kwargs from an on-disk cache, without downloading."""
+    """Build create _ 模型 kwargs from an on-disk cache, without downloading。
+        Build create_model kwargs from an on-disk cache, without downloading."""
     path = cached_timm_weight_path(model_name)
     if path is None:
         return None
@@ -93,7 +98,8 @@ def ensure_timm_pretrained_via_hf(
     *,
     force: bool = False,
 ) -> Path:
-    """Download timm weights from Hugging Face Hub into the medseg cache."""
+    """Download timm 权重 from Hugging Face Hub into the medseg cache。
+        Download timm weights from Hugging Face Hub into the medseg cache."""
     if not force:
         cached = cached_timm_weight_path(model_name)
         if cached is not None:
@@ -130,7 +136,8 @@ def ensure_timm_pretrained_via_modelscope(
     force: bool = False,
     verbose: bool = False,
 ) -> Path:
-    """Optional: download timm weights from ModelScope (requires ``modelscope`` pkg)."""
+    """可选: download timm 权重 from ModelScope ( requires ` ` modelscope ` ` pkg )。
+        Optional: download timm weights from ModelScope (requires ``modelscope`` pkg)."""
     if not force:
         cached = cached_timm_weight_path(model_name)
         if cached is not None:

@@ -2,10 +2,10 @@
 
 import sys as _sys
 
-# Order matters: vmunet_encoder must be importable as
-# ``medseg.models.encoders.vmunet_encoder`` before umamba_encoder loads, because the
+# Order matters: vmunet _ 编码器 must be importable as / Order matters: vmunet_encoder must be importable as
+# ` ` medseg. models. encoders. vmunet _ 编码器 ` ` before umamba _ 编码器 加载, because the / ``medseg.models.encoders.vmunet_encoder`` before umamba_encoder loads, because the
 # latter triggers ``medseg.models.networks.mamba.mamba_unet`` which imports vmunet
-# via its legacy absolute path.
+# via its 遗留 绝对的 path / via its legacy absolute path.
 from . import vmunet_encoder
 _sys.modules['medseg.models.encoders.vmunet_encoder'] = vmunet_encoder
 from . import mamba_pure_encoder

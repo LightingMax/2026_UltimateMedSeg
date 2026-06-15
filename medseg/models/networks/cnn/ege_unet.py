@@ -1,4 +1,5 @@
 """EGE-UNet: Efficient Group Enhanced UNet for Skin Lesion Segmentation.
+    EGE-UNet: 高效的 Group Enhanced UNet for Skin 病灶 分割。
 
 Faithful reimplementation from:
   https://github.com/JCruan519/EGE-UNet  (MICCAI 2023 Workshop)
@@ -19,11 +20,12 @@ from medseg.utils.timm_compat import trunc_normal_
 
 
 # ---------------------------------------------------------------------------
-# LayerNorm (channels_first)
+# LayerNorm ( 通道 _ first ) / LayerNorm (channels_first)
 # ---------------------------------------------------------------------------
 
 class _LayerNorm(nn.Module):
-    """ConvNeXt-style LayerNorm supporting channels_first."""
+    """ConvNeXt-style LayerNorm supporting 通道 _ first。
+        ConvNeXt-style LayerNorm supporting channels_first."""
     def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(normalized_shape))
@@ -63,7 +65,8 @@ class DepthWiseConv2d(nn.Module):
 # ---------------------------------------------------------------------------
 
 class GroupAggregationBridge(nn.Module):
-    """GAB: Fuses high-res and low-res features via grouped dilated convolution."""
+    """GAB: 融合 high-res and low-res 特征 via grouped dilated 卷积。
+        GAB: Fuses high-res and low-res features via grouped dilated convolution."""
     def __init__(self, dim_xh, dim_xl, k_size=3, d_list=(1, 2, 5, 7)):
         super().__init__()
         self.pre_project = nn.Conv2d(dim_xh, dim_xl, 1)
@@ -96,11 +99,12 @@ class GroupAggregationBridge(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Grouped Multi-Axis Hadamard Product Attention (GHPA)
+# Grouped Multi-Axis Hadamard Product 注意力 ( GHPA ) / Grouped Multi-Axis Hadamard Product Attention (GHPA)
 # ---------------------------------------------------------------------------
 
 class GHPA(nn.Module):
-    """Grouped multi-axis Hadamard Product Attention."""
+    """Grouped multi-axis Hadamard Product 注意力。
+        Grouped multi-axis Hadamard Product Attention."""
     def __init__(self, dim_in, dim_out, x=8, y=8):
         super().__init__()
         c_dim_in = dim_in // 4
@@ -165,7 +169,8 @@ class GHPA(nn.Module):
 # ---------------------------------------------------------------------------
 
 class EGEUNet(nn.Module):
-    """EGE-UNet: Efficient Group Enhanced UNet."""
+    """EGE-UNet: 高效的 Group Enhanced UNet。
+        EGE-UNet: Efficient Group Enhanced UNet."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  c_list=(8, 16, 24, 32, 48, 64), bridge=True, deep_supervision=False, **kwargs):
@@ -174,7 +179,7 @@ class EGEUNet(nn.Module):
         self.bridge = bridge
         self.deep_supervision = deep_supervision
 
-        # Encoder
+        # 编码器 / Encoder
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, stride=1, padding=1)
@@ -182,7 +187,7 @@ class EGEUNet(nn.Module):
         self.encoder5 = GHPA(c_list[3], c_list[4])
         self.encoder6 = GHPA(c_list[4], c_list[5])
 
-        # Encoder batch norms
+        # 编码器 批次 norms / Encoder batch norms
         self.ebn1 = nn.GroupNorm(4, c_list[0])
         self.ebn2 = nn.GroupNorm(4, c_list[1])
         self.ebn3 = nn.GroupNorm(4, c_list[2])
@@ -197,14 +202,14 @@ class EGEUNet(nn.Module):
             self.GAB4 = GroupAggregationBridge(c_list[4], c_list[3])
             self.GAB5 = GroupAggregationBridge(c_list[5], c_list[4])
 
-        # GT deep supervision side convs
+        # GT 深度 supervision side convs / GT deep supervision side convs
         self.gt_conv1 = nn.Conv2d(c_list[4], 1, 1)
         self.gt_conv2 = nn.Conv2d(c_list[3], 1, 1)
         self.gt_conv3 = nn.Conv2d(c_list[2], 1, 1)
         self.gt_conv4 = nn.Conv2d(c_list[1], 1, 1)
         self.gt_conv5 = nn.Conv2d(c_list[0], 1, 1)
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder1 = GHPA(c_list[5], c_list[4])
         self.decoder2 = GHPA(c_list[4], c_list[3])
         self.decoder3 = GHPA(c_list[3], c_list[2])
@@ -219,7 +224,7 @@ class EGEUNet(nn.Module):
 
         self.final = nn.Conv2d(c_list[0], num_classes, kernel_size=1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c_list[4], num_classes, 1),

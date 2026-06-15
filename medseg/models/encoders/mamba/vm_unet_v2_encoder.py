@@ -1,4 +1,5 @@
 """VM-UNet-V2 Encoder.
+    VM-UNet-V2 编码器。
 
 Faithful port of the VM-UNet-V2 backbone (VSSM) from
 https://github.com/nobodyplayer1/VM-UNetV2.
@@ -25,8 +26,8 @@ from functools import partial
 
 from medseg.registry import ENCODER_REGISTRY
 
-# Reuse SS2D, VSSBlock, and helpers from vmunet_encoder (same directory).
-# vmunet_encoder is imported first in __init__.py, so this is always available.
+# Reuse SS2D, VSSBlock, and helpers from vmunet _ 编码器 ( same directory ) / Reuse SS2D, VSSBlock, and helpers from vmunet_encoder (same directory).
+# vmunet _ 编码器 is imported first in _ _ init _ _. py, so this is always available / vmunet_encoder is imported first in __init__.py, so this is always available.
 from .vmunet_encoder import (
     SS2D,
     VSSBlock,
@@ -38,6 +39,7 @@ from .vmunet_encoder import (
 
 class _VSSLayer(nn.Module):
     """One stage of VSSBlocks + optional PatchMerging2D downsampling.
+        One 阶段 of VSSBlocks + 可选 PatchMerging2D 下采样。
 
     Faithful to the original VM-UNetV2 VSSLayer.
     Data format: (B, H, W, C) throughout.
@@ -74,6 +76,7 @@ class _VSSLayer(nn.Module):
 @ENCODER_REGISTRY.register("vm_unet_v2")
 class VMUNetV2Encoder(nn.Module):
     """VM-UNet-V2 Encoder (VSSM backbone).
+        VM-UNet-V2 编码器。
 
     Faithful to https://github.com/nobodyplayer1/VM-UNetV2
     4-stage hierarchical encoder with SS2D selective scan and
@@ -102,14 +105,14 @@ class VMUNetV2Encoder(nn.Module):
         dims = [embed_dim * (2 ** i) for i in range(num_stages)]
         self.dims = dims
 
-        # Patch embedding: stride-4 Conv2d -> (B, H/4, W/4, C) channels-last
+        # 图块 嵌入: 步长 - 4 Conv2d - > ( B, H / 4, W / 4, C ) channels-last / Patch embedding: stride-4 Conv2d -> (B, H/4, W/4, C) channels-last
         self.patch_embed = PatchEmbed2D(
             patch_size=4, in_chans=in_channels, embed_dim=embed_dim)
 
-        # Stochastic depth (linearly increasing)
+        # Stochastic 深度 ( linearly increasing ) / Stochastic depth (linearly increasing)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
 
-        # VSS layers with PatchMerging2D downsampling between stages
+        # VSS layers with PatchMerging2D 下采样 between 阶段 / VSS layers with PatchMerging2D downsampling between stages
         self.layers = nn.ModuleList()
         for i in range(num_stages):
             layer = _VSSLayer(
@@ -121,7 +124,7 @@ class VMUNetV2Encoder(nn.Module):
             )
             self.layers.append(layer)
 
-        # LayerNorm for each stage output
+        # LayerNorm for each 阶段 输出 / LayerNorm for each stage output
         self.norms = nn.ModuleList([nn.LayerNorm(dims[i]) for i in range(num_stages)])
 
         self.out_channels = dims
@@ -152,7 +155,7 @@ class VMUNetV2Encoder(nn.Module):
         print(f"VM-UNetV2 encoder loaded: {msg}")
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        # Patch embed: (B, C, H, W) -> (B, H/4, W/4, C)
+        # 图块 embed: ( B, C, H, W ) - > ( B, H / 4, W / 4, C ) / Patch embed: (B, C, H, W) -> (B, H/4, W/4, C)
         x = self.patch_embed(x)
 
         features: List[torch.Tensor] = []

@@ -1,4 +1,5 @@
 """SAM2 mask generator wrapper.
+    SAM2 掩码 generator 封装器。
 
 # Reference: https://github.com/facebookresearch/sam2
 # Reference: https://huggingface.co/facebook/sam2-hiera-large
@@ -68,7 +69,7 @@ class SAM2MaskGenerator:
                 pass
             logger.info(f"SAM2 loaded: {self.model_id} on {self.device}")
         except Exception:
-            # Strict: no mock fallback on load failure.
+            # Strict: no mock fallback on 加载 failure / Strict: no mock fallback on load failure.
             raise
 
     # ------------------------------------------------------------

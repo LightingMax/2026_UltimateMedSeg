@@ -59,6 +59,7 @@ def _parse_bbox_response(
     coord_scale: float = 1.0,
 ) -> List[BBox]:
     """Extract bboxes from a free-form VL reply.
+        提取 bboxes from a free-form VL reply。
 
     Args:
         response: model output text.
@@ -75,7 +76,7 @@ def _parse_bbox_response(
             x1, x2 = x2, x1
         if y2 < y1:
             y1, y2 = y2, y1
-        # Skip degenerate boxes
+        # 跳跃 degenerate boxes / Skip degenerate boxes
         if x2 - x1 < 1e-4 or y2 - y1 < 1e-4:
             return
         boxes.append(
@@ -89,7 +90,7 @@ def _parse_bbox_response(
             )
         )
 
-    # Try JSON pattern first (more reliable when the model follows the prompt)
+    # Try JSON pattern first ( more reliable when the 模型 follows the prompt ) / Try JSON pattern first (more reliable when the model follows the prompt)
     for m in _JSON_BBOX_RE.finditer(response):
         _push(*m.groups())
     if boxes:
@@ -102,7 +103,8 @@ def _parse_bbox_response(
 
 
 class GenericVLGrounder(MLLMGrounder):
-    """Base grounder for general VL models without native box tokens."""
+    """Base grounder for general VL models without native box 标记。
+        Base grounder for general VL models without native box tokens."""
 
     DEFAULT_PROMPT = (
         "Locate the {class_name} in this medical image and return ONLY a "
@@ -112,8 +114,8 @@ class GenericVLGrounder(MLLMGrounder):
         "salient one. Do not output any other text."
     )
 
-    # Coordinate scale of the model output. Override in subclass if the
-    # model emits coords in [0, 1000] or pixel space.
+    # Coordinate scale of the 模型 输出. 覆盖 in subclass if the / Coordinate scale of the model output. Override in subclass if the
+    # 模型 emits coords in [ 0, 1000 ] or pixel space / model emits coords in [0, 1000] or pixel space.
     COORD_SCALE: float = 1.0
 
     def __init__(
@@ -149,14 +151,14 @@ class GenericVLGrounder(MLLMGrounder):
         if self.mock_mode:
             return self._mock_detect_single_class(image, class_name)
         if self.model is None:
-            # _load_model() should have raised; surface the inconsistency
+            # _ 加载 _ 模型 ( ) should have raised; surface the inconsistency / _load_model() should have raised; surface the inconsistency
             # rather than silently producing a fake bbox.
             raise RuntimeError(
                 f"[{type(self).__name__}] model is None but mock_mode is False; "
                 "the load step did not raise and the instance is unusable."
             )
-        # Strict: no inference-time fallback. Parsing failures return an
-        # empty list (downstream pipeline treats it as 'no detection'),
+        # Strict: no inference-time fallback. Parsing failures 返回 an / Strict: no inference-time fallback. Parsing failures return an
+        # empty list ( downstream pipeline treats it as ' no 检测 ' ) / empty list (downstream pipeline treats it as 'no detection'),
         # but any model-side exception is re-raised.
         prompt = self.prompt_template.format(class_name=class_name)
         response = self._generate_response(image, prompt)

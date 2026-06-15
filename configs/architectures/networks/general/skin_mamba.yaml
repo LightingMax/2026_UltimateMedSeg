@@ -1,5 +1,7 @@
 # SkinMamba: Cross-scale Mamba + FFT Boundary Guidance (Skin)
+# SkinMamba: Cross-scale Mamba + FFT Boundary Guidance 分割网络
 # SkinMamba: Cross-scale Mamba + FFT Boundary Guidance (Skin)
+# SkinMamba: Cross-scale Mamba + FFT Boundary Guidance 分割网络
 # Domain: skin
 
 model:

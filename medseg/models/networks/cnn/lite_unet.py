@@ -1,4 +1,5 @@
 """Lite-UNet: Lightweight and Efficient Network for Cell Localization / Segmentation.
+    Lite-UNet: 轻量级 and 高效的 网络 for 细胞 Localization / 分割。
 
 Faithful reimplementation from:
   https://github.com/Boom5426/MHFAN  (EAAI 2024)
@@ -18,11 +19,12 @@ import torch.nn.functional as F
 
 
 # ---------------------------------------------------------------------------
-# Central Difference Convolution
+# Central Difference 卷积 / Central Difference Convolution
 # ---------------------------------------------------------------------------
 
 class Conv2d_cd(nn.Module):
-    """Central difference convolution: out = conv(x) - theta * sum_conv(x)."""
+    """Central difference 卷积: out = conv ( x ) - theta * sum _ conv ( x )。
+        Central difference convolution: out = conv(x) - theta * sum_conv(x)."""
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
                  padding=1, dilation=1, groups=1, bias=False, theta=0.7):
         super().__init__()
@@ -42,7 +44,7 @@ class Conv2d_cd(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Ghost Module
+# Ghost 模块 / Ghost Module
 # ---------------------------------------------------------------------------
 
 class GhostModule(nn.Module):
@@ -101,7 +103,8 @@ class SqueezeExcite(nn.Module):
 
 
 class CBAM(nn.Module):
-    """Convolutional Block Attention Module."""
+    """卷积的 块 注意力 模块。
+        Convolutional Block Attention Module."""
     def __init__(self, channel, reduction=16, spatial_kernel=7):
         super().__init__()
         self.max_pool = nn.AdaptiveMaxPool2d(1)
@@ -125,7 +128,7 @@ class CBAM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Ghost Bottleneck with CBAM
+# Ghost 瓶颈层 / Ghost Bottleneck with CBAM
 # ---------------------------------------------------------------------------
 
 class GhostBottleneckCBAM(nn.Module):
@@ -160,7 +163,7 @@ class GhostBottleneckCBAM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Conv Block & Up Conv
+# Conv 块 & Up Conv / Conv Block & Up Conv
 # ---------------------------------------------------------------------------
 
 class ConvBlock(nn.Module):
@@ -189,7 +192,7 @@ class UpConv(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# GhostBottleneck (standard, for decoder)
+# GhostBottleneck (standard, for 解码器 / GhostBottleneck (standard, for decoder)
 # ---------------------------------------------------------------------------
 
 class GhostBottleneck(nn.Module):
@@ -230,7 +233,8 @@ class GhostBottleneck(nn.Module):
 # ---------------------------------------------------------------------------
 
 class LiteUNet(nn.Module):
-    """Lite-UNet: Lightweight UNet with Ghost modules and CBAM."""
+    """Lite-UNet: 轻量级 UNet with Ghost modules and CBAM。
+        Lite-UNet: Lightweight UNet with Ghost modules and CBAM."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  channels=(64, 128, 256, 512, 1024), deep_supervision=False, **kwargs):
@@ -238,7 +242,7 @@ class LiteUNet(nn.Module):
         c = list(channels)
         self.deep_supervision = deep_supervision
 
-        # Encoder
+        # 编码器 / Encoder
         self.Maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.Conv1 = ConvBlock(in_channels, c[0])
         self.Conv2 = GhostBottleneckCBAM(c[0], c[0] * 2, c[1])
@@ -246,7 +250,7 @@ class LiteUNet(nn.Module):
         self.Conv4 = GhostBottleneckCBAM(c[2], c[2] * 2, c[3])
         self.Conv5 = GhostBottleneckCBAM(c[3], c[3] * 2, c[4])
 
-        # Decoder
+        # 解码 / Decoder
         self.Up5 = UpConv(c[4], c[3])
         self.Up_conv5 = GhostBottleneck(c[4], c[3] * 2, c[3])
         self.Up4 = UpConv(c[3], c[2])
@@ -258,7 +262,7 @@ class LiteUNet(nn.Module):
 
         self.Conv_1x1 = nn.Conv2d(c[0], num_classes, kernel_size=1, stride=1, padding=0)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c[3], num_classes, 1),

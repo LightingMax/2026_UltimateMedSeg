@@ -1,4 +1,5 @@
 """Pure 2D Mamba-vision Encoder (MambaPureEncoder).
+    Pure 2D Mamba-vision 编码器。
 
 A representative pure-Mamba vision backbone built from the SS2D/VSSBlock
 primitives shared with VM-UNet. The architecture mirrors VMamba-T:
@@ -26,7 +27,8 @@ from .vmunet_encoder import (
 
 
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
-    """Try a download/load, falling back to unverified SSL, then random init."""
+    """Try a download / 加载, falling back to unverified SSL, then random init。
+        Try a download/load, falling back to unverified SSL, then random init."""
     try:
         return load_fn(*args, **kwargs)
     except Exception as e1:
@@ -44,6 +46,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 class _MambaStage(nn.Module):
     """One stage: a stack of VSSBlocks + optional 2x patch-merging downsample.
+        One 阶段: a stack of VSSBlocks + 可选 2x patch-merging 下采样。
 
     Operates on (B, H, W, C) tensors (channels-last) as used by VSSBlock/SS2D.
     """
@@ -72,7 +75,8 @@ class _MambaStage(nn.Module):
         self.downsample = PatchMerging2D(dim) if downsample else None
 
     def forward(self, x: torch.Tensor):
-        """x: (B, H, W, C). Returns (stage_feat_before_down, x_for_next_stage)."""
+        """x: ( B, H, W, C ). 返回 ( 阶段 _ feat _ before _ down, x _ for _ next _ 阶段 )。
+            x: (B, H, W, C). Returns (stage_feat_before_down, x_for_next_stage)."""
         for blk in self.blocks:
             x = blk(x)
         feat = x
@@ -84,6 +88,7 @@ class _MambaStage(nn.Module):
 @ENCODER_REGISTRY.register("mambavision")
 class MambaPureEncoder(nn.Module):
     """Pure 2D Mamba-vision encoder (VMamba-T config).
+        Pure 2D Mamba-vision 编码器。
 
     4-stage hierarchical encoder of SS2D-based VSSBlocks. Returns a list of
     feature maps in (B, C, H, W) format with the deepest map LAST.
@@ -126,7 +131,7 @@ class MambaPureEncoder(nn.Module):
         self.dims = tuple(dims)
         self.out_channels: List[int] = list(dims)
 
-        # 1x1 stem if the backbone needs RGB but caller provides other channels.
+        # 1x1 主干 if the 骨干网络 needs RGB but caller provides other 通道 / 1x1 stem if the backbone needs RGB but caller provides other channels.
         if in_channels != 3:
             self.input_stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_out = 3
@@ -134,14 +139,14 @@ class MambaPureEncoder(nn.Module):
             self.input_stem = nn.Identity()
             stem_out = in_channels
 
-        # Patch embedding: stride=patch_size, channels-last output.
+        # 图块 嵌入: 步长 = 图块 _ 大小, channels-last 输出 / Patch embedding: stride=patch_size, channels-last output.
         self.patch_embed = PatchEmbed2D(
             patch_size=patch_size,
             in_chans=stem_out,
             embed_dim=dims[0],
         )
 
-        # Linearly scaled stochastic depth across all blocks.
+        # Linearly scaled stochastic 深度 across all blocks / Linearly scaled stochastic depth across all blocks.
         total_blocks = sum(depths)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, total_blocks)]
 
@@ -160,16 +165,17 @@ class MambaPureEncoder(nn.Module):
             self.stages.append(stage)
             cursor += depths[i]
 
-        # Per-stage LayerNorm applied on (B, H, W, C) outputs before reshape.
+        # Per-stage LayerNorm applied on ( B, H, W, C ) outputs before 重塑 / Per-stage LayerNorm applied on (B, H, W, C) outputs before reshape.
         self.norms = nn.ModuleList([nn.LayerNorm(dims[i]) for i in range(4)])
 
         if pretrained:
             _load_with_ssl_fallback(self._maybe_load_pretrained, pretrained_path)
 
-    # ---- Pretrained loading ---------------------------------------------------
+    # - - - - 预训练 loading - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Pretrained loading ---------------------------------------------------
 
     def _maybe_load_pretrained(self, pretrained_path: Optional[str] = None, **_):
         """Best-effort local checkpoint load. No-op if no path is provided.
+            Best-effort 局部的 检查点 加载. No-op if no path is provided。
 
         A canonical pretrained VMamba-T checkpoint is not hosted in a stable
         place we can rely on offline, so we only honor an explicit local path.

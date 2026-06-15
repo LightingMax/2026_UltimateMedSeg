@@ -69,8 +69,9 @@ class VQADataset(torch.utils.data.Dataset):
         return self.samples_per_epoch
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -105,7 +106,7 @@ class VQADataset(torch.utils.data.Dataset):
         roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
         conversations = []
         if roles[source[0]["from"]] != conv.roles[0]:
-            # Skip the first one if it is not from human
+            # 跳跃 the first one if it is not from human / Skip the first one if it is not from human
             source = source[1:]
         conv.messages = []
         for j, sentence in enumerate(source):

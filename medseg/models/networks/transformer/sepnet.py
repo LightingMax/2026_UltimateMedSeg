@@ -1,4 +1,5 @@
 """SEPNet: Semantic Enhanced Perceptual Network for Polyp Segmentation.
+    SEPNet: 语义的 Enhanced Perceptual 网络 for 息肉 分割。
 
 Reference:
     Wang et al., "Polyp Segmentation via Semantic Enhanced Perceptual
@@ -24,7 +25,8 @@ from medseg.models.encoders.transformer.pvtv2_encoder import PVTv2Encoder
 
 
 class _BasicRFB(nn.Module):
-    """Receptive Field Block for multi-scale feature enhancement."""
+    """Receptive Field 块 for 多尺度特征 enhancement。
+        Receptive Field Block for multi-scale feature enhancement."""
     def __init__(self, in_ch, out_ch, reduction=4, se_reduction=16):
         super().__init__()
         mid = max(in_ch // reduction, 8)
@@ -41,7 +43,7 @@ class _BasicRFB(nn.Module):
             nn.Conv2d(mid, mid, 3, 1, 7, dilation=7, bias=False), nn.BatchNorm2d(mid), nn.ReLU(True))
         self.fuse = nn.Sequential(
             nn.Conv2d(mid * 4, out_ch, 1, bias=False), nn.BatchNorm2d(out_ch), nn.ReLU(True))
-        # SE attention
+        # SE 注意力 / SE attention
         se_mid = max(out_ch // se_reduction, 4)
         self.se = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
@@ -58,7 +60,8 @@ class _BasicRFB(nn.Module):
 
 
 class _DynamicFocusMining(nn.Module):
-    """Dynamic Focus and Mining module for progressive refinement."""
+    """动态的 Focus and Mining 模块 for progressive refinement。
+        Dynamic Focus and Mining module for progressive refinement."""
     def __init__(self, channels=128, reduction=4):
         super().__init__()
         mid = channels // max(reduction, 1)
@@ -81,26 +84,27 @@ class _DynamicFocusMining(nn.Module):
 
 
 class SEPNet(nn.Module):
-    """SEPNet for polyp segmentation (PVT-v2-B2 backbone)."""
+    """SEPNet for 息肉 分割 ( PVT-v 2-B 2 骨干网络 )。
+        SEPNet for polyp segmentation (PVT-v2-B2 backbone)."""
     def __init__(self, in_channels=3, num_classes=2, img_size=352,
                  mid_channels=128, **kwargs):
         super().__init__()
         self.num_classes = num_classes
         C = mid_channels
 
-        # PVT-v2-B2 encoder (timm, ImageNet pretrained)
-        # Output channels: [64, 128, 320, 512]
+        # PVT-v2-B2 编码器 / PVT-v2-B2 encoder (timm, ImageNet pretrained)
+        # 输出 通道: [ 64, 128, 320, 512 ] / Output channels: [64, 128, 320, 512]
         self.encoder = PVTv2Encoder(in_channels=in_channels, img_size=img_size,
                                      pretrained=True)
         enc_channels = self.encoder.out_channels  # [64, 128, 320, 512]
 
-        # MAP (RFB) modules
+        # 映射 ( RFB ) modules / MAP (RFB) modules
         self.rfb1 = _BasicRFB(enc_channels[0], C)
         self.rfb2 = _BasicRFB(enc_channels[1], C)
         self.rfb3 = _BasicRFB(enc_channels[2], C)
         self.rfb4 = _BasicRFB(enc_channels[3], C)
 
-        # CRC (Dynamic Focus and Mining) modules
+        # CRC ( 动态的 Focus and Mining ) modules / CRC (Dynamic Focus and Mining) modules
         self.crc3 = _DynamicFocusMining(C, reduction=4)
         self.crc2 = _DynamicFocusMining(C, reduction=4)
         self.crc1 = _DynamicFocusMining(C, reduction=4)

@@ -1,4 +1,5 @@
-"""RWKV-based complete segmentation architectures."""
+"""RWKV-based complete 分割 architectures。
+    RWKV-based complete segmentation architectures."""
 
 from .u_rwkv import URWKV
 from .rwkv_unet import RWKVUNet

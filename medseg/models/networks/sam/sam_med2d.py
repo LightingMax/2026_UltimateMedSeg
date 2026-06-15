@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import os
 
-# Limit huggingface_hub timeouts so a network outage cannot stall construction.
+# Limit huggingface _ hub timeouts so a 网络 outage cannot stall construction / Limit huggingface_hub timeouts so a network outage cannot stall construction.
 os.environ.setdefault('HF_HUB_ETAG_TIMEOUT', '3')
 os.environ.setdefault('HF_HUB_DOWNLOAD_TIMEOUT', '5')
 
@@ -46,6 +46,7 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 # ---------------------------------------------------------------------------
 class _Adapter(nn.Module):
     """Bottleneck residual adapter.
+        瓶颈层 残差 适配器。
 
     Linear(dim -> hidden) -> GELU -> Linear(hidden -> dim), added back to the
     input via a skip connection. The output projection is zero-initialised so
@@ -66,7 +67,8 @@ class _Adapter(nn.Module):
 
 
 class _BlockWithAdapter(nn.Module):
-    """Wrap a ViT transformer block and append an _Adapter to its output."""
+    """Wrap a ViT Transformer 块 and append an _ 适配器 to its 输出。
+        Wrap a ViT transformer block and append an _Adapter to its output."""
 
     def __init__(self, block: nn.Module, dim: int = 768, hidden: int = 64):
         super().__init__()
@@ -80,6 +82,7 @@ class _BlockWithAdapter(nn.Module):
 
 def _build_vit(img_size: int, in_channels: int, pretrained: bool):
     """Build the SAM-style ViT-B/16 backbone via timm.
+        Build the SAM-style ViT-B / 16 骨干网络 via timm。
 
     ``dynamic_img_size=True`` lets the model accept any spatial size that is a
     multiple of the patch size (16), with positional embeddings interpolated
@@ -104,6 +107,7 @@ def _build_vit(img_size: int, in_channels: int, pretrained: bool):
 
 class _SAMMed2DEncoder(nn.Module):
     """SAM-Med2D image encoder: timm ViT-B/16 with per-block adapters.
+        SAM-Med2D image 编码器。
 
     The wrapped ``blocks`` attribute is also exposed at the encoder level so
     :class:`SAMBase.apply_freeze` can find it when ``unfreeze_last_n_blocks``
@@ -127,7 +131,7 @@ class _SAMMed2DEncoder(nn.Module):
             ])
             self.vit.blocks = wrapped
 
-        # Re-expose for SAMBase.apply_freeze (which looks for `blocks` / `norm`).
+        # Re-expose for SAMBase. 应用 _ freeze ( which looks for ` blocks ` / ` norm ` ) / Re-expose for SAMBase.apply_freeze (which looks for `blocks` / `norm`).
         self.blocks = self.vit.blocks
         if hasattr(self.vit, 'norm') and isinstance(self.vit.norm, nn.Module):
             self.norm = self.vit.norm
@@ -136,8 +140,8 @@ class _SAMMed2DEncoder(nn.Module):
         B, _, H, W = x.shape
         tokens = self.vit.forward_features(x)
 
-        # timm ViT returns either ``(B, N, C)`` (with prefix CLS tokens) or
-        # ``(B, C, Hp, Wp)`` depending on the version / pooling config.
+        # timm ViT 返回 either ` ` ( B, N, C ) ` ` ( with prefix CLS 标记 ) or / timm ViT returns either ``(B, N, C)`` (with prefix CLS tokens) or
+        # ` ` ( B, C, Hp, Wp ) ` ` depending on the version / 池化 配置 / ``(B, C, Hp, Wp)`` depending on the version / pooling config.
         if tokens.dim() == 3:
             if self.num_prefix_tokens > 0:
                 tokens = tokens[:, self.num_prefix_tokens:, :]
@@ -158,6 +162,7 @@ class _SAMMed2DEncoder(nn.Module):
 
 class _SAMMed2DMaskDecoder(nn.Module):
     """4-stage transposed-conv decoder: 768 -> 256 -> 128 -> 64 -> num_classes.
+        4-stage transposed-conv 解码器。
 
     Each stage doubles the spatial size (kernel 2, stride 2), giving an overall
     16x upsampling that exactly inverts the ViT patchification.
@@ -183,10 +188,11 @@ class _SAMMed2DMaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SAMMed2D(SAMBase):
     """SAM-Med2D: SAM ViT-B/16 with per-block adapters + a conv mask decoder.
+        SAM-Med2D: SAM ViT-B/16 with per-block adapters + a conv mask 解码器。
 
     Args:
         in_channels: number of input image channels (default 3).
@@ -238,7 +244,7 @@ class SAMMed2D(SAMBase):
         )
         self.use_adapter = bool(use_adapter)
 
-        # Image encoder: ViT-B/16 with adapters.
+        # Image 编码器 / Image encoder: ViT-B/16 with adapters.
         self.image_encoder = _SAMMed2DEncoder(
             img_size=img_size,
             in_channels=in_channels,
@@ -246,14 +252,14 @@ class SAMMed2D(SAMBase):
             use_adapter=self.use_adapter,
         )
 
-        # SAM-Med2D in this prompt-free variant has no prompt encoder; expose
-        # ``None`` so SAMBase.apply_freeze can introspect uniformly.
+        # SAM-Med2D in this prompt-free variant has no prompt 编码器 / SAM-Med2D in this prompt-free variant has no prompt encoder; expose
+        # ` ` None ` ` so SAMBase. 应用 _ freeze can introspect uniformly / ``None`` so SAMBase.apply_freeze can introspect uniformly.
         self.prompt_encoder = None
 
-        # 4-stage transposed-conv mask decoder.
+        # 4-stage transposed-conv mask 解码器 / 4-stage transposed-conv mask decoder.
         self.mask_decoder = _SAMMed2DMaskDecoder(self.EMBED_DIM, num_classes)
 
-        # Optional custom checkpoint (e.g. an OpenGVLab SAM-Med2D weight dump).
+        # 可选 custom 检查点 ( e. g. an OpenGVLab SAM-Med 2D 权重 dump ) / Optional custom checkpoint (e.g. an OpenGVLab SAM-Med2D weight dump).
         if pretrained_path:
             try:
                 sd = torch.load(pretrained_path, map_location='cpu')
@@ -309,8 +315,8 @@ class SAMMed2D(SAMBase):
         feat = self.image_encoder(x_pad)        # (B, 768, H'/16, W'/16)
         logits = self.mask_decoder(feat)        # (B, num_classes, H', W')
 
-        # The decoder upsamples exactly 16x, so logits already match x_pad's
-        # spatial size; bilinear is a safety net for unusual cases.
+        # The 解码器 / The decoder upsamples exactly 16x, so logits already match x_pad's
+        # 空间的 大小; bilinear is a safety net for unusual cases / spatial size; bilinear is a safety net for unusual cases.
         if logits.shape[-2:] != x_pad.shape[-2:]:
             logits = F.interpolate(
                 logits, size=x_pad.shape[-2:],

@@ -40,11 +40,12 @@ class DWSepConvBNAct(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# LMBP: Local Mamba Block (Parallel DW conv branches, no Mamba)
+# LMBP: 局部的 Mamba 块 ( 并行的 DW conv branches, no Mamba ) / LMBP: Local Mamba Block (Parallel DW conv branches, no Mamba)
 # ---------------------------------------------------------------------------
 
 class LMBP(nn.Module):
-    """Local Mamba Block Parallel: 3 DW conv branches + 1 identity."""
+    """局部的 Mamba 块 并行的: 3 DW conv branches + 1 identity。
+        Local Mamba Block Parallel: 3 DW conv branches + 1 identity."""
     def __init__(self, input_dim, output_dim, sep_conv_kernel=3):
         super().__init__()
         self.input_dim = input_dim
@@ -70,7 +71,7 @@ class LMBP(nn.Module):
         x_norm = self.norm(x_flat)
         x1, x2, x3, x4 = torch.chunk(x_norm, 4, dim=2)
 
-        # Branch 1-3: DW sep conv
+        # 分支 1 - 3: DW sep conv / Branch 1-3: DW sep conv
         def _conv_branch(xi, conv):
             xi_img = xi.transpose(-1, -2).reshape(B, c_quarter, *img_dims)
             xi_img = conv(xi_img)
@@ -88,11 +89,12 @@ class LMBP(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# GLMBP: Global-Local Mamba Block (bidirectional Mamba + DW conv)
+# GLMBP: Global-Local Mamba 块 ( bidirectional Mamba + DW conv ) / GLMBP: Global-Local Mamba Block (bidirectional Mamba + DW conv)
 # ---------------------------------------------------------------------------
 
 class GLMBP(nn.Module):
-    """Global-Local Mamba Block: bidirectional Mamba for 2 branches + DW conv for 1 + identity."""
+    """Global-Local Mamba 块: bidirectional Mamba for 2 branches + DW conv for 1 + identity。
+        Global-Local Mamba Block: bidirectional Mamba for 2 branches + DW conv for 1 + identity."""
     def __init__(self, input_dim, output_dim, d_state=16, d_conv=4, expand=2,
                  sep_conv_kernel=3):
         super().__init__()
@@ -119,7 +121,7 @@ class GLMBP(nn.Module):
         x_norm = self.norm(x_flat)
         x1, x2, x3, x4 = torch.chunk(x_norm, 4, dim=2)
 
-        # Branch 1-2: bidirectional Mamba
+        # 分支 1 - 2: bidirectional Mamba / Branch 1-2: bidirectional Mamba
         x1_fwd = self.mamba(x1)
         x1_bwd = torch.flip(self.mamba(torch.flip(x1, dims=[1])), dims=[1])
         x_proc1 = x1_fwd + x1_bwd + self.skip_scale * x1
@@ -128,13 +130,13 @@ class GLMBP(nn.Module):
         x2_bwd = torch.flip(self.mamba(torch.flip(x2, dims=[1])), dims=[1])
         x_proc2 = x2_fwd + x2_bwd + self.skip_scale * x2
 
-        # Branch 3: DW sep conv
+        # 分支 3: DW sep conv / Branch 3: DW sep conv
         x3_img = x3.transpose(-1, -2).reshape(B, c_quarter, *img_dims)
         x3_img = self.sep_conv(x3_img)
         x3_flat = x3_img.reshape(B, c_quarter, n_tokens).transpose(-1, -2)
         x_proc3 = x3_flat + self.skip_scale * x3
 
-        # Branch 4: identity
+        # 分支 4: identity / Branch 4: identity
         x_proc4 = x4 + self.skip_scale * x4
 
         x_mamba = torch.cat([x_proc1, x_proc2, x_proc3, x_proc4], dim=2)
@@ -158,7 +160,7 @@ class UltraLBMUNet(nn.Module):
             c_list = [max(4, (int(c * channel_multiplier) // 4) * 4) for c in c_list]
         c_list = list(c_list)
 
-        # Encoder
+        # 编码器 / Encoder
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, stride=1, padding=1)
@@ -172,7 +174,7 @@ class UltraLBMUNet(nn.Module):
         self.ebn4 = nn.GroupNorm(min(4, c_list[3]), c_list[3])
         self.ebn5 = nn.GroupNorm(min(4, c_list[4]), c_list[4])
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder1 = GLMBP(c_list[5], c_list[4], sep_conv_kernel=7)
         self.decoder2 = GLMBP(c_list[4], c_list[3], sep_conv_kernel=5)
         self.decoder3 = LMBP(c_list[3], c_list[2], sep_conv_kernel=3)
@@ -192,7 +194,7 @@ class UltraLBMUNet(nn.Module):
         if learnable_skip:
             self.k = nn.Parameter(torch.ones(1))
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c_list[4], num_classes, 1),

@@ -1,4 +1,5 @@
 """MALUNet Encoder: 6-stage encoder with Conv + EABlock + DilatedGatedAttention.
+    MALUNet Encoder: 6-stage 编码器。
 MALUNet 编码器：6 阶段编码器，前 3 阶段 Conv3x3+GN+GELU+MaxPool，后 3 阶段 EABlock+DGA。
 
 Stages / 各阶段:
@@ -9,7 +10,7 @@ Stages / 各阶段:
 
 out_channels: [8, 16, 24, 32, 48, 64] (default c_list)
 """
-# Reference: https://github.com/JCruan519/MALUNet
+# 参考: https: / / github. com / JCruan519 / MALUNet / Reference: https://github.com/JCruan519/MALUNet
 
 import math
 import torch
@@ -27,6 +28,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 class DepthWiseConv2d(nn.Module):
     """Depthwise separable convolution: depthwise conv + GroupNorm + pointwise conv.
+        Depthwise separable 卷积: depthwise conv + GroupNorm + pointwise conv。
     深度可分离卷积：深度卷积 + GroupNorm + 逐点卷积。
     """
     def __init__(self, dim_in, dim_out, kernel_size=3, padding=1, stride=1, dilation=1):
@@ -46,6 +48,7 @@ class DepthWiseConv2d(nn.Module):
 
 class GatedAttentionUnit(nn.Module):
     """Gated Attention Unit: dual-branch gating + output projection.
+        Gated 注意力 Unit: dual-branch gating + 输出 projection。
     门控注意力单元：双分支门控 + 输出投影。
     """
     def __init__(self, in_c, out_c, kernel_size):
@@ -71,6 +74,7 @@ class GatedAttentionUnit(nn.Module):
 
 class DilatedGatedAttention(nn.Module):
     """Multi-dilation grouped depthwise conv + Gated Attention Unit.
+        Multi-dilation grouped depthwise conv + Gated 注意力 Unit。
     多膨胀率分组深度卷积 + 门控注意力单元。
     """
     def __init__(self, in_c, out_c, k_size=3, dilated_ratio=(7, 5, 2, 1)):
@@ -97,6 +101,7 @@ class DilatedGatedAttention(nn.Module):
 
 class EABlock(nn.Module):
     """External Attention: low-rank linear attention.
+        External 注意力: low-rank linear 注意力。
     外部注意力：低秩线性注意力。
     """
     def __init__(self, in_c):
@@ -130,6 +135,7 @@ class EABlock(nn.Module):
 @ENCODER_REGISTRY.register("malunet")
 class MALUNetEncoder(nn.Module):
     """MALUNet encoder: 6-stage with Conv + EA + DGA.
+        MALUNet 编码器。
     MALUNet 编码器：6 阶段，前 3 阶段为轻量卷积，后 3 阶段为注意力模块。
 
     Stages / 各阶段:
@@ -178,6 +184,7 @@ class MALUNetEncoder(nn.Module):
 
     def _init_weights(self, m):
         """Weight initialization following MALUNet convention.
+            权重 initialization following MALUNet convention。
         按 MALUNet 惯例初始化权重。"""
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
@@ -195,6 +202,7 @@ class MALUNetEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Encode input to 6 multi-scale feature maps.
+            编码 输入 to 6 多尺度特征 映射。
         将输入编码为 6 个多尺度特征图。
 
         Returns: [t1(c0,H/2), t2(c1,H/4), t3(c2,H/8),

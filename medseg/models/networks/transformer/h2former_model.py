@@ -1,4 +1,5 @@
 """H2Former – self-contained port from github.com/NKUhealong/H2Former.
+    H2Former – self-contained 移植 from github. com / NKUhealong / H2Former。
 
 H2Former: Hybrid Hierarchical Transformer for Medical Image Segmentation.
 Architecture: ResNet-34 + Swin Transformer dual-branch with multi-scale
@@ -14,7 +15,7 @@ import numpy as np
 
 
 # ---------------------------------------------------------------------------
-# ECA layer
+# ECA 层 / ECA layer
 # ---------------------------------------------------------------------------
 class _ECA(nn.Module):
     def __init__(self, channel, k_size=3):
@@ -32,7 +33,7 @@ class _ECA(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Channel attention (for Swin blocks)
+# 通道 注意力 ( for Swin blocks ) / Channel attention (for Swin blocks)
 # ---------------------------------------------------------------------------
 class _ChannelAttention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False):
@@ -95,7 +96,7 @@ class _MlpWithECA(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Window attention (Swin-style)
+# 窗口 注意力 ( Swin-style ) / Window attention (Swin-style)
 # ---------------------------------------------------------------------------
 def _window_partition(x, window_size):
     B, H, W, C = x.shape
@@ -273,10 +274,11 @@ class _BasicBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Multi-scale patch embedding / merging (ECA-enhanced)
+# Multi-scale 图块 嵌入 / merging ( ECA-enhanced ) / Multi-scale patch embedding / merging (ECA-enhanced)
 # ---------------------------------------------------------------------------
 class _PatchEmbed(nn.Module):
-    """Multi-scale patch embedding with ECA."""
+    """Multi-scale 图块 嵌入 with ECA。
+        Multi-scale patch embedding with ECA."""
 
     def __init__(self, img_size=224, patch_size=None, in_chans=3,
                  embed_dim=64):
@@ -291,7 +293,7 @@ class _PatchEmbed(nn.Module):
 
     def forward(self, x):
         outs = [proj(x) for proj in self.projs]
-        # Average multi-scale embeddings
+        # Average 多尺度 嵌入 / Average multi-scale embeddings
         out = outs[0]
         for o in outs[1:]:
             if o.shape != out.shape:
@@ -303,7 +305,8 @@ class _PatchEmbed(nn.Module):
 
 
 class _PatchMerging(nn.Module):
-    """ECA-enhanced patch merging."""
+    """ECA-enhanced 图块 merging。
+        ECA-enhanced patch merging."""
 
     def __init__(self, dim):
         super().__init__()
@@ -322,7 +325,7 @@ class _PatchMerging(nn.Module):
         x = torch.cat([x0, x1, x2, x3], -1)
         x = x.view(B, -1, 4 * C)
         x = self.reduction(self.norm(x))
-        # Apply ECA
+        # 应用 ECA / Apply ECA
         B, N, C2 = x.shape
         h = w = int(np.sqrt(N))
         x = x.view(B, h, w, C2).permute(0, 3, 1, 2)
@@ -331,7 +334,7 @@ class _PatchMerging(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder
+# 解码 / Decoder
 # ---------------------------------------------------------------------------
 class _Decoder(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -357,6 +360,7 @@ class _Decoder(nn.Module):
 # ---------------------------------------------------------------------------
 class H2Former(nn.Module):
     """H2Former: ResNet-34 + Swin Transformer with multi-scale fusion.
+        H2Former: ResNet - 34 + Swin Transformer with 多尺度 融合。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -377,7 +381,7 @@ class H2Former(nn.Module):
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         patches_resolution = [img_size // 2, img_size // 2]
         patch_size = [2, 4, 8, 16]
-        # ResNet encoder
+        # ResNet 编码器 / ResNet encoder
         self.conv1 = nn.Conv2d(in_channels, 64, 7, 1, 3, bias=False)
         self.bn1 = norm_layer(64)
         self.relu = nn.ReLU(inplace=True)
@@ -386,7 +390,7 @@ class H2Former(nn.Module):
         self.layer2 = self._make_layer(64, 128, 4, norm_layer, stride=2)
         self.layer3 = self._make_layer(128, 256, 6, norm_layer, stride=2)
         self.layer4 = self._make_layer(256, 512, 3, norm_layer, stride=2)
-        # Multi-scale patch embedding
+        # Multi-scale 图块 嵌入 / Multi-scale patch embedding
         self.patch_embed = _PatchEmbed(img_size, patch_size, in_channels,
                                        embed_dim)
         # Multi-scale merging
@@ -402,7 +406,7 @@ class H2Former(nn.Module):
             self.swin_layers.append(_BasicLayer(
                 dim_i, res_i, depths[i], num_heads[i], window_size,
                 mlp_ratio, True))
-        # Decoder
+        # 解码 / Decoder
         channels = [64, 128, 256, 512]
         self.decode4 = _Decoder(channels[3], channels[2])
         self.decode3 = _Decoder(channels[2], channels[1])
@@ -425,14 +429,14 @@ class H2Former(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        # Multi-scale patch embedding
+        # Multi-scale 图块 嵌入 / Multi-scale patch embedding
         ms1 = self.patch_embed(x)
         # ResNet path
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.maxpool(x)
         x = self.layer1(x)
         B, C, H, W = x.shape  # e.g. (B, 64, 112, 112)
-        # Fuse ResNet + Swin at level 1
+        # 融合 ResNet + Swin at level 1 / Fuse ResNet + Swin at level 1
         x_flat = x.flatten(2).transpose(1, 2)
         x_flat = x_flat + ms1
         x_flat = self.swin_layers[0](x_flat)

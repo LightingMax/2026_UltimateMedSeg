@@ -1,4 +1,5 @@
 """Central Hugging Face Hub configuration and download helpers.
+    Central Hugging Face Hub 配置 and download helpers。
 
 All HF downloads in medseg should go through this module so endpoint
 selection and mirror fallback apply consistently.
@@ -35,7 +36,8 @@ T = TypeVar("T")
 
 
 def resolve_hf_endpoint() -> Optional[str]:
-    """Return an explicitly configured HF endpoint, or ``None`` for auto mode."""
+    """返回 an explicitly configured HF endpoint, or ` ` None ` ` for auto mode。
+        Return an explicitly configured HF endpoint, or ``None`` for auto mode."""
     endpoint = os.environ.get("HF_ENDPOINT", "").strip()
     if endpoint:
         return endpoint.rstrip("/")
@@ -54,7 +56,8 @@ def user_pinned_hf_endpoint() -> bool:
 
 
 def configure_hf_hub(*, log: bool = True) -> Optional[str]:
-    """Apply resolved endpoint to ``HF_ENDPOINT`` once per process."""
+    """应用 resolved endpoint to ` ` HF _ ENDPOINT ` ` once per 处理。
+        Apply resolved endpoint to ``HF_ENDPOINT`` once per process."""
     global _CONFIGURED
     endpoint = resolve_hf_endpoint()
     if endpoint and not os.environ.get("HF_ENDPOINT"):
@@ -83,7 +86,8 @@ def hf_endpoint(endpoint: Optional[str]):
 
 
 def is_retryable_hf_error(exc: BaseException) -> bool:
-    """Return True when a download failure may succeed on the mirror endpoint."""
+    """返回 True when a download failure may succeed on the mirror endpoint。
+        Return True when a download failure may succeed on the mirror endpoint."""
     if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
         if isinstance(exc, OSError) and getattr(exc, "errno", None) not in (
             None, 101, 110, 111, 113, 104, 105,
@@ -131,7 +135,8 @@ def is_retryable_hf_error(exc: BaseException) -> bool:
 
 
 def call_with_hf_fallback(func: Callable[..., T], *args, **kwargs) -> T:
-    """Call ``func`` using official HF first, then mirror on network failure."""
+    """Call ` ` func ` ` using official HF first, then mirror on 网络 failure。
+        Call ``func`` using official HF first, then mirror on network failure."""
     pinned = resolve_hf_endpoint()
     if pinned:
         configure_hf_hub(log=False)
@@ -242,7 +247,8 @@ def download_repo_files(
     local_dir: Union[str, os.PathLike],
     revision: Optional[str] = None,
 ) -> list:
-    """Download specific files from a repo into ``local_dir``."""
+    """Download specific files from a repo into ` ` 局部的 _ dir ` `。
+        Download specific files from a repo into ``local_dir``."""
     from pathlib import Path
 
     local_dir = Path(local_dir)
@@ -260,7 +266,7 @@ def download_repo_files(
     return paths
 
 
-# Known HF dataset repos useful for medseg (not all are TransUNet npz format).
+# Known HF 数据集 repos useful for medseg ( not all are TransUNet npz format ) / Known HF dataset repos useful for medseg (not all are TransUNet npz format).
 HF_DATASET_CATALOG = {
     "medseg7d": {
         "repo_id": "MaybeRichard/MedSeg-7D",

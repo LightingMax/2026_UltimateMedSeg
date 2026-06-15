@@ -1,4 +1,5 @@
 """SK-VM++ Skip — Mamba-assisted skip connection (BSPC 2025, Fang et al.).
+    SK-VM++ Skip — Mamba-assisted 跳跃连接。
 
 Adapted from: https://github.com/wurenkai/SK-VMPlusPlus
 Paper: SK-VM++: Mamba assists skip-connections for medical image segmentation
@@ -31,6 +32,7 @@ from medseg.models.encoders.mamba.vmunet_encoder import SS2D, DropPath
 
 class _PVMLayer(nn.Module):
     """Pyramid Vision Mamba Layer — core SSM block of SK-VM++.
+        金字塔 Vision Mamba 层 — core SSM 块 of SK-VM + +。
 
     Splits channels into ``n_chunks`` chunks, processes each with an
     independent SS2D block, then reassembles and projects.
@@ -65,29 +67,29 @@ class _PVMLayer(nn.Module):
         B, C, H, W = x.shape
         residual = x
 
-        # Flatten -> (B, L, C), L = H * W
+        # 展平 - > ( B, L, C ), L = H * W / Flatten -> (B, L, C), L = H * W
         x_flat = x.reshape(B, C, H * W).transpose(1, 2)
         x_norm = self.norm(x_flat)  # (B, L, C)
 
-        # Split into n_chunks along channel dim
+        # Split into n _ chunks along 通道 dim / Split into n_chunks along channel dim
         chunks = torch.chunk(x_norm, self.n_chunks, dim=-1)  # n x (B, L, C/n)
 
         outs = []
         for chunk, mamba in zip(chunks, self.mambas):
-            # Reshape to (B, H, W, C/n) for SS2D
+            # 重塑 to ( B, H, W, C / n ) for SS2D / Reshape to (B, H, W, C/n) for SS2D
             chunk_2d = chunk.transpose(1, 2).reshape(B, H, W, self.chunk_dim)
-            # SS2D forward: (B, H, W, C/n) -> (B, H, W, C/n)
+            # SS2D 前向传播: ( B, H, W, C / n ) - > ( B, H, W, C / n ) / SS2D forward: (B, H, W, C/n) -> (B, H, W, C/n)
             out_2d = mamba(chunk_2d)
             # Back to (B, L, C/n)
             out_flat = out_2d.reshape(B, H * W, self.chunk_dim)
             outs.append(out_flat + self.skip_scale * chunk)
 
-        # Concatenate: (B, L, C)
+        # 拼接: ( B, L, C ) / Concatenate: (B, L, C)
         out = torch.cat(outs, dim=-1)
         # LayerNorm + project
         out = self.norm(out)
         out = self.proj(out)
-        # Reshape back to 2D
+        # 重塑 back to 2D / Reshape back to 2D
         out = out.transpose(1, 2).reshape(B, C, H, W)
 
         return self.drop_path(out) + residual
@@ -96,6 +98,7 @@ class _PVMLayer(nn.Module):
 @SKIP_REGISTRY.register("skvmpp")
 class SKVMPlusPlusSkip(nn.Module):
     """SK-VM++ Mamba-assisted skip connection.
+        SK-VM++ Mamba-assisted 跳跃连接。
 
     Fuses decoder and encoder skip features through PVMLayer, then adds
     residual to the skip feature.
@@ -117,20 +120,21 @@ class SKVMPlusPlusSkip(nn.Module):
         self.d_conv = d_conv
         self.expand = expand
         self.drop_path = drop_path
-        # Lazily-built submodules keyed by skip channel count
+        # Lazily-built submodules keyed by 跳跃连接 / Lazily-built submodules keyed by skip channel count
         self._cache: dict = {}
 
     def get_out_channels(self, decoder_ch: int, skip_ch: int) -> int:
         return skip_ch
 
     def _build(self, decoder_ch: int, skip_ch: int, device):
-        """Lazily build layers for a (decoder_ch, skip_ch) pair."""
+        """Lazily build layers for a ( 解码 _ ch, 跳跃 _ ch ) pair。
+            Lazily build layers for a (decoder_ch, skip_ch) pair."""
         key = (decoder_ch, skip_ch, str(device))
         if key in self._cache:
             return self._cache[key]
 
         proj = nn.Conv2d(decoder_ch, skip_ch, 1, bias=False).to(device)
-        # Channel count must be divisible by n_chunks
+        # 通道 count must be divisible by n _ chunks / Channel count must be divisible by n_chunks
         # If not, adjust n_chunks to the largest divisor <= self.n_chunks
         n_chunks = self.n_chunks
         while n_chunks > 1 and skip_ch % n_chunks != 0:
@@ -153,7 +157,7 @@ class SKVMPlusPlusSkip(nn.Module):
 
     def forward(self, decoder_feat: torch.Tensor,
                 skip_feat: torch.Tensor) -> torch.Tensor:
-        # Align spatial dimensions to skip (encoder) size
+        # Align spatial dimensions to 跳跃连接 / Align spatial dimensions to skip (encoder) size
         if decoder_feat.shape[2:] != skip_feat.shape[2:]:
             decoder_feat = F.interpolate(
                 decoder_feat, size=skip_feat.shape[2:],
@@ -164,17 +168,17 @@ class SKVMPlusPlusSkip(nn.Module):
         skip_ch = skip_feat.shape[1]
         mod = self._build(dec_ch, skip_ch, decoder_feat.device)
 
-        # Project decoder to skip channels
+        # Project 解码器 / Project decoder to skip channels
         proj_d = mod["proj"](decoder_feat)
 
-        # Combine with abs (matching original SK-VM++ formulation)
+        # 组合 with abs ( matching original SK-VM + + formulation ) / Combine with abs (matching original SK-VM++ formulation)
         combined = torch.abs(proj_d + skip_feat)
 
-        # Refine through PVMLayer (includes residual)
+        # Refine through PVMLayer ( includes 残差 ) / Refine through PVMLayer (includes residual)
         refined = mod["pvm"](combined)
 
-        # BN + ReLU on residual path
+        # BN + ReLU on 残差 path / BN + ReLU on residual path
         refined = F.relu(mod["bn"](refined))
 
-        # Add to skip feature
+        # Add to 跳跃连接 / Add to skip feature
         return skip_feat + refined

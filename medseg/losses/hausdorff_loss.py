@@ -1,4 +1,5 @@
 """Hausdorff Distance Loss.
+    Hausdorff Distance 损失。
 
 Faithful reimplementation of:
     Karimi & Salcudean, "Reducing the Hausdorff Distance in Medical Image
@@ -37,6 +38,7 @@ from medseg.registry import LOSS_REGISTRY
 
 def _dt_per_class(mask: np.ndarray) -> np.ndarray:
     """Unsigned Euclidean DT of a 0/1 mask (or its complement when empty).
+        Unsigned Euclidean DT of a 0 / 1 掩码 ( or its complement when empty )。
 
     For each foreground class c we want d(x) = distance to nearest pixel
     that *is not* class c on a one-hot map -- i.e. the Karimi formulation
@@ -76,7 +78,8 @@ def _bfs_dt(mask: np.ndarray) -> np.ndarray:
 
 
 def _batch_dt(mask: torch.Tensor) -> torch.Tensor:
-    """mask: (B, H, W) 0/1 tensor.  Returns (B, H, W) float DT on same device."""
+    """掩码: ( B, H, W ) 0 / 1 张量. 返回 ( B, H, W ) float DT on same device。
+        mask: (B, H, W) 0/1 tensor.  Returns (B, H, W) float DT on same device."""
     arr = mask.detach().cpu().numpy()
     out = np.zeros_like(arr, dtype=np.float32)
     for b in range(arr.shape[0]):
@@ -86,7 +89,8 @@ def _batch_dt(mask: torch.Tensor) -> torch.Tensor:
 
 @LOSS_REGISTRY.register("hausdorff")
 class HausdorffLoss(nn.Module):
-    """HD_{DT} loss (Karimi & Salcudean, TMI 2019)."""
+    """HD_{DT} 损失。
+        HD_{DT} loss (Karimi & Salcudean, TMI 2019)."""
 
     def __init__(
         self,
@@ -101,7 +105,8 @@ class HausdorffLoss(nn.Module):
         self.ignore_index = ignore_index
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """pred: (B, C, H, W) logits.  target: (B, H, W) long."""
+        """pred: ( B, C, H, W ) logits. 目标: ( B, H, W ) long。
+            pred: (B, C, H, W) logits.  target: (B, H, W) long."""
         C = pred.shape[1]
         probs = F.softmax(pred, dim=1)
 
@@ -120,7 +125,7 @@ class HausdorffLoss(nn.Module):
             q = target_oh[:, c]                  # (B, H, W)
             with torch.no_grad():
                 d_q = _batch_dt(q.bool())
-                # DT of binarised prediction (threshold at 0.5)
+                # DT of binarised 预测 ( 阈值 at 0. 5 ) / DT of binarised prediction (threshold at 0.5)
                 d_p = _batch_dt((p > 0.5))
                 weight = d_p.pow(self.alpha) + d_q.pow(self.alpha)
             err = (p - q).pow(2)

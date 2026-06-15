@@ -1,4 +1,5 @@
 """Serp-Mamba: Selective State-Space Model for Retinal Vessel Segmentation.
+    Serp-Mamba: Selective State-Space 模型 for Retinal 血管 分割。
 
 Reference:
     "Serp-Mamba: Advancing High-Resolution Retinal Vessel Segmentation
@@ -25,7 +26,8 @@ from medseg.models.encoders.vmunet_encoder import SS2D
 
 
 class _SerpMambaBlock(nn.Module):
-    """Serpentine Mamba block: 4-directional SS2D fusion."""
+    """Serpentine Mamba 块: 4-directional SS2D 融合。
+        Serpentine Mamba block: 4-directional SS2D fusion."""
     def __init__(self, dim):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
@@ -46,12 +48,12 @@ class _SerpMambaBlock(nn.Module):
 
         # Horizontal scan
         h_out = self.ss2d_h(x_norm)
-        # Vertical scan (transpose H/W)
+        # Vertical scan ( 转置 H / W ) / Vertical scan (transpose H/W)
         x_t = x_hw.transpose(1, 2)  # BWHC
         x_t_norm = self.norm(x_t)
         v_out = self.ss2d_v(x_t_norm).transpose(1, 2)  # BHWC back
 
-        # Fuse
+        # 融合 / Fuse
         fused = self.fuse(torch.cat([h_out, v_out], dim=-1))
         out = self.proj(fused)
         return out.permute(0, 3, 1, 2) + x
@@ -71,14 +73,15 @@ class _DoubleConv(nn.Module):
 
 
 class SerpMamba(nn.Module):
-    """Serp-Mamba for retinal vessel segmentation."""
+    """Serp-Mamba for retinal 血管 分割。
+        Serp-Mamba for retinal vessel segmentation."""
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  base_channels=32, **kwargs):
         super().__init__()
         C = base_channels
         self.num_classes = num_classes
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _DoubleConv(in_channels, C)
         self.enc2 = _DoubleConv(C, C * 2)
         self.enc3 = _DoubleConv(C * 2, C * 4)
@@ -86,12 +89,12 @@ class SerpMamba(nn.Module):
         self.enc5 = _DoubleConv(C * 8, C * 16)
         self.pool = nn.MaxPool2d(2)
 
-        # Mamba blocks at bottleneck + deep stages
+        # Mamba blocks at 瓶颈层 / Mamba blocks at bottleneck + deep stages
         self.mamba_b = _SerpMambaBlock(C * 16)
         self.mamba4 = _SerpMambaBlock(C * 8)
         self.mamba3 = _SerpMambaBlock(C * 4)
 
-        # Decoder
+        # 解码 / Decoder
         self.up5 = nn.ConvTranspose2d(C * 16, C * 8, 2, stride=2)
         self.dec5 = _DoubleConv(C * 16, C * 8)
         self.up4 = nn.ConvTranspose2d(C * 8, C * 4, 2, stride=2)
@@ -116,7 +119,7 @@ class SerpMamba(nn.Module):
         e4 = self.enc4(self.pool(e3))
         e5 = self.enc5(self.pool(e4))
 
-        # Mamba enhanced features
+        # Mamba enhanced 特征 / Mamba enhanced features
         b = self.mamba_b(e5)
         e4 = self.mamba4(e4)
         e3 = self.mamba3(e3)

@@ -1,4 +1,5 @@
 """Swin-UNet Decoder: faithful port from https://github.com/HuCaoFighting/Swin-Unet
+    Swin-UNet 解码器。
 
 Reference: Cao et al., "Swin-Unet: Unet-like Pure Transformer for Medical Image Segmentation"
 File: networks/swin_transformer_unet_skip_expand_decoder_sys.py
@@ -22,7 +23,8 @@ from medseg.models.encoders.swinunet_encoder import SwinTransformerBlock
 
 
 class PatchExpand(nn.Module):
-    """Patch expanding layer for 2x upsampling (from original Swin-UNet)."""
+    """图块 expanding 层 for 2x 上采样 ( from original Swin-UNet )。
+        Patch expanding layer for 2x upsampling (from original Swin-UNet)."""
 
     def __init__(self, input_resolution, dim, dim_scale=2, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -45,7 +47,8 @@ class PatchExpand(nn.Module):
 
 
 class FinalPatchExpand_X4(nn.Module):
-    """Final 4x patch expanding for full resolution recovery."""
+    """Final 4x 图块 expanding for full 分辨率 recovery。
+        Final 4x patch expanding for full resolution recovery."""
 
     def __init__(self, input_resolution, dim, dim_scale=4, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -71,7 +74,8 @@ class FinalPatchExpand_X4(nn.Module):
 
 
 class BasicLayer_up(nn.Module):
-    """A basic Swin Transformer layer for decoder (with optional upsample)."""
+    """A basic Swin Transformer layer for 解码器。
+        A basic Swin Transformer layer for decoder (with optional upsample)."""
 
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
@@ -111,6 +115,7 @@ class BasicLayer_up(nn.Module):
 @DECODER_REGISTRY.register("swinunet")
 class SwinUNetDecoder(nn.Module):
     """Swin-UNet decoder with PatchExpand upsampling and Swin Transformer blocks.
+        Swin-UNet 解码器。
 
     Faithful to the original SwinTransformerSys decoder part.
     Architecture:
@@ -143,16 +148,16 @@ class SwinUNetDecoder(nn.Module):
         super().__init__()
         norm_layer = nn.LayerNorm
         num_layers = len(encoder_channels)  # should be 3 for skip features (excluding bottleneck)
-        # Actually num_layers is total encoder stages including bottleneck
+        # Actually num_layers is total 编码器 / Actually num_layers is total encoder stages including bottleneck
         self.num_layers = num_layers + 1  # total stages
         patches_resolution = [img_size // patch_size, img_size // patch_size]
         self.patches_resolution = patches_resolution
 
-        # Stochastic depth for decoder
+        # Stochastic depth for 解码器 / Stochastic depth for decoder
         depths_dec = list(depths_decoder)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths_dec))]
 
-        # Build decoder layers and concat_back_dim
+        # Build 解码器 / Build decoder layers and concat_back_dim
         self.layers_up = nn.ModuleList()
         self.concat_back_dim = nn.ModuleList()
 
@@ -164,7 +169,7 @@ class SwinUNetDecoder(nn.Module):
             concat_linear = nn.Linear(2 * dim_layer, dim_layer) if i_layer > 0 else nn.Identity()
 
             if i_layer == 0:
-                # First decoder layer: just PatchExpand (no Swin blocks)
+                # First 解码器 / First decoder layer: just PatchExpand (no Swin blocks)
                 layer_up = PatchExpand(
                     input_resolution=res,
                     dim=dim_layer, dim_scale=2, norm_layer=norm_layer)
@@ -211,21 +216,21 @@ class SwinUNetDecoder(nn.Module):
         return self._out_channels
 
     def forward(self, bottleneck_feat: torch.Tensor, skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # Convert bottleneck from (B, C, H, W) to (B, L, C) sequence format
+        # Convert 瓶颈层 / Convert bottleneck from (B, C, H, W) to (B, L, C) sequence format
         B, C, H, W = bottleneck_feat.shape
         x = bottleneck_feat.flatten(2).transpose(1, 2)  # (B, H*W, C)
 
-        # Convert skip features from (B, C, H, W) to (B, L, C) - keep original order (shallow to deep)
+        # Convert 跳跃连接 / Convert skip features from (B, C, H, W) to (B, L, C) - keep original order (shallow to deep)
         skip_seqs = []
         for feat in skip_features:
             skip_seqs.append(feat.flatten(2).transpose(1, 2))
 
-        # Decoder: process layers
+        # 解码: 处理 layers / Decoder: process layers
         for inx, layer_up in enumerate(self.layers_up):
             if inx == 0:
                 x = layer_up(x)
             else:
-                # Concat with skip feature (from deep to shallow)
+                # Concat with 跳跃连接 / Concat with skip feature (from deep to shallow)
                 skip_idx = len(skip_seqs) - inx  # maps to correct skip level
                 if 0 <= skip_idx < len(skip_seqs):
                     x = torch.cat([x, skip_seqs[skip_idx]], -1)

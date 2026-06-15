@@ -8,7 +8,13 @@ model:
     name: swinunet
     in_channels: 3
     pretrained: true
-    params: {}
+    params:
+      embed_dim: 96
+      depths: [2, 2, 2, 2]
+      num_heads: [3, 6, 12, 24]
+      window_size: 7
+      patch_size: 4
+      drop_path_rate: 0.1
   bottleneck:
     name: none
     params: {}

@@ -3,7 +3,7 @@ WORKER_HEART_BEAT_INTERVAL = 15
 
 LOGDIR = "."
 
-# Model Constants
+# 模型 Constants / Model Constants
 IGNORE_INDEX = -100
 IMAGE_TOKEN_INDEX = -200
 DEFAULT_IMAGE_TOKEN = "<image>"

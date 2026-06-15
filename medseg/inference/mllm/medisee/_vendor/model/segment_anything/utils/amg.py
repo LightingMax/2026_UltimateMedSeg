@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 import math
 from copy import deepcopy
@@ -78,7 +78,8 @@ class MaskData:
 def is_box_near_crop_edge(
     boxes: torch.Tensor, crop_box: List[int], orig_box: List[int], atol: float = 20.0
 ) -> torch.Tensor:
-    """Filter masks at the edge of a crop, but not at the edge of the original image."""
+    """Filter 掩码 at the 边缘 of a crop, but not at the 边缘 of the original 图像。
+        Filter masks at the edge of a crop, but not at the edge of the original image."""
     crop_box_torch = torch.as_tensor(crop_box, dtype=torch.float, device=boxes.device)
     orig_box_torch = torch.as_tensor(orig_box, dtype=torch.float, device=boxes.device)
     boxes = uncrop_boxes_xyxy(boxes, crop_box).float()
@@ -109,15 +110,15 @@ def mask_to_rle_pytorch(tensor: torch.Tensor) -> List[Dict[str, Any]]:
     Encodes masks to an uncompressed RLE, in the format expected by
     pycoco tools.
     """
-    # Put in fortran order and flatten h,w
+    # Put in fortran order and 展平 h, w / Put in fortran order and flatten h,w
     b, h, w = tensor.shape
     tensor = tensor.permute(0, 2, 1).flatten(1)
 
-    # Compute change indices
+    # 计算 change indices / Compute change indices
     diff = tensor[:, 1:] ^ tensor[:, :-1]
     change_indices = diff.nonzero()
 
-    # Encode run length
+    # 编码 run length / Encode run length
     out = []
     for i in range(b):
         cur_idxs = change_indices[change_indices[:, 0] == i, 1]
@@ -136,7 +137,8 @@ def mask_to_rle_pytorch(tensor: torch.Tensor) -> List[Dict[str, Any]]:
 
 
 def rle_to_mask(rle: Dict[str, Any]) -> np.ndarray:
-    """Compute a binary mask from an uncompressed RLE."""
+    """计算 a 二值的 掩码 from an uncompressed RLE。
+        Compute a binary mask from an uncompressed RLE."""
     h, w = rle["size"]
     mask = np.empty(h * w, dtype=bool)
     idx = 0
@@ -161,8 +163,8 @@ def calculate_stability_score(
     score is the IoU between the binary masks obtained by thresholding
     the predicted mask logits at high and low values.
     """
-    # One mask is always contained inside the other.
-    # Save memory by preventing unnecessary cast to torch.int64
+    # One 掩码 is always contained inside the other / One mask is always contained inside the other.
+    # 保存 memory by preventing unnecessary cast to torch. int64 / Save memory by preventing unnecessary cast to torch.int64
     intersections = (
         (masks > (mask_threshold + threshold_offset))
         .sum(-1, dtype=torch.int16)
@@ -177,7 +179,8 @@ def calculate_stability_score(
 
 
 def build_point_grid(n_per_side: int) -> np.ndarray:
-    """Generates a 2D grid of points evenly spaced in [0,1]x[0,1]."""
+    """生成 a 2D grid of points evenly spaced in [ 0, 1 ] x [ 0, 1 ]。
+        Generates a 2D grid of points evenly spaced in [0,1]x[0,1]."""
     offset = 1 / (2 * n_per_side)
     points_one_side = np.linspace(offset, 1 - offset, n_per_side)
     points_x = np.tile(points_one_side[None, :], (n_per_side, 1))
@@ -189,7 +192,8 @@ def build_point_grid(n_per_side: int) -> np.ndarray:
 def build_all_layer_point_grids(
     n_per_side: int, n_layers: int, scale_per_layer: int
 ) -> List[np.ndarray]:
-    """Generates point grids for all crop layers."""
+    """生成 point grids for all crop layers。
+        Generates point grids for all crop layers."""
     points_by_layer = []
     for i in range(n_layers + 1):
         n_points = int(n_per_side / (scale_per_layer**i))
@@ -208,7 +212,7 @@ def generate_crop_boxes(
     im_h, im_w = im_size
     short_side = min(im_h, im_w)
 
-    # Original image
+    # Original 图像 / Original image
     crop_boxes.append([0, 0, im_w, im_h])
     layer_idxs.append(0)
 
@@ -237,7 +241,7 @@ def generate_crop_boxes(
 def uncrop_boxes_xyxy(boxes: torch.Tensor, crop_box: List[int]) -> torch.Tensor:
     x0, y0, _, _ = crop_box
     offset = torch.tensor([[x0, y0, x0, y0]], device=boxes.device)
-    # Check if boxes has a channel dimension
+    # Check if boxes has a 通道 维度 / Check if boxes has a channel dimension
     if len(boxes.shape) == 3:
         offset = offset.unsqueeze(1)
     return boxes + offset
@@ -246,7 +250,7 @@ def uncrop_boxes_xyxy(boxes: torch.Tensor, crop_box: List[int]) -> torch.Tensor:
 def uncrop_points(points: torch.Tensor, crop_box: List[int]) -> torch.Tensor:
     x0, y0, _, _ = crop_box
     offset = torch.tensor([[x0, y0]], device=points.device)
-    # Check if points has a channel dimension
+    # Check if points has a 通道 维度 / Check if points has a channel dimension
     if len(points.shape) == 3:
         offset = offset.unsqueeze(1)
     return points + offset
@@ -258,7 +262,7 @@ def uncrop_masks(
     x0, y0, x1, y1 = crop_box
     if x0 == 0 and y0 == 0 and x1 == orig_w and y1 == orig_h:
         return masks
-    # Coordinate transform masks
+    # Coordinate transform 掩码 / Coordinate transform masks
     pad_x, pad_y = orig_w - (x1 - x0), orig_h - (y1 - y0)
     pad = (x0, pad_x - x0, y0, pad_y - y0)
     return torch.nn.functional.pad(masks, pad, value=0)
@@ -284,7 +288,7 @@ def remove_small_regions(
     fill_labels = [0] + small_regions
     if not correct_holes:
         fill_labels = [i for i in range(n_labels) if i not in fill_labels]
-        # If every region is below threshold, keep largest
+        # If every 区域 is below 阈值, keep largest / If every region is below threshold, keep largest
         if len(fill_labels) == 0:
             fill_labels = [int(np.argmax(sizes)) + 1]
     mask = np.isin(regions, fill_labels)
@@ -305,11 +309,11 @@ def batched_mask_to_box(masks: torch.Tensor) -> torch.Tensor:
     Calculates boxes in XYXY format around masks. Return [0,0,0,0] for
     an empty mask. For input shape C1xC2x...xHxW, the output shape is C1xC2x...x4.
     """
-    # torch.max below raises an error on empty inputs, just skip in this case
+    # torch.max below raises an error on empty inputs, just 跳跃连接 / torch.max below raises an error on empty inputs, just skip in this case
     if torch.numel(masks) == 0:
         return torch.zeros(*masks.shape[:-2], 4, device=masks.device)
 
-    # Normalize shape to CxHxW
+    # 归一化 形状 to CxHxW / Normalize shape to CxHxW
     shape = masks.shape
     h, w = shape[-2:]
     if len(shape) > 2:
@@ -331,13 +335,13 @@ def batched_mask_to_box(masks: torch.Tensor) -> torch.Tensor:
     in_width_coords = in_width_coords + w * (~in_width)
     left_edges, _ = torch.min(in_width_coords, dim=-1)
 
-    # If the mask is empty the right edge will be to the left of the left edge.
+    # If the 掩码 is empty the right 边缘 will be to the left of the left 边缘 / If the mask is empty the right edge will be to the left of the left edge.
     # Replace these boxes with [0, 0, 0, 0]
     empty_filter = (right_edges < left_edges) | (bottom_edges < top_edges)
     out = torch.stack([left_edges, top_edges, right_edges, bottom_edges], dim=-1)
     out = out * (~empty_filter).unsqueeze(-1)
 
-    # Return to original shape
+    # 返回 to original 形状 / Return to original shape
     if len(shape) > 2:
         out = out.reshape(*shape[:-2], 4)
     else:

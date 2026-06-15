@@ -1,4 +1,5 @@
 """Test-Time Augmentation (TTA) wrapper for segmentation models.
+    Test-Time 数据增强 ( TTA ) 封装器 for 分割 models。
 
 Applies a set of geometric and/or photometric augmentations at inference
 time, runs the wrapped model on each augmented copy, **inverts** the
@@ -108,7 +109,7 @@ def _to_main_logits(out) -> torch.Tensor:
 
 
 # ----------------------------------------------------------------------
-# Forward / inverse spatial transforms
+# 前向传播 / inverse 空间的 transforms / Forward / inverse spatial transforms
 # ----------------------------------------------------------------------
 def _apply_spatial(x: torch.Tensor, aug: str) -> torch.Tensor:
     if aug == "identity":
@@ -132,7 +133,7 @@ def _invert_spatial(y: torch.Tensor, aug: str) -> torch.Tensor:
     if aug == "identity":
         return y
     if aug == "rot90":
-        # forward rotated by k=+1 → invert with k=-1 (= +3)
+        # 前向传播 rotated by k = + 1 → invert with k = - 1 ( = + 3 ) / forward rotated by k=+1 → invert with k=-1 (= +3)
         return torch.rot90(y, k=-1, dims=(-2, -1))
     if aug == "rot180":
         return torch.rot90(y, k=-2, dims=(-2, -1))
@@ -148,7 +149,7 @@ def _invert_spatial(y: torch.Tensor, aug: str) -> torch.Tensor:
 
 
 # ----------------------------------------------------------------------
-# Photometric transforms (input only)
+# Photometric transforms ( 输入 only ) / Photometric transforms (input only)
 # ----------------------------------------------------------------------
 def _apply_photometric(
     x: torch.Tensor,
@@ -190,6 +191,7 @@ def _apply_photometric(
 # ----------------------------------------------------------------------
 class TTAWrapper(nn.Module):
     """Test-Time Augmentation wrapper.
+        Test-Time 数据增强 封装器。
 
     Args:
         model: any segmentation ``nn.Module`` returning logits ``(B, C, H, W)``.
@@ -284,7 +286,8 @@ class TTAWrapper(nn.Module):
 
     # ------------------------------------------------------------------
     def forward_per_aug(self, x: torch.Tensor) -> List[torch.Tensor]:
-        """Run model on each augmented copy and invert geometry."""
+        """Run 模型 on each augmented copy and invert geometry。
+            Run model on each augmented copy and invert geometry."""
         outs: List[torch.Tensor] = []
         for aug in self.augmentations:
             x_aug = self._augment_input(x, aug)
@@ -296,7 +299,7 @@ class TTAWrapper(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         outs = self.forward_per_aug(x)
 
-        # Sanity: all outputs must agree on (B, C, H, W); if a model resizes,
+        # Sanity: all outputs must agree on ( B, C, H, W ); if a 模型 resizes / Sanity: all outputs must agree on (B, C, H, W); if a model resizes,
         # we let it through but log once.
         ref_shape = outs[0].shape
         for i, o in enumerate(outs[1:], start=1):
@@ -328,6 +331,7 @@ class TTAWrapper(nn.Module):
 # ----------------------------------------------------------------------
 def build_tta_from_config(model: nn.Module, cfg: dict) -> TTAWrapper:
     """Build a TTAWrapper from a yaml-style config dict.
+        Build a TTAWrapper from a yaml-style 配置 dict。
 
     Schema::
 

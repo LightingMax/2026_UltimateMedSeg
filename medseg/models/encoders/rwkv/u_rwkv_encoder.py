@@ -1,4 +1,5 @@
 """U-RWKV encoder: stride-2 stem + 4 ConvRWKV stages (Stage0 stride 1, Stages 1-3 stride 2).
+    U-RWKV 编码器。
 
 Extracted from ``medseg.models.networks.rwkv.u_rwkv`` (U-RWKV, MICCAI 2025
 reimplementation). Wraps the Conv+RWKV trunk and exposes the 4 multi-scale
@@ -32,11 +33,12 @@ def _wkv(B, T, C, w, u, k, v):
 
 
 # ---------------------------------------------------------------------------
-# Q-Shift: spatial token shifting (4 directions + identity), resolution-friendly
+# Q-Shift: 空间的 标记 shifting ( 4 directions + identity ), resolution-friendly / Q-Shift: spatial token shifting (4 directions + identity), resolution-friendly
 # ---------------------------------------------------------------------------
 
 def _q_shift(x, H, W, shift_pixel=1, gamma=0.25):
     """Shift tokens in 4 directions for spatial mixing.
+        Shift 标记 in 4 directions for 空间的 mixing。
 
     x: (B, N, C) where N = H*W. Uses runtime (H, W) -- no baked size.
     """
@@ -62,7 +64,7 @@ def _q_shift(x, H, W, shift_pixel=1, gamma=0.25):
 
 
 # ---------------------------------------------------------------------------
-# RWKV Spatial Mix (time mixing adapted for 2D)
+# RWKV 空间的 Mix ( time mixing adapted for 2D ) / RWKV Spatial Mix (time mixing adapted for 2D)
 # ---------------------------------------------------------------------------
 
 class _SpatialMix(nn.Module):
@@ -135,7 +137,7 @@ class _SpatialMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# RWKV Channel Mix (feed-forward with gating)
+# RWKV 通道 Mix ( feed-forward with gating ) / RWKV Channel Mix (feed-forward with gating)
 # ---------------------------------------------------------------------------
 
 class _ChannelMix(nn.Module):
@@ -174,7 +176,7 @@ class _ChannelMix(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# RWKV Block (LayerNorm -> SpatialMix -> LayerNorm -> ChannelMix)
+# RWKV 块 ( LayerNorm - > SpatialMix - > LayerNorm - > ChannelMix ) / RWKV Block (LayerNorm -> SpatialMix -> LayerNorm -> ChannelMix)
 # ---------------------------------------------------------------------------
 
 class _RWKVBlock(nn.Module):
@@ -194,7 +196,7 @@ class _RWKVBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Conv encoder stage with RWKV blocks
+# Conv 编码器 / Conv encoder stage with RWKV blocks
 # ---------------------------------------------------------------------------
 
 class _ConvRWKVStage(nn.Module):
@@ -230,12 +232,13 @@ class _ConvRWKVStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# U-RWKV Encoder
+# U-RWKV 编码器 / U-RWKV Encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("u_rwkv")
 class URWKVEncoder(nn.Module):
     """U-RWKV encoder: 7x7 stride-2 stem + 4 ConvRWKV stages.
+        U-RWKV 编码器。
 
     Stage strides: [1, 2, 2, 2] -> output strides relative to input are
     [2, 4, 8, 16] (stem contributes one 2x downsample).
@@ -272,7 +275,7 @@ class URWKVEncoder(nn.Module):
         self._embed_dims = list(embed_dims)
         self._depths = list(depths)
 
-        # Optional 1x1 channel-remap when the dataset is not RGB.
+        # 可选 1x1 channel-remap when the 数据集 is not RGB / Optional 1x1 channel-remap when the dataset is not RGB.
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             stem_in = 3
@@ -282,14 +285,14 @@ class URWKVEncoder(nn.Module):
 
         total_layers = sum(depths)
 
-        # Stem: 7x7 stride-2 conv
+        # 主干: 7x7 步长 - 2 conv / Stem: 7x7 stride-2 conv
         self.stem = nn.Sequential(
             nn.Conv2d(stem_in, embed_dims[0], 7, stride=2, padding=3, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
             nn.ReLU(inplace=True),
         )
 
-        # 4 encoder stages: Stage 0 stride 1, Stages 1..3 stride 2
+        # 4 编码器 / 4 encoder stages: Stage 0 stride 1, Stages 1..3 stride 2
         self.enc_stages = nn.ModuleList()
         layer_offset = 0
         for i in range(len(embed_dims)):
@@ -300,7 +303,7 @@ class URWKVEncoder(nn.Module):
                 layer_offset, stride=stride, shift_pixel=shift_pixel))
             layer_offset += depths[i]
 
-        # Multi-scale channel dims (deepest LAST, framework convention).
+        # Multi-scale 通道 dims ( deepest LAST, framework convention ) / Multi-scale channel dims (deepest LAST, framework convention).
         self.out_channels = list(embed_dims)
 
         if pretrained:

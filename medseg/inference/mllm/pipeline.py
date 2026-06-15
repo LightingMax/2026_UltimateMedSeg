@@ -151,7 +151,7 @@ class MLLMGroundingSegPipeline:
         # Step 1: MLLM grounding
         detection = self.grounder.detect(image, self.class_names)
 
-        # Step 2: SAM2 box → mask
+        # Step 2: SAM2 box → 掩码 / Step 2: SAM2 box → mask
         per_class_masks: Dict[str, np.ndarray] = {}
         for cid, name in enumerate(self.class_names, start=1):
             boxes = detection.boxes_by_class.get(name, [])
@@ -164,7 +164,7 @@ class MLLMGroundingSegPipeline:
             union = np.any(masks > 0, axis=0).astype(np.uint8) if masks.shape[0] > 0 \
                 else np.zeros((h, w), dtype=np.uint8)
 
-            # Step 3 (optional): refinement
+            # Step 3 ( 可选 ): refinement / Step 3 (optional): refinement
             if self.refinement_model is not None:
                 refined = self._refine_roi(image, boxes[0], cid)
                 if refined is not None:
@@ -181,7 +181,7 @@ class MLLMGroundingSegPipeline:
 
 
 # ================================================================
-# Factory
+# 工厂函数 / Factory
 # ================================================================
 def build_pipeline_from_config(cfg: Dict[str, Any]) -> MLLMGroundingSegPipeline:
     """根据 yaml cfg 构建 pipeline。
@@ -198,8 +198,8 @@ def build_pipeline_from_config(cfg: Dict[str, Any]) -> MLLMGroundingSegPipeline:
     # 统一格式 / Unified format:
     #   mllm:
     #     class_names: [...]
-    #     grounder: {type, model_id, device, ...}
-    #     mask_generator: {type, device, ...}
+    # grounder: { type, 模型 _ id, device,... } / grounder: {type, model_id, device, ...}
+    # 掩码 _ generator: { type, device,... } / mask_generator: {type, device, ...}
     #     refinement: {enabled, ...}  # 可选 / optional
     if "grounder" not in mllm_cfg:
         raise ValueError(
@@ -227,7 +227,7 @@ def build_pipeline_from_config(cfg: Dict[str, Any]) -> MLLMGroundingSegPipeline:
     grounder_cls = MLLM_REGISTRY[mllm_type]
     grounder = grounder_cls(**grounder_kwargs)
 
-    # ---- Mask Generator (sam2 / medsam) ----
+    # - - - - 掩码 Generator ( sam2 / medsam ) - - - - / ---- Mask Generator (sam2 / medsam) ----
     mg_type = mg_cfg.get("type", "sam2")
     if mg_type not in MASK_GENERATOR_REGISTRY:
         raise ValueError(
@@ -238,9 +238,9 @@ def build_pipeline_from_config(cfg: Dict[str, Any]) -> MLLMGroundingSegPipeline:
     mg_kwargs = {k: v for k, v in mg_cfg.items() if k != "type"}
     mask_generator = mg_cls(**mg_kwargs)
 
-    # ---- Refinement (optional) ----
-    # Strict: if the YAML enables refinement, missing config / build
-    # failures raise rather than silently disabling the third stage.
+    # - - - - Refinement ( 可选 ) - - - - / ---- Refinement (optional) ----
+    # Strict: if the YAML enables refinement, missing 配置 / build / Strict: if the YAML enables refinement, missing config / build
+    # failures raise rather than silently disabling the third 阶段 / failures raise rather than silently disabling the third stage.
     refinement_model = None
     if refine_cfg.get("enabled", False):
         import yaml as _yaml

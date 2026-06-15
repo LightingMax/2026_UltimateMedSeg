@@ -1,4 +1,5 @@
 """UCTransNet: Rethinking the Skip Connections in U-Net via Channel-wise Transformer.
+    UCTransNet: Rethinking the 跳跃连接。
 
 Full end-to-end network using CNN encoder + CTrans (Channel-wise Cross-
 fusion Transformer) module replacing conventional skip connections.
@@ -22,7 +23,7 @@ from typing import List, Optional
 
 
 # ---------------------------------------------------------------------------
-# CNN Encoder
+# CNN 编码器 / CNN Encoder
 # ---------------------------------------------------------------------------
 
 class _DoubleConv(nn.Module):
@@ -70,12 +71,13 @@ class _Encoder(nn.Module):
 
 class _CTransModule(nn.Module):
     """Channel-wise Cross-fusion Transformer for multi-scale feature fusion.
+        Channel-wise Cross-fusion Transformer for 多尺度特征 融合。
 
     Performs self-attention on skip features to produce channel-refined skip
     features. For very high-resolution scales, spatial pooling is applied
     before attention and results are upsampled back to preserve tractability.
     """
-    # Max spatial tokens before we apply pooling for attention
+    # Max 空间的 标记 before we 应用 池化 for 注意力 / Max spatial tokens before we apply pooling for attention
     _MAX_TOKENS = 4096
 
     def __init__(self, channels: List[int], num_heads: int = 4):
@@ -112,7 +114,7 @@ class _CTransModule(nn.Module):
             B, C, H, W = skip.shape
             skip_proj = self.projections[i](skip)
 
-            # Pool if spatial size is too large for efficient attention
+            # Pool if 空间的 大小 is too large for 高效的 注意力 / Pool if spatial size is too large for efficient attention
             n_tokens = H * W
             pool_factor = 1
             if n_tokens > self._MAX_TOKENS:
@@ -133,7 +135,7 @@ class _CTransModule(nn.Module):
             else:
                 attn_feat = attn_out.transpose(1, 2).view(B, C, H, W)
 
-            # Fuse attention with original skip
+            # Fuse attention with original 跳跃连接 / Fuse attention with original skip
             fused = torch.cat([skip, attn_feat], dim=1)
             refined.append(self.fusions[i](fused))
 
@@ -141,13 +143,13 @@ class _CTransModule(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder
+# 解码 / Decoder
 # ---------------------------------------------------------------------------
 
 class _Decoder(nn.Module):
     def __init__(self, channels: List[int]):
         super().__init__()
-        # channels: [64, 128, 256, 512, 1024]
+        # 通道: [ 64, 128, 256, 512, 1024 ] / channels: [64, 128, 256, 512, 1024]
         self.up_convs = nn.ModuleList()
         self.dec_blocks = nn.ModuleList()
 
@@ -164,7 +166,7 @@ class _Decoder(nn.Module):
         for i, (up, dec) in enumerate(zip(self.up_convs, self.dec_blocks)):
             x = up(x)
             skip = skips[len(skips) - 1 - i]
-            # Handle size mismatch
+            # Handle 大小 mismatch / Handle size mismatch
             if x.shape[2:] != skip.shape[2:]:
                 x = F.interpolate(x, size=skip.shape[2:], mode="bilinear", align_corners=False)
             x = torch.cat([x, skip], dim=1)
@@ -178,6 +180,7 @@ class _Decoder(nn.Module):
 
 class UCTransNet(nn.Module):
     """UCTransNet: U-Net with Channel-wise Transformer skip connections.
+        UCTransNet: U-Net with Channel-wise Transformer 跳跃连接。
 
     Args:
         in_channels: Input channels (default 3).
@@ -201,7 +204,7 @@ class UCTransNet(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        # Support alternative parameter names from configs
+        # Support alternative 参数 names from configs / Support alternative parameter names from configs
         if embed_dim is not None:
             base_channels = embed_dim
         if num_heads is not None:
@@ -218,12 +221,12 @@ class UCTransNet(nn.Module):
         H_in, W_in = x.shape[2:]
         features = self.encoder(x)  # [e1, e2, e3, e4, bottleneck]
 
-        # Refine skip connections via CTrans
+        # Refine 跳跃连接 / Refine skip connections via CTrans
         refined_skips = self.ctrans(features)
 
         # Decode
         decoded = self.decoder(features[-1], refined_skips)
 
-        # Upsample and predict
+        # 上采样 and 预测 / Upsample and predict
         out = F.interpolate(decoded, size=(H_in, W_in), mode="bilinear", align_corners=False)
         return self.head(out)

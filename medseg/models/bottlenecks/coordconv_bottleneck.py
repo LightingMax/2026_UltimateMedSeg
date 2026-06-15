@@ -1,4 +1,5 @@
 """CoordConv bottleneck — NeurIPS 2018.
+    CoordConv 瓶颈层。
 
 Official source: https://github.com/mkocabas/CoordConv-pytorch
 
@@ -18,6 +19,7 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 class AddCoords(nn.Module):
     """Append normalised (x, y) coordinate maps to the input tensor.
+        Append normalised ( x, y ) coordinate 映射 to the 输入 张量。
 
     Faithful port of the ``AddCoords`` class from the official PyTorch
     implementation. Coordinates are in [-1, 1] range.
@@ -62,6 +64,7 @@ class AddCoords(nn.Module):
 @BOTTLENECK_REGISTRY.register("coordconv")
 class CoordConvBottleneck(nn.Module):
     """CoordConv bottleneck with residual connection.
+        CoordConv 瓶颈层。
 
     The coordinate channels (+2 for x, y) are prepended before a 3×3 conv
     so the convolution can condition on absolute spatial position.

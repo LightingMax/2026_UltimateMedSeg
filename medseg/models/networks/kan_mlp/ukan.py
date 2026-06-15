@@ -1,4 +1,5 @@
 """U-KAN: U-KAN Makes Strong Backbone for Medical Image Segmentation
+    U-KAN: U-KAN Makes Strong 骨干网络 for 医学的 图像 分割。
 and Generation (AAAI 2025).
 
 Faithful reimplementation from:
@@ -21,7 +22,8 @@ from medseg.utils.timm_compat import DropPath, to_2tuple, trunc_normal_
 # ---------------------------------------------------------------------------
 
 class KANLinear(nn.Module):
-    """KAN linear layer with B-spline learnable activation functions."""
+    """KAN linear 层 with B-spline learnable 激活 functions。
+        KAN linear layer with B-spline learnable activation functions."""
     def __init__(self, in_features, out_features, grid_size=5, spline_order=3,
                  scale_noise=0.1, scale_base=1.0, scale_spline=1.0,
                  enable_standalone_scale_spline=True,
@@ -146,7 +148,8 @@ class DW_bn_relu(nn.Module):
 
 
 class KANLayer(nn.Module):
-    """Tokenized KAN layer: fc1 → dw → fc2 → dw → fc3 → dw."""
+    """Tokenized KAN 层: fc1 → dw → fc2 → dw → fc3 → dw。
+        Tokenized KAN layer: fc1 → dw → fc2 → dw → fc3 → dw."""
     def __init__(self, in_features, hidden_features=None, out_features=None,
                  act_layer=nn.GELU, drop=0., no_kan=False):
         super().__init__()
@@ -213,7 +216,8 @@ class KANLayer(nn.Module):
 
 
 class KANBlock(nn.Module):
-    """KAN block: LayerNorm → KANLayer with residual + DropPath."""
+    """KAN 块: LayerNorm → KANLayer with 残差 + DropPath。
+        KAN block: LayerNorm → KANLayer with residual + DropPath."""
     def __init__(self, dim, drop=0., drop_path=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm, no_kan=False):
         super().__init__()
@@ -245,7 +249,8 @@ class KANBlock(nn.Module):
 
 
 class PatchEmbed(nn.Module):
-    """Image to Patch Embedding."""
+    """图像 to 图块 嵌入。
+        Image to Patch Embedding."""
     def __init__(self, img_size=224, patch_size=7, stride=4,
                  in_chans=3, embed_dim=768):
         super().__init__()
@@ -317,11 +322,12 @@ class D_ConvLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# UKAN  (exported model)
+# UKAN ( exported 模型 ) / UKAN  (exported model)
 # ---------------------------------------------------------------------------
 
 class UKAN(nn.Module):
     """U-KAN: UNet backbone with tokenized KAN blocks (AAAI 2025).
+        U-KAN: UNet 骨干网络 with tokenized KAN blocks ( AAAI 2025 )。
 
     Args:
         in_channels: Input image channels (default 3).
@@ -344,7 +350,7 @@ class UKAN(nn.Module):
         norm_layer = nn.LayerNorm
         kan_input_dim = embed_dims[0]
 
-        # ---- Encoder (Conv stages) ----
+        # ---- 编码器 / ---- Encoder (Conv stages) ----
         self.encoder1 = ConvLayer(in_channels, kan_input_dim // 8)
         self.encoder2 = ConvLayer(kan_input_dim // 8, kan_input_dim // 4)
         self.encoder3 = ConvLayer(kan_input_dim // 4, kan_input_dim)
@@ -355,7 +361,7 @@ class UKAN(nn.Module):
         self.dnorm3 = norm_layer(embed_dims[1])
         self.dnorm4 = norm_layer(embed_dims[0])
 
-        # ---- KAN blocks (encoder) ----
+        # - - - - KAN blocks ( 编码器 ) - - - - / ---- KAN blocks (encoder) ----
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.block1 = nn.ModuleList([KANBlock(
             dim=embed_dims[1], drop=drop_rate, drop_path=dpr[0],
@@ -364,7 +370,7 @@ class UKAN(nn.Module):
             dim=embed_dims[2], drop=drop_rate, drop_path=dpr[1],
             norm_layer=norm_layer, no_kan=no_kan)])
 
-        # ---- KAN blocks (decoder) ----
+        # - - - - KAN blocks ( 解码 ) - - - - / ---- KAN blocks (decoder) ----
         self.dblock1 = nn.ModuleList([KANBlock(
             dim=embed_dims[1], drop=drop_rate, drop_path=dpr[0],
             norm_layer=norm_layer, no_kan=no_kan)])
@@ -372,7 +378,7 @@ class UKAN(nn.Module):
             dim=embed_dims[0], drop=drop_rate, drop_path=dpr[1],
             norm_layer=norm_layer, no_kan=no_kan)])
 
-        # ---- Patch embeddings ----
+        # - - - - 图块 嵌入 - - - - / ---- Patch embeddings ----
         self.patch_embed3 = PatchEmbed(
             img_size=img_size // 4, patch_size=3, stride=2,
             in_chans=embed_dims[0], embed_dim=embed_dims[1])
@@ -380,7 +386,7 @@ class UKAN(nn.Module):
             img_size=img_size // 8, patch_size=3, stride=2,
             in_chans=embed_dims[1], embed_dim=embed_dims[2])
 
-        # ---- Decoder (Conv stages) ----
+        # ---- 解码器 / ---- Decoder (Conv stages) ----
         self.decoder1 = D_ConvLayer(embed_dims[2], embed_dims[1])
         self.decoder2 = D_ConvLayer(embed_dims[1], embed_dims[0])
         self.decoder3 = D_ConvLayer(embed_dims[0], embed_dims[0] // 4)
@@ -401,7 +407,7 @@ class UKAN(nn.Module):
         ds_collect = self.training and self.deep_supervision
         intermediates = []
 
-        # ---- Encoder: Conv stages ----
+        # ---- 编码器 / ---- Encoder: Conv stages ----
         out = F.relu(F.max_pool2d(self.encoder1(x), 2, 2))
         t1 = out
         out = F.relu(F.max_pool2d(self.encoder2(out), 2, 2))
@@ -409,7 +415,7 @@ class UKAN(nn.Module):
         out = F.relu(F.max_pool2d(self.encoder3(out), 2, 2))
         t3 = out
 
-        # ---- Encoder: Tokenized KAN stage 4 ----
+        # ---- 编码器 / ---- Encoder: Tokenized KAN stage 4 ----
         out, H, W = self.patch_embed3(out)
         for blk in self.block1:
             out = blk(out, H, W)
@@ -417,14 +423,14 @@ class UKAN(nn.Module):
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         t4 = out
 
-        # ---- Bottleneck ----
+        # ---- 瓶颈层 / ---- Bottleneck ----
         out, H, W = self.patch_embed4(out)
         for blk in self.block2:
             out = blk(out, H, W)
         out = self.norm4(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
 
-        # ---- Decoder: KAN stage 4 ----
+        # ---- 解码器 / ---- Decoder: KAN stage 4 ----
         out = F.relu(F.interpolate(self.decoder1(out),
                                    scale_factor=(2, 2), mode='bilinear'))
         out = torch.add(out, t4)
@@ -433,7 +439,7 @@ class UKAN(nn.Module):
         for blk in self.dblock1:
             out = blk(out, H, W)
 
-        # ---- Decoder: KAN stage 3 ----
+        # ---- 解码器 / ---- Decoder: KAN stage 3 ----
         out = self.dnorm3(out)
         out = out.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         if ds_collect:
@@ -450,7 +456,7 @@ class UKAN(nn.Module):
         if ds_collect:
             intermediates.append(out)  # embed_dims[0]
 
-        # ---- Decoder: Conv stages ----
+        # ---- 解码器 / ---- Decoder: Conv stages ----
         out = F.relu(F.interpolate(self.decoder3(out),
                                    scale_factor=(2, 2), mode='bilinear'))
         out = torch.add(out, t2)

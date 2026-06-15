@@ -1,4 +1,5 @@
-"""Transformer-based complete segmentation architectures."""
+"""Transformer-based complete 分割 architectures。
+    Transformer-based complete segmentation architectures."""
 
 from .da_transunet import DATransUNet
 from .ds_transunet import DSTransUNet
@@ -52,5 +53,5 @@ __all__ = [
     "HSNet", "SSFormer", "LDNet", "ESFPNet", "MIST",
     # Domain-specific ports (2024-2026)
     "SEPNet", "CTNet",
-    # Pathology
+    # 病理学 / Pathology
 ]

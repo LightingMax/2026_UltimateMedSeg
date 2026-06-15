@@ -1,4 +1,5 @@
 """MedSAM mask generator wrapper.
+    MedSAM 掩码 generator 封装器。
 
 # Reference: https://github.com/bowang-lab/MedSAM
 # Reference: https://huggingface.co/wanglab/medsam-vit-base
@@ -69,6 +70,7 @@ logger = logging.getLogger(__name__)
 
 class MedSAMMaskGenerator:
     """MedSAM mask generator (box prompt -> binary mask).
+        MedSAM 掩码 generator ( box prompt - > 二值的 掩码 )。
 
     Parameters
     ----------
@@ -97,7 +99,7 @@ class MedSAMMaskGenerator:
         multimask: bool = False,                          # kept for parity with SAM2
         **kwargs,
     ):
-        # ``model_id`` is named like SAM2 wrapper for unified YAML schema.
+        # ` ` 模型 _ id ` ` is named like SAM2 封装器 for 统一的 YAML schema / ``model_id`` is named like SAM2 wrapper for unified YAML schema.
         self.model_type = model_id
         self.checkpoint = checkpoint or os.environ.get(self.DEFAULT_CHECKPOINT_ENV)
         self.device = device
@@ -113,11 +115,11 @@ class MedSAMMaskGenerator:
         from segment_anything import sam_model_registry  # type: ignore
         from medseg.utils.weight_downloader import ensure_weight
 
-        # Resolution order:
-        #   1. explicit ctor `checkpoint=...`
-        #   2. $MEDSAM_CHECKPOINT env var
-        #   3. auto-download via the unified weight downloader
-        # ensure_weight raises WeightDownloadError with the manual URL
+        # 分辨率 order / Resolution order:
+        # 1. explicit ctor ` 检查点 =... ` / 1. explicit ctor `checkpoint=...`
+        # 2. $ MEDSAM _ 检查点 env var / 2. $MEDSAM_CHECKPOINT env var
+        # 3. auto-download via the 统一的 权重 downloader / 3. auto-download via the unified weight downloader
+        # ensure _ 权重 raises WeightDownloadError with the manual URL / ensure_weight raises WeightDownloadError with the manual URL
         # (Google Drive / Zenodo) on failure — no silent fallback.
         if self.checkpoint and os.path.isfile(self.checkpoint):
             ckpt_path = self.checkpoint
@@ -139,7 +141,8 @@ class MedSAMMaskGenerator:
         image: np.ndarray,
         boxes: List[BBox],
     ) -> np.ndarray:
-        """Mock: fill each bbox interior with foreground (same shape as SAM2 mock)."""
+        """Mock: fill each bbox interior with foreground ( same 形状 as SAM2 mock )。
+            Mock: fill each bbox interior with foreground (same shape as SAM2 mock)."""
         h, w = image.shape[:2]
         if len(boxes) == 0:
             return np.zeros((0, h, w), dtype=np.uint8)
@@ -155,6 +158,7 @@ class MedSAMMaskGenerator:
     @staticmethod
     def _resize_image(image: np.ndarray, size: int):
         """Resize HxWx3 image to (size, size) and apply MedSAM's official
+            Resize HxWx3 图像 to ( 大小, 大小 ) and 应用 MedSAM's official。
         **per-image min-max** normalisation to ``[0, 1]``.
 
         NOTE: the previous version divided by 255 — this is *not* what
@@ -189,6 +193,7 @@ class MedSAMMaskGenerator:
         boxes: List[BBox],
     ) -> np.ndarray:
         """Generate masks for one image with multiple boxes.
+            生成 掩码 for one 图像 with multiple boxes。
 
         Parameters
         ----------
@@ -199,7 +204,7 @@ class MedSAMMaskGenerator:
         -------
         masks : (N, H, W) uint8 binary masks (one per box)
         """
-        # Explicit empty-input contract: no boxes -> no masks.
+        # Explicit empty-input contract: no boxes - > no 掩码 / Explicit empty-input contract: no boxes -> no masks.
         h, w = image.shape[:2]
         if len(boxes) == 0:
             return np.zeros((0, h, w), dtype=np.uint8)
@@ -210,12 +215,12 @@ class MedSAMMaskGenerator:
                 "MedSAM model is None but mock_mode is False; load failed silently."
             )
 
-        # Strict: no inference-time mock fallback; let exceptions propagate.
+        # Strict: no inference-time mock fallback; let exceptions 传播 / Strict: no inference-time mock fallback; let exceptions propagate.
         import torch
 
         S = self.image_size
 
-        # 1. Image preprocess (resize → min-max → CHW tensor); embed once.
+        # 1. 图像 preprocess ( resize → min-max → CHW 张量 ); embed once / 1. Image preprocess (resize → min-max → CHW tensor); embed once.
         img_S = self._resize_image(image, S)
         img_t = (
             torch.from_numpy(img_S)
@@ -240,11 +245,11 @@ class MedSAMMaskGenerator:
                     dtype=np.float32,
                 )
                 box_torch = torch.as_tensor(box_S, device=self.device)[None]
-                # 3. Prompt encoder with single box.
+                # 3. Prompt 编码器 / 3. Prompt encoder with single box.
                 sparse, dense = self.model.prompt_encoder(
                     points=None, boxes=box_torch, masks=None,
                 )
-                # 4. Mask decoder.
+                # 4. Mask 解码器 / 4. Mask decoder.
                 low_res, _ = self.model.mask_decoder(
                     image_embeddings=image_embedding,
                     image_pe=self.model.prompt_encoder.get_dense_pe(),
@@ -252,9 +257,9 @@ class MedSAMMaskGenerator:
                     dense_prompt_embeddings=dense,
                     multimask_output=False,
                 )
-                # 5. Upsample low-res logits to S×S, then sigmoid → threshold →
+                # 5. 上采样 low-res logits to S × S, then sigmoid → 阈值 → / 5. Upsample low-res logits to S×S, then sigmoid → threshold →
                 #    resize back to original (H, W). (Matches the official
-                #    notebook which uses F.interpolate to image_size first.)
+                # notebook which uses F. 插值 to 图像 _ 大小 first. ) / notebook which uses F.interpolate to image_size first.)
                 import torch.nn.functional as F  # local import keeps top clean
                 low_res_full = F.interpolate(
                     low_res, size=(S, S), mode="bilinear", align_corners=False,

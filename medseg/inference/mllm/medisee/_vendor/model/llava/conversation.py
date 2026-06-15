@@ -389,7 +389,7 @@ conv_mistral_instruct = Conversation(
 )
 
 
-# default_conversation = conv_vicuna_v0
+# 默认值 _ conversation = conv _ vicuna _ v0 / default_conversation = conv_vicuna_v0
 default_conversation = conv_mistral_instruct
 conv_templates = {
     "default": conv_vicuna_v0,

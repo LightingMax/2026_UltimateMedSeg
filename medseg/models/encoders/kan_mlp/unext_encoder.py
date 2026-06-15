@@ -1,4 +1,5 @@
 """UNeXt encoder (ConvBlock stages + Tokenized MLP bottleneck).
+    UNeXt 编码器。
 
 Encoder portion of the UNeXt network (``medseg/networks/kan_mlp/unext.py``).
 Four downsampling stages:
@@ -43,6 +44,7 @@ class _ConvBlock(nn.Module):
 
 class _TokenizedMLP(nn.Module):
     """Tokenized MLP block: LN -> Linear -> shift DWConv1d -> GELU -> Linear (+ residual).
+        Tokenized MLP 块: LN - > Linear - > shift DWConv1d - > GELU - > Linear ( + 残差 )。
 
     Operates on tokens (B, N, C) where N = H*W. The depthwise 1D conv mixes
     along the token axis, so any spatial size is supported.
@@ -77,6 +79,7 @@ class _TokenizedMLP(nn.Module):
 @ENCODER_REGISTRY.register("unext")
 class UNeXtEncoder(nn.Module):
     """UNeXt encoder: 3 conv stages + tokenized-MLP bottleneck.
+        UNeXt 编码器。
 
     Returns 4 multi-scale features (shallowest first, deepest last):
         [/1 base_ch, /2 base_ch*2, /4 base_ch*4, /8 base_ch*8]
@@ -87,15 +90,15 @@ class UNeXtEncoder(nn.Module):
                  pretrained: bool = False, base_ch: int = 32,
                  num_mlp_blocks: int = 3, **kwargs):
         super().__init__()
-        # ``img_size`` and ``pretrained`` are accepted for API compatibility
-        # but the encoder is fully convolutional / token-MLP so it adapts to
-        # any input resolution and has no pretrained checkpoint.
+        # ` ` img _ 大小 ` ` and ` ` 预训练 ` ` are accepted for API 兼容性 / ``img_size`` and ``pretrained`` are accepted for API compatibility
+        # but the 编码器 / but the encoder is fully convolutional / token-MLP so it adapts to
+        # any 输入 分辨率 and has no 预训练 检查点 / any input resolution and has no pretrained checkpoint.
         del img_size, pretrained
 
         chs = [base_ch, base_ch * 2, base_ch * 4, base_ch * 8]
         self.out_channels: List[int] = chs
 
-        # Optional 1x1 conv stem when caller passes non-RGB input
+        # 可选 1x1 conv 主干 when caller passes non-RGB 输入 / Optional 1x1 conv stem when caller passes non-RGB input
         if in_channels != 3:
             self.input_stem = nn.Conv2d(in_channels, 3, kernel_size=1)
             enc_in = 3
@@ -103,13 +106,13 @@ class UNeXtEncoder(nn.Module):
             self.input_stem = nn.Identity()
             enc_in = in_channels
 
-        # Conv encoder stages
+        # Conv 编码器 / Conv encoder stages
         self.enc1 = nn.Sequential(_ConvBlock(enc_in, chs[0]), _ConvBlock(chs[0], chs[0]))
         self.enc2 = nn.Sequential(_ConvBlock(chs[0], chs[1]), _ConvBlock(chs[1], chs[1]))
         self.enc3 = nn.Sequential(_ConvBlock(chs[1], chs[2]), _ConvBlock(chs[2], chs[2]))
         self.pool = nn.MaxPool2d(2)
 
-        # Tokenized-MLP bottleneck (deepest stage)
+        # Tokenized-MLP 瓶颈层 / Tokenized-MLP bottleneck (deepest stage)
         self.bottleneck_pool = nn.MaxPool2d(2)
         self.bottleneck_proj = _ConvBlock(chs[2], chs[3])
         self.mlp_blocks = nn.ModuleList(

@@ -1,6 +1,9 @@
 # H2Former (He et al., 2023)
+# H2Former 分割网络
 # H2Former (He et al., 2023)
+# H2Former 分割网络
 # Standalone architecture: h2former
+# 独立架构: h2former
 
 model:
   num_classes: 2

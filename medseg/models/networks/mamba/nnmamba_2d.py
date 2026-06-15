@@ -1,4 +1,5 @@
 """nnMamba 2D: nnUNet-style encoder/decoder with Mamba SSM blocks inserted between stages.
+    nnMamba 2D: nnUNet-style 编码器。
 
 2D adaptation of nnMamba (Gong et al., 2024):
   https://github.com/lhaof/nnMamba
@@ -51,11 +52,12 @@ def _load_pretrained_with_fallback(load_fn, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# Mamba SSM wrapper (hard dependency on mamba_ssm, matching official source)
+# Mamba SSM 封装器 ( hard dependency on mamba _ ssm, matching official 来源 ) / Mamba SSM wrapper (hard dependency on mamba_ssm, matching official source)
 # ---------------------------------------------------------------------------
 
 class _MambaSSM(nn.Module):
     """Mamba SSM wrapper. Hard-depends on ``mamba_ssm`` (matches official nnMamba source).
+        Mamba SSM 封装器. Hard-depends on ` ` mamba _ ssm ` ` ( matches official nnMamba 来源 )。
 
     Interface: (B, L, D) -> (B, L, D)
     """
@@ -91,6 +93,7 @@ _MambaSSMFallback = _MambaSSM
 
 class _MambaLayer(nn.Module):
     """Patch-token Mamba layer for 2D features.
+        Patch-token Mamba 层 for 2D 特征。
 
     (B, C, H, W) -> flatten spatial to (B, H*W, C) -> LayerNorm -> Mamba ->
     reshape back to (B, C, H, W).
@@ -119,7 +122,8 @@ class _MambaLayer(nn.Module):
 # ---------------------------------------------------------------------------
 
 class _ConvDropoutNormNonlin(nn.Module):
-    """nnU-Net default conv block: Conv2d -> Dropout2d -> InstanceNorm2d -> LeakyReLU."""
+    """nnU-Net 默认值 conv 块: Conv2d - > Dropout2d - > InstanceNorm2d - > LeakyReLU。
+        nnU-Net default conv block: Conv2d -> Dropout2d -> InstanceNorm2d -> LeakyReLU."""
 
     def __init__(self, in_ch, out_ch, kernel_size=3, stride=1,
                  dropout_p=0.0, neg_slope=1e-2):
@@ -137,7 +141,8 @@ class _ConvDropoutNormNonlin(nn.Module):
 
 
 class _StackedConvLayers(nn.Module):
-    """Two-conv nnU-Net stage; first conv carries the stride."""
+    """Two-conv nnU-Net 阶段; first conv carries the 步长。
+        Two-conv nnU-Net stage; first conv carries the stride."""
 
     def __init__(self, in_ch, out_ch, num_convs=2, kernel_size=3,
                  stride=1, dropout_p=0.0):
@@ -159,6 +164,7 @@ class _StackedConvLayers(nn.Module):
 
 class NnMamba2D(nn.Module):
     """nnMamba 2D — nnU-Net encoder/decoder with patch-token Mamba between stages.
+        nnMamba 2D — nnU-Net 编码器。
 
     Args:
         in_channels: Input channel count.
@@ -196,7 +202,7 @@ class NnMamba2D(nn.Module):
                     for i in range(num_stages)]
         self.features = features
 
-        # Encoder: stem stage (stride 1) + (num_stages-1) strided stages.
+        # 编码器: 主干 阶段 ( 步长 1 ) + ( num _ 阶段 - 1 ) strided 阶段 / Encoder: stem stage (stride 1) + (num_stages-1) strided stages.
         self.encoder_stages = nn.ModuleList()
         self.encoder_mambas = nn.ModuleList()
 
@@ -208,14 +214,14 @@ class NnMamba2D(nn.Module):
                                   num_convs=num_convs_per_stage,
                                   kernel_size=3, stride=stride))
             prev_ch = features[s]
-            # Mamba SSM block inserted between stages (after each conv stage).
+            # Mamba SSM 块 inserted between 阶段 ( after each conv 阶段 ) / Mamba SSM block inserted between stages (after each conv stage).
             self.encoder_mambas.append(
                 _MambaLayer(features[s],
                            d_state=mamba_d_state,
                            d_conv=mamba_d_conv,
                            expand=mamba_expand))
 
-        # Decoder: mirror with ConvTranspose2d + skip concat + stacked convs.
+        # Decoder: mirror with ConvTranspose2d + 跳跃连接 / Decoder: mirror with ConvTranspose2d + skip concat + stacked convs.
         self.up_layers = nn.ModuleList()
         self.decoder_stages = nn.ModuleList()
         for s in range(num_stages - 1, 0, -1):
@@ -229,7 +235,7 @@ class NnMamba2D(nn.Module):
                                   num_convs=num_convs_per_stage,
                                   kernel_size=3, stride=1))
 
-        # Final 1x1 segmentation head.
+        # Final 1x1 分割 头部 / Final 1x1 segmentation head.
         self.seg_head = nn.Conv2d(features[0], num_classes, kernel_size=1)
 
         self._init_weights()
@@ -250,14 +256,14 @@ class NnMamba2D(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         in_h, in_w = x.shape[-2], x.shape[-1]
 
-        # Encoder with inter-stage Mamba.
+        # 编码器 with inter-stage Mamba / Encoder with inter-stage Mamba.
         skips = []
         for stage, mamba in zip(self.encoder_stages, self.encoder_mambas):
             x = stage(x)
             x = mamba(x)
             skips.append(x)
 
-        # Decoder with skip concatenation.
+        # Decoder with 跳跃连接 / Decoder with skip concatenation.
         x = skips[-1]
         for i, (up, dec) in enumerate(zip(self.up_layers, self.decoder_stages)):
             x = up(x)

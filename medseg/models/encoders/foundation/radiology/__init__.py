@@ -1,4 +1,5 @@
-"""Radiology foundation encoders."""
+"""放射学 foundation encoders。
+    Radiology foundation encoders."""
 import sys as _sys
 for _stem in ('raddino_encoder', 'medsiglip_encoder', 'omnirad_encoder'):
     try:

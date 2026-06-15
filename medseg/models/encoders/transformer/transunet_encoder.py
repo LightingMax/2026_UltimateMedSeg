@@ -1,4 +1,5 @@
 """TransUNet Encoder: Faithful port from the official TransUNet repository.
+    TransUNet 编码器。
 
 Reference: Chen et al., "TransUNet: Transformers Make Strong Encoders for Medical Image Segmentation" (2021)
 Original code: https://github.com/Beckschen/TransUNet
@@ -23,7 +24,7 @@ from medseg.registry import ENCODER_REGISTRY
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# Weight conversion utils (for loading numpy/jax pretrained weights)
+# 权重 conversion utils ( for loading numpy / jax 预训练 权重 ) / Weight conversion utils (for loading numpy/jax pretrained weights)
 # ============================================================
 
 def np2th(weights, conv=False):
@@ -39,7 +40,7 @@ def swish(x):
 
 ACT2FN = {"gelu": torch.nn.functional.gelu, "relu": torch.nn.functional.relu, "swish": swish}
 
-# Weight name constants from jax checkpoint
+# 权重 name constants from jax 检查点 / Weight name constants from jax checkpoint
 ATTENTION_Q = "MultiHeadDotProductAttention_1/query"
 ATTENTION_K = "MultiHeadDotProductAttention_1/key"
 ATTENTION_V = "MultiHeadDotProductAttention_1/value"
@@ -54,7 +55,8 @@ MLP_NORM = "LayerNorm_2"
 # ============================================================
 
 class StdConv2d(nn.Conv2d):
-    """Conv2d with Weight Standardization."""
+    """Conv2d with 权重 Standardization。
+        Conv2d with Weight Standardization."""
 
     def forward(self, x):
         w = self.weight
@@ -75,7 +77,8 @@ def conv1x1(cin, cout, stride=1, bias=False):
 
 
 class PreActBottleneck(nn.Module):
-    """Pre-activation (v2) bottleneck block."""
+    """Pre-activation (v2) 瓶颈层。
+        Pre-activation (v2) bottleneck block."""
 
     def __init__(self, cin, cout=None, cmid=None, stride=1):
         super().__init__()
@@ -348,7 +351,8 @@ class Encoder(nn.Module):
 
 
 class Embeddings(nn.Module):
-    """Construct the embeddings from patch, position embeddings."""
+    """Construct the 嵌入 from 图块, position 嵌入。
+        Construct the embeddings from patch, position embeddings."""
 
     def __init__(self, img_size, in_channels=3, hidden_size=768,
                  grid_size=None, resnet_num_layers=(3, 4, 9), resnet_width_factor=1,
@@ -357,7 +361,7 @@ class Embeddings(nn.Module):
         img_size = _pair(img_size)
 
         if grid_size is not None:
-            # Hybrid mode: ResNetV2 + patch embedding
+            # Hybrid mode: ResNetV2 + 图块 嵌入 / Hybrid mode: ResNetV2 + patch embedding
             grid_size = _pair(grid_size)
             patch_size_real = (img_size[0] // 16 // grid_size[0], img_size[1] // 16 // grid_size[1])
             patch_size_real_computed = (patch_size_real[0] * 16, patch_size_real[1] * 16)
@@ -371,7 +375,7 @@ class Embeddings(nn.Module):
             in_channels = self.hybrid_model.width * 16
             self.patch_size = patch_size_real
         else:
-            # Pure ViT mode
+            # 纯 ViT mode / Pure ViT mode
             self.hybrid = False
             patch_size = _pair(patch_size or 16)
             n_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1])
@@ -425,12 +429,13 @@ class Transformer(nn.Module):
 
 
 # ============================================================
-# TransUNet Encoder (Registered)
+# TransUNet 编码器 / TransUNet Encoder (Registered)
 # ============================================================
 
 @ENCODER_REGISTRY.register("transunet")
 class TransUNetEncoder(nn.Module):
     """TransUNet Encoder: ResNetV2 hybrid + ViT.
+        TransUNet 编码器。
 
     Faithfully ported from the official repository. Compatible with official pretrained weights.
 
@@ -475,7 +480,7 @@ class TransUNetEncoder(nn.Module):
         self.img_size = img_size
         self.hidden_size = hidden_size
 
-        # Output channels: ResNet skip features + transformer features
+        # Output channels: ResNet 跳跃连接 / Output channels: ResNet skip features + transformer features
         width = int(64 * resnet_width_factor)
         self.out_channels = [width, width * 4, width * 8, hidden_size]
 
@@ -483,7 +488,8 @@ class TransUNetEncoder(nn.Module):
             self.load_pretrained(pretrained_path)
 
     def load_pretrained(self, weights_path: str):
-        """Load pretrained weights from numpy (.npz) or torch (.pth) checkpoint."""
+        """加载 预训练 权重 from numpy (. npz ) or torch (. pth ) 检查点。
+            Load pretrained weights from numpy (.npz) or torch (.pth) checkpoint."""
         import numpy as np
         if weights_path.endswith('.npz'):
             weights = np.load(weights_path)
@@ -496,12 +502,13 @@ class TransUNetEncoder(nn.Module):
             logger.info(f"Loaded pretrained TransUNet: {msg}")
 
     def _load_from_numpy(self, weights):
-        """Load from numpy weights (jax format)."""
+        """加载 from numpy 权重 ( jax format )。
+            Load from numpy weights (jax format)."""
         import numpy as np
         from scipy import ndimage
 
         with torch.no_grad():
-            # Load ResNetV2
+            # 加载 ResNetV2 / Load ResNetV2
             resnet = self.transformer.embeddings.hybrid_model
             resnet.root.conv.weight.copy_(
                 np2th(weights["conv_root/kernel"], conv=True))
@@ -514,13 +521,13 @@ class TransUNetEncoder(nn.Module):
                 for uname, unit in block.named_children():
                     unit.load_from(weights, n_block=bname, n_unit=uname)
 
-            # Load Transformer
+            # 加载 Transformer / Load Transformer
             self.transformer.embeddings.patch_embeddings.weight.copy_(
                 np2th(weights["embedding/kernel"], conv=True))
             self.transformer.embeddings.patch_embeddings.bias.copy_(
                 np2th(weights["embedding/bias"]))
 
-            # Resize position embeddings if needed
+            # Resize position 嵌入 if needed / Resize position embeddings if needed
             posemb = np2th(weights["Transformer/posembed_input/pos_embedding"])
             posemb_new = self.transformer.embeddings.position_embeddings
             if posemb.size() == posemb_new.size():
@@ -537,7 +544,7 @@ class TransUNetEncoder(nn.Module):
                 posemb_grid = torch.from_numpy(posemb_grid).reshape(1, gs_new * gs_new, -1)
                 self.transformer.embeddings.position_embeddings.copy_(posemb_grid)
 
-            # Load Transformer blocks
+            # 加载 Transformer blocks / Load Transformer blocks
             for i, layer in enumerate(self.transformer.encoder.layer):
                 layer.load_from(weights, i)
 
@@ -548,16 +555,16 @@ class TransUNetEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         encoded, attn_weights, features = self.transformer(x)
-        # encoded: B, n_patches, hidden_size
-        # features: list of ResNet skip features [high_res -> low_res]
+        # encoded: B, n _ 图块, hidden _ 大小 / encoded: B, n_patches, hidden_size
+        # features: list of ResNet 跳跃连接 / features: list of ResNet skip features [high_res -> low_res]
         B, n_patch, hidden = encoded.size()
         h = w = int(math.sqrt(n_patch))
         encoded = encoded.permute(0, 2, 1).contiguous().view(B, hidden, h, w)
 
-        # features from ResNetV2 are in [high_res -> low_res] order
-        # We return [high_res, mid_res, low_res, transformer_features]
+        # 特征 from ResNetV2 are in [ high _ res - > low _ res ] order / features from ResNetV2 are in [high_res -> low_res] order
+        # We 返回 [ high _ res, mid _ res, low _ res, Transformer _ 特征 ] / We return [high_res, mid_res, low_res, transformer_features]
         if features is not None:
-            # features[0] is highest res (H/2), features[1] is H/4, etc.
+            # 特征 [ 0 ] is highest res ( H / 2 ), 特征 [ 1 ] is H / 4, etc / features[0] is highest res (H/2), features[1] is H/4, etc.
             return features[::-1] + [encoded]
         else:
             return [encoded]

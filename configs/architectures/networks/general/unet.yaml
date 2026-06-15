@@ -1,6 +1,8 @@
 # UNet (Ronneberger et al., 2015)
+# UNet 分割网络
 # Standard UNet with basic encoder + unet decoder
 # Standalone architecture: unet
+# 独立架构: unet
 
 model:
   num_classes: 2

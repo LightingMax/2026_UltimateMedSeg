@@ -1,8 +1,8 @@
 # Source: https://github.com/SLDGroup/CASCADE
-# Network: cascade (complete architecture)
-# 完整网络：cascade（完整架构）
+# Network: pvtb2_cascade (PVTv2-B2 encoder + CASCADE decoder)
+# 完整网络：pvtb2_cascade（PVTv2-B2编码器 + CASCADE解码器）
 model:
-  architecture: cascade
+  architecture: pvtb2_cascade
   num_classes: 2
   img_size: 256
   encoder:

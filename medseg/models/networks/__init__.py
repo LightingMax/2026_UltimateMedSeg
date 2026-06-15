@@ -1,4 +1,5 @@
 """Networks: categorized complete segmentation architectures.
+    Networks: categorized complete 分割 architectures。
 
 Subcategories:
     - transformer/ : Transformer-based (ViT, Swin, etc.)
@@ -25,7 +26,7 @@ from .cnn import (
     STUNet, DconnNet,
     # Domain-specific ports (2024-2026)
     Polyper,
-    # Pathology (CNN-based)
+    # 病理学 ( CNN-based ) / Pathology (CNN-based)
     HoverNetLite,
 )
 
@@ -62,7 +63,7 @@ from .transformer import (
     HSNet, SSFormer, LDNet, ESFPNet, MIST,
     # Domain-specific ports (2024-2026)
     SEPNet, CTNet,
-    # Pathology
+    # 病理学 / Pathology
     NuLite, TransNuSeg,
 )
 
@@ -75,12 +76,12 @@ from .sam import (
 
 
 # ── 线性注意力机制 (TTT / xLSTM) ──────────────────────────────────────
-# ── Linear Attention Models (TTT / xLSTM) ─────────────────────────
+# ─ ─ Linear 注意力 Models ( TTT / xLSTM ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Linear Attention Models (TTT / xLSTM) ─────────────────────────
 from .linear_attn import (
     TTTUNet, XLSTMUNetBot, XLSTMUNetEnc, UVixLSTM,
 )
 
-# Text-guided + UNet end-to-end fusion models (forward(image, text=None))
+# Text-guided + UNet end-to-end 融合 models ( 前向传播 ( 图像, text = None ) ) / Text-guided + UNet end-to-end fusion models (forward(image, text=None))
 # 文本引导分割模型（forward(image, text=None)）
 from medseg.models.text_unet import (
     TGANet,
@@ -100,7 +101,7 @@ from medseg.models.text_unet import (
 # Prompt-guided SAM wrappers (点/框 prompt，非文本引导)
 from medseg.models.networks.sam import SAMMed2DWrapper, LiteMedSAM
 
-# MLLM + segmentation paradigm (LLM-as-decoder), forward(image, text=None)
+# MLLM + 分割 paradigm ( LLM-as-decoder ), 前向传播 ( 图像, text = None ) / MLLM + segmentation paradigm (LLM-as-decoder), forward(image, text=None)
 from medseg.inference.mllm import MediSeeWrapper
 
 
@@ -221,7 +222,7 @@ _SPECIAL_ARCHS = {
     "samed": SAMed,
     "auto_sam": AutoSAM,
     # Domain-specific ports (2024-2026)
-    # Polyp
+    # 息肉 / Polyp
     "sepnet": SEPNet,
     "ctnet": CTNet,
     "polyper": Polyper,
@@ -229,7 +230,7 @@ _SPECIAL_ARCHS = {
     "dcm_net": DCMNet,
     "uu_mamba": UUMamba,
     "vim_unet": ViMUNet,
-    # Pathology
+    # 病理学 / Pathology
     "u_vixlstm": UVixLSTM,
     "nulite": NuLite,
     "transnuseg": TransNuSeg,
@@ -244,19 +245,19 @@ _SPECIAL_ARCHS = {
     "mamba_vesselnet_pp": MambaVesselNetPP,
 }
 
-# Models below take a (image, text=None) forward signature and use
-# bespoke constructor kwargs (no canonical in_channels/num_classes injection).
+# Models below take a ( 图像, text = None ) 前向传播 signature and use / Models below take a (image, text=None) forward signature and use
+# bespoke constructor kwargs ( no canonical in _ 通道 / num _ classes injection ) / bespoke constructor kwargs (no canonical in_channels/num_classes injection).
 # We therefore route their construction through a separate path that simply
-# forwards ``arch_params`` plus a few common keys (num_classes, img_size,
-# in_channels) when the constructor accepts them.
+# forwards ` ` arch _ params ` ` plus a few common keys ( num _ classes, img _ 大小 / forwards ``arch_params`` plus a few common keys (num_classes, img_size,
+# in _ 通道 ) when the constructor accepts them / in_channels) when the constructor accepts them.
 _TEXT_UNET_ARCHS = {
     "tganet": TGANet,
     "lvit": LViT,
     "languide": LanGuideMedSeg,
     "clip_universal": CLIPDrivenUniversalModel2D,
-    # 2D text-guided medical segmentation methods (2022-2024 venues).
+    # 2D text-guided 医学的 分割 methods ( 2022 - 2024 venues ) / 2D text-guided medical segmentation methods (2022-2024 venues).
     # 3D-native methods (SegVol/Hermes/UniSeg/MA-SAM/ZePT/MedSAM2) were
-    # excluded per project policy: a 2D adaptation cannot be 99% faithful
+    # excluded per project policy: a 2D adaptation cannot be 99 % 忠实 / excluded per project policy: a 2D adaptation cannot be 99% faithful
     # to a 3D paper.
     "cris": CRIS,
     "biomedparse": BiomedParse,
@@ -266,7 +267,7 @@ _TEXT_UNET_ARCHS = {
     "medclip_sam": MedCLIPSAM,
     "tp_drseg": TPDRSeg,
     "cxrclipseg": CXRCLIPSeg,
-    # MLLM + segmentation
+    # MLLM + 分割 / MLLM + segmentation
     "medisee": MediSeeWrapper,
 }
 
@@ -278,6 +279,7 @@ _SPECIAL_ARCHS["lite_medsam"] = LiteMedSAM
 
 def _build_text_unet(arch_name: str, cfg: dict):
     """Build a text+UNet model.
+        Build a text + UNet 模型。
 
     Common cfg keys (encoder.in_channels / num_classes / img_size) are
     forwarded only when the target constructor accepts them, so that each
@@ -291,7 +293,7 @@ def _build_text_unet(arch_name: str, cfg: dict):
     sig = inspect.signature(cls.__init__)
     accepted = set(sig.parameters.keys())
 
-    # Map canonical keys -> constructor kwarg names when accepted
+    # 映射 canonical keys - > constructor kwarg names when accepted / Map canonical keys -> constructor kwarg names when accepted
     in_channels = cfg.get("encoder", {}).get("in_channels", None)
     num_classes = cfg.get("num_classes", None)
     img_size = cfg.get("img_size", None)
@@ -323,7 +325,7 @@ def _build_text_unet(arch_name: str, cfg: dict):
 
     # 把 yaml 里的 text_prompts 挂到模型上
     # 模型 forward(image, text=None) 时，如果 text=None 就自动用这个
-    # Attach text_prompts from yaml; model.forward uses it when text=None
+    # Attach text _ prompts from yaml; 模型. 前向传播 uses it when text = None / Attach text_prompts from yaml; model.forward uses it when text=None
     if text_prompts is not None:
         model._default_text_prompts = text_prompts
 
@@ -331,7 +333,8 @@ def _build_text_unet(arch_name: str, cfg: dict):
 
 
 def build_special_arch(arch_name: str, cfg: dict):
-    """Build a special architecture model."""
+    """Build a special 架构 模型。
+        Build a special architecture model."""
     if arch_name in _TEXT_UNET_ARCHS:
         return _build_text_unet(arch_name, cfg)
     if arch_name not in _SPECIAL_ARCHS:
@@ -340,15 +343,15 @@ def build_special_arch(arch_name: str, cfg: dict):
         ))
         raise KeyError(f"'{arch_name}' not found. Available: [{available}]")
     cls = _SPECIAL_ARCHS[arch_name]
-    # Respect pretrained flag from encoder config so smoke tests can disable
-    # weight downloads for special architectures.
+    # Respect pretrained flag from 编码器 / Respect pretrained flag from encoder config so smoke tests can disable
+    # 权重 downloads for special architectures / weight downloads for special architectures.
     enc_cfg = cfg.get("encoder", {})
     pretrained = enc_cfg.get("pretrained", True)
 
-    # Resolve img_size (handle 'native' keyword)
+    # Resolve img _ 大小 ( handle ' native ' keyword ) / Resolve img_size (handle 'native' keyword)
     img_size = cfg.get("img_size", 224)
     if img_size == "native" or not isinstance(img_size, int):
-        # Try to get native size from encoder registry
+        # Try to get native size from 编码器 / Try to get native size from encoder registry
         enc_name = enc_cfg.get("name", "")
         try:
             from medseg.registry import ENCODER_REGISTRY
@@ -369,6 +372,6 @@ def build_special_arch(arch_name: str, cfg: dict):
     try:
         return cls(**build_kwargs)
     except TypeError:
-        # Some architectures don't accept pretrained kwarg
+        # Some architectures don't accept 预训练 kwarg / Some architectures don't accept pretrained kwarg
         build_kwargs.pop("pretrained", None)
         return cls(**build_kwargs)

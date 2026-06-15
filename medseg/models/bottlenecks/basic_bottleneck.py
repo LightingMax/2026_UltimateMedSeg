@@ -1,4 +1,5 @@
-"""Basic convolutional bottleneck."""
+"""Basic convolutional 瓶颈层。
+    Basic convolutional bottleneck."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch.nn as nn
@@ -7,7 +8,8 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 @BOTTLENECK_REGISTRY.register("basic")
 class BasicBottleneck(nn.Module):
-    """Basic conv bottleneck: two 3x3 convolutions."""
+    """Basic conv 瓶颈层。
+        Basic conv bottleneck: two 3x3 convolutions."""
     def __init__(self, in_channels, mid_channels=None, **kwargs):
         super().__init__()
         mid = mid_channels or in_channels

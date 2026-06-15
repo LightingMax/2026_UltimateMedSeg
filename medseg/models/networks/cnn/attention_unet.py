@@ -1,4 +1,5 @@
 """Attention UNet – self-contained port from ozan-oktay/attention-gated-networks.
+    注意力 UNet – self-contained 移植 from ozan-oktay / attention-gated-networks。
 
 Attention U-Net: Learning Where to Look for the Pancreas (Oktay et al., 2018).
 
@@ -17,7 +18,8 @@ import torch.nn.functional as F
 # Building blocks
 # ---------------------------------------------------------------------------
 class _DoubleConv(nn.Module):
-    """Two consecutive Conv-BN-ReLU blocks."""
+    """两个连续 Conv-BN-ReLU blocks。
+        Two consecutive Conv-BN-ReLU blocks."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -36,6 +38,7 @@ class _DoubleConv(nn.Module):
 
 class _AttentionGate(nn.Module):
     """Attention gate from Attention UNet (Oktay et al., 2018).
+        注意力 gate from 注意力 UNet ( Oktay et al., 2018 )。
 
     Combines gating signal g (from deeper decoder) with skip feature x
     (from encoder) to learn spatial attention weights.
@@ -70,10 +73,11 @@ class _AttentionGate(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Attention UNet
+# 注意力 UNet / Attention UNet
 # ---------------------------------------------------------------------------
 class AttentionUNet(nn.Module):
     """Attention UNet with 4 encoder/decoder levels and attention gates.
+        Attention UNet with 4 编码器。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -83,17 +87,17 @@ class AttentionUNet(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _DoubleConv(in_channels, 64)
         self.enc2 = _DoubleConv(64, 128)
         self.enc3 = _DoubleConv(128, 256)
         self.enc4 = _DoubleConv(256, 512)
         self.pool = nn.MaxPool2d(2)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = _DoubleConv(512, 1024)
 
-        # Decoder
+        # 解码 / Decoder
         self.up4 = nn.ConvTranspose2d(1024, 512, 2, stride=2)
         self.dec4 = _DoubleConv(1024, 512)
         self.up3 = nn.ConvTranspose2d(512, 256, 2, stride=2)
@@ -103,26 +107,26 @@ class AttentionUNet(nn.Module):
         self.up1 = nn.ConvTranspose2d(128, 64, 2, stride=2)
         self.dec1 = _DoubleConv(128, 64)
 
-        # Attention gates
+        # 注意力 gates / Attention gates
         self.ag4 = _AttentionGate(F_g=512, F_l=512, F_int=256)
         self.ag3 = _AttentionGate(F_g=256, F_l=256, F_int=128)
         self.ag2 = _AttentionGate(F_g=128, F_l=128, F_int=64)
         self.ag1 = _AttentionGate(F_g=64, F_l=64, F_int=32)
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(64, num_classes, 1)
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.enc1(x)
         e2 = self.enc2(self.pool(e1))
         e3 = self.enc3(self.pool(e2))
         e4 = self.enc4(self.pool(e3))
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.bottleneck(self.pool(e4))
 
-        # Decoder with attention gates
+        # 解码 with 注意力 gates / Decoder with attention gates
         d4 = self.up4(b)
         e4 = self.ag4(g=d4, x=e4)
         d4 = self.dec4(torch.cat([d4, e4], dim=1))

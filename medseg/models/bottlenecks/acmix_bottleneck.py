@@ -1,4 +1,5 @@
 """ACmix bottleneck: 1:1 faithful port of the official LeapLabTHU/ACmix.
+    ACmix 瓶颈层。
 
 Reference: Pan et al., "On the Integration of Self-Attention and Convolution",
            CVPR 2022. https://arxiv.org/abs/2111.14556
@@ -63,14 +64,16 @@ def position(H, W, device):
 
 
 def stride_(x, stride):
-    """Sub-sample by ``stride`` along H, W (matches official ``stride``)."""
+    """Sub-sample by ` ` 步长 ` ` along H, W ( matches official ` ` 步长 ` ` )。
+        Sub-sample by ``stride`` along H, W (matches official ``stride``)."""
     return x[:, :, ::stride, ::stride]
 
 
-# ---------------- ACmix block (1:1 with official ACmix.py) ----------------
+# - - - - - - - - - - - - - - - - ACmix 块 ( 1: 1 with official ACmix. py ) - - - - - - - - - - - - - - - - / ---------------- ACmix block (1:1 with official ACmix.py) ----------------
 
 class ACmix(nn.Module):
-    """Faithful port of the ACmix module (LeapLabTHU/ACmix/ACmix.py)."""
+    """忠实 移植 of the ACmix 模块 ( LeapLabTHU / ACmix / ACmix. py )。
+        Faithful port of the ACmix module (LeapLabTHU/ACmix/ACmix.py)."""
 
     def __init__(self, in_planes, out_planes, kernel_att=7, head=4,
                  kernel_conv=3, stride=1, dilation=1):
@@ -86,11 +89,11 @@ class ACmix(nn.Module):
         self.rate2 = nn.Parameter(torch.Tensor(1))
         self.head_dim = out_planes // head
 
-        # Shared 1x1 stage-1 projections (q / k / v).
+        # Shared 1x1 阶段 - 1 projections ( q / k / v ) / Shared 1x1 stage-1 projections (q / k / v).
         self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=1)
         self.conv2 = nn.Conv2d(in_planes, out_planes, kernel_size=1)
         self.conv3 = nn.Conv2d(in_planes, out_planes, kernel_size=1)
-        # Positional encoder (2-D coord -> head_dim).
+        # Positional 编码器 / Positional encoder (2-D coord -> head_dim).
         self.conv_p = nn.Conv2d(2, self.head_dim, kernel_size=1)
 
         # Self-attention unfold.
@@ -100,7 +103,7 @@ class ACmix(nn.Module):
                                 padding=0, stride=self.stride)
         self.softmax = nn.Softmax(dim=1)
 
-        # Conv branch: 3*head -> k_conv^2 score map -> identity-shift dep_conv.
+        # Conv 分支: 3 * 头部 - > k _ conv ^ 2 score 映射 - > identity-shift dep _ conv / Conv branch: 3*head -> k_conv^2 score map -> identity-shift dep_conv.
         self.fc = nn.Conv2d(3 * self.head,
                             self.kernel_conv * self.kernel_conv,
                             kernel_size=1, bias=False)
@@ -116,9 +119,9 @@ class ACmix(nn.Module):
         init_rate_half(self.rate1)
         init_rate_half(self.rate2)
         # dep_conv is initialised as a set of identity-shift kernels:
-        # the i-th input channel-group only sees the i-th spatial location of
-        # its k_conv x k_conv neighbourhood, exactly matching a standard
-        # k_conv x k_conv convolution at initialisation.
+        # the i-th 输入 channel-group only sees the i-th 空间的 location of / the i-th input channel-group only sees the i-th spatial location of
+        # its k _ conv x k _ conv neighbourhood, exactly matching a 标准 / its k_conv x k_conv neighbourhood, exactly matching a standard
+        # k _ conv x k _ conv 卷积 at initialisation / k_conv x k_conv convolution at initialisation.
         kernel = torch.zeros(
             self.kernel_conv * self.kernel_conv,
             self.kernel_conv, self.kernel_conv,
@@ -135,7 +138,7 @@ class ACmix(nn.Module):
         b, c, h, w = q.shape
         h_out, w_out = h // self.stride, w // self.stride
 
-        # ------------------ self-attention branch ------------------
+        # - - - - - - - - - - - - - - - - - - 自注意力 分支 - - - - - - - - - - - - - - - - - - / ------------------ self-attention branch ------------------
         pe = self.conv_p(position(h, w, x.device))
 
         q_att = q.reshape(b * self.head, self.head_dim, h, w) * scaling
@@ -169,7 +172,7 @@ class ACmix(nn.Module):
             b, self.out_planes, h_out, w_out,
         )
 
-        # ------------------ convolution branch ---------------------
+        # - - - - - - - - - - - - - - - - - - 卷积 分支 - - - - - - - - - - - - - - - - - - - - - / ------------------ convolution branch ---------------------
         f_all = self.fc(torch.cat([
             q.reshape(b, self.head, self.head_dim, h * w),
             k.reshape(b, self.head, self.head_dim, h * w),
@@ -183,11 +186,12 @@ class ACmix(nn.Module):
         return self.rate1 * out_att + self.rate2 * out_conv
 
 
-# ---------------- registry wrapper ----------------
+# - - - - - - - - - - - - - - - - 注册表 封装器 - - - - - - - - - - - - - - - - / ---------------- registry wrapper ----------------
 
 @BOTTLENECK_REGISTRY.register("acmix")
 class ACmixBottleneck(nn.Module):
     """ACmix bottleneck = official ACmix block + BN + ReLU + residual.
+        ACmix 瓶颈层。
 
     Args:
         in_channels: Number of input channels (== output channels).
@@ -199,7 +203,7 @@ class ACmixBottleneck(nn.Module):
     def __init__(self, in_channels, kernel_att=7, num_heads=4,
                  kernel_conv=3, **kwargs):
         super().__init__()
-        # ACmix requires out_planes % head == 0; pick a safe head count.
+        # ACmix requires out _ planes % 头部 = = 0; pick a safe 头部 count / ACmix requires out_planes % head == 0; pick a safe head count.
         head = num_heads
         while head > 1 and in_channels % head != 0:
             head //= 2

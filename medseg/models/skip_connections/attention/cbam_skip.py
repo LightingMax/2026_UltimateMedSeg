@@ -1,4 +1,5 @@
-"""CBAM (Channel + Spatial Attention) skip connection."""
+"""CBAM (Channel + Spatial Attention) 跳跃连接。
+    CBAM (Channel + Spatial Attention) skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("cbam")
 class CBAMSkip(nn.Module):
     """CBAM Channel+Spatial Attention skip.
+        CBAM Channel+Spatial Attention 跳跃连接。
 
     Applies CBAM to the skip feature:
       1) Channel attention: shared MLP applied to GAP and GMP pooled features,
@@ -23,7 +25,7 @@ class CBAMSkip(nn.Module):
         super().__init__()
         self.reduction = reduction
         self.spatial_kernel = spatial_kernel
-        # Lazily-built submodules keyed by channel count
+        # Lazily-built submodules keyed by 通道 count / Lazily-built submodules keyed by channel count
         self._channel_mlps = nn.ModuleDict()
         self._spatial_convs = nn.ModuleDict()
 
@@ -50,7 +52,7 @@ class CBAMSkip(nn.Module):
             self._spatial_convs[key] = spatial_conv
 
     def forward(self, decoder_feat, skip_feat):
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[-2:] != decoder_feat.shape[-2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[-2:],
@@ -63,14 +65,14 @@ class CBAMSkip(nn.Module):
         mlp = self._channel_mlps[key]
         spatial_conv = self._spatial_convs[key]
 
-        # --- Channel attention ---
+        # - - - 通道 注意力 - - - / --- Channel attention ---
         avg_pool = F.adaptive_avg_pool2d(skip_feat, 1).view(B, C)
         max_pool = F.adaptive_max_pool2d(skip_feat, 1).view(B, C)
         ch_attn = torch.sigmoid(mlp(avg_pool) + mlp(max_pool))
         ch_attn = ch_attn.view(B, C, 1, 1)
         x = skip_feat * ch_attn
 
-        # --- Spatial attention ---
+        # - - - 空间的 注意力 - - - / --- Spatial attention ---
         avg_map = torch.mean(x, dim=1, keepdim=True)
         max_map, _ = torch.max(x, dim=1, keepdim=True)
         sp_in = torch.cat([avg_map, max_map], dim=1)

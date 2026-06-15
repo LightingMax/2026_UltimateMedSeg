@@ -1,3 +1,7 @@
+# ============================================================================
+# Skip connection study: Resnet50 encoder + Missformer Bridge skip
+# 跳跃连接消融实验: Resnet50 编码器 + Missformer Bridge 跳跃连接
+# ============================================================================
 model:
   num_classes: 2
   img_size: 256

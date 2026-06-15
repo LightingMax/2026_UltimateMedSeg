@@ -1,4 +1,5 @@
 """Phi-3.5-Vision grounding wrapper.
+    Phi - 3. 5-Vision grounding 封装器。
 
 # Reference: https://github.com/microsoft/Phi-3CookBook
 # Reference: https://huggingface.co/microsoft/Phi-3.5-vision-instruct
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class Phi3VGrounder(GenericVLGrounder):
-    """Phi-3.5-Vision grounding wrapper (inference-only)."""
+    """Phi - 3. 5-Vision grounding 封装器 ( inference-only )。
+        Phi-3.5-Vision grounding wrapper (inference-only)."""
 
     COORD_SCALE = 1.0
 
@@ -74,7 +76,7 @@ class Phi3VGrounder(GenericVLGrounder):
             )
             logger.info(f"Phi-3.5-Vision loaded: {self.model_id} on {self.device}")
         except Exception:
-            # Strict: no mock fallback on load failure. Re-raise the
+            # Strict: no mock fallback on 加载 failure. Re-raise the / Strict: no mock fallback on load failure. Re-raise the
             # original error so the caller sees what actually broke.
             raise
 
@@ -87,7 +89,7 @@ class Phi3VGrounder(GenericVLGrounder):
             image = (image * 255).clip(0, 255).astype(np.uint8)
         pil_img = Image.fromarray(image).convert("RGB")
 
-        # Phi-3.5-Vision uses <|image_1|> placeholder
+        # Phi - 3. 5-Vision uses < | 图像 _ 1 | > placeholder / Phi-3.5-Vision uses <|image_1|> placeholder
         messages = [{"role": "user", "content": f"<|image_1|>\n{prompt}"}]
         chat = self.processor.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True

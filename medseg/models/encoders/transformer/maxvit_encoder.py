@@ -1,4 +1,5 @@
 """MaxViT encoder.
+    MaxViT 编码器。
 
 Wraps timm's ``maxvit_tiny_tf_224`` as a multi-scale feature extractor.
 
@@ -43,6 +44,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 @ENCODER_REGISTRY.register("maxvit")
 class MaxViTEncoder(nn.Module):
     """MaxViT-Tiny encoder via timm (features_only).
+        MaxViT-Tiny 编码器。
 
     Returns multi-scale features with the deepest (lowest-resolution) feature
     LAST. ``self.out_channels`` lists channel counts in the same order.
@@ -57,7 +59,7 @@ class MaxViTEncoder(nn.Module):
         self.in_channels = in_channels
         self.img_size = img_size
 
-        # MaxViT strictly needs 3-channel RGB input -- add a projection stem
+        # MaxViT strictly needs 3-channel RGB 输入 - - add a projection 主干 / MaxViT strictly needs 3-channel RGB input -- add a projection stem
         # for non-RGB inputs.
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
@@ -72,12 +74,13 @@ class MaxViTEncoder(nn.Module):
             in_chans=3,
         )
 
-        # Channel counts for each returned feature map (high-res -> low-res).
+        # 通道 counts for each returned 特征图 ( high-res - > low-res ) / Channel counts for each returned feature map (high-res -> low-res).
         self.out_channels: List[int] = list(self.model.feature_info.channels())
         self._out_strides = list(self.model.feature_info.reduction())
 
     def _pad_to_multiple(self, x: torch.Tensor):
         """Pad H,W on the bottom/right to the next multiple of ``STRIDE``.
+            Pad H, W on the bottom / right to the next multiple of ` ` 步长 ` `。
 
         Returns the padded tensor and (pad_h, pad_w) so callers can crop later
         if needed. Padding is zero-valued.
@@ -94,7 +97,7 @@ class MaxViTEncoder(nn.Module):
         x, _ = self._pad_to_multiple(x)
         features = self.model(x)
 
-        # Ensure all feature maps are BCHW (timm MaxViT outputs BCHW already,
+        # Ensure all 特征图 are BCHW ( timm MaxViT outputs BCHW already / Ensure all feature maps are BCHW (timm MaxViT outputs BCHW already,
         # but defensively handle BHWC layouts seen in some transformer models).
         out = []
         for i, f in enumerate(features):

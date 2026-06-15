@@ -1,6 +1,9 @@
 # UCTransNet (Wang et al., 2022) encoder variant
+# UCTransNet 分割网络
 # UCTransNet (Wang et al., 2022) encoder variant
+# UCTransNet 分割网络
 # Standalone architecture: uctransnet_enc
+# 独立架构: uctransnet_enc
 
 model:
   num_classes: 2
@@ -8,7 +11,9 @@ model:
   architecture: uctransnet_enc
   encoder:
     in_channels: 3
-  arch_params: {}
+  arch_params:
+    base_channels: 64
+    ctrans_heads: 4
 
 data:
   type: generic

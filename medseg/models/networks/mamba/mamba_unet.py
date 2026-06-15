@@ -1,4 +1,5 @@
 """Mamba-UNet: Pure Vision Mamba encoder-decoder for Medical Image Segmentation.
+    Mamba-UNet: Pure Vision Mamba 编码器。
 
 Faithful reimplementation from:
   https://github.com/ziyangwang007/Mamba-UNet  (MedIA 2024, 798+ stars)
@@ -29,7 +30,8 @@ from medseg.models.encoders.vmunet_encoder import (
 # ---------------------------------------------------------------------------
 
 class PatchExpand(nn.Module):
-    """Patch expand for 2x spatial upsampling (Mamba-UNet style)."""
+    """图块 expand for 2x 空间的 上采样 ( Mamba-UNet style )。
+        Patch expand for 2x spatial upsampling (Mamba-UNet style)."""
     def __init__(self, dim, dim_scale=2, norm_layer=nn.LayerNorm):
         super().__init__()
         self.dim = dim
@@ -46,7 +48,8 @@ class PatchExpand(nn.Module):
 
 
 class FinalPatchExpand_X4(nn.Module):
-    """Final 4x spatial upsampling to original resolution."""
+    """Final 4x 空间的 上采样 to original 分辨率。
+        Final 4x spatial upsampling to original resolution."""
     def __init__(self, dim, dim_scale=4, norm_layer=nn.LayerNorm):
         super().__init__()
         self.dim = dim
@@ -66,11 +69,12 @@ class FinalPatchExpand_X4(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VSSLayer (encoder stage)
+# VSSLayer ( 编码器 阶段 ) / VSSLayer (encoder stage)
 # ---------------------------------------------------------------------------
 
 class VSSLayer(nn.Module):
-    """Encoder stage: VSSBlocks + optional PatchMerging2D downsample."""
+    """编码器 阶段: VSSBlocks + 可选 PatchMerging2D 下采样。
+        Encoder stage: VSSBlocks + optional PatchMerging2D downsample."""
     def __init__(self, dim, depth, d_state=16, d_conv=3, expand=2,
                  drop_path=0.0, downsample=None):
         super().__init__()
@@ -87,7 +91,8 @@ class VSSLayer(nn.Module):
         self.downsample = downsample(dim) if downsample else None
 
     def forward(self, x):
-        """x: (B, H, W, C) -> x_out before downsample, x after downsample"""
+        """x: ( B, H, W, C ) - > x _ out before 下采样, x after 下采样。
+            x: (B, H, W, C) -> x_out before downsample, x after downsample"""
         for blk in self.blocks:
             x = blk(x)
         x_out = x
@@ -97,11 +102,12 @@ class VSSLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VSSLayer_up (decoder stage)
+# VSSLayer _ up ( 解码 阶段 ) / VSSLayer_up (decoder stage)
 # ---------------------------------------------------------------------------
 
 class VSSLayer_up(nn.Module):
-    """Decoder stage: VSSBlocks + optional PatchExpand upsample."""
+    """解码 阶段: VSSBlocks + 可选 PatchExpand 上采样。
+        Decoder stage: VSSBlocks + optional PatchExpand upsample."""
     def __init__(self, dim, depth, d_state=16, d_conv=3, expand=2,
                  drop_path=0.0, upsample=None):
         super().__init__()
@@ -126,11 +132,12 @@ class VSSLayer_up(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VSSM: full VMamba encoder-decoder (Mamba-UNet core)
+# VSSM: full VMamba 编码器 / VSSM: full VMamba encoder-decoder (Mamba-UNet core)
 # ---------------------------------------------------------------------------
 
 class VSSM(nn.Module):
     """VMamba Symmetric encoder-decoder with concat skip connections.
+        VMamba Symmetric 编码器。
 
     This is the core architecture from Mamba-UNet (Wang et al., 2024).
     Key difference from VM-UNet: uses concatenation + linear for skip connections
@@ -150,14 +157,14 @@ class VSSM(nn.Module):
         self.num_features = dims[-1]
         self.dims = dims
 
-        # Patch embedding
+        # 图块 嵌入 / Patch embedding
         self.patch_embed = PatchEmbed2D(patch_size, in_chans, self.embed_dim,
                                         norm_layer=norm_layer)
 
-        # Stochastic depth
+        # Stochastic 深度 / Stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
 
-        # Encoder layers
+        # 编码器 layers / Encoder layers
         self.layers = nn.ModuleList()
         for i in range(num_layers):
             layer = VSSLayer(
@@ -169,7 +176,7 @@ class VSSM(nn.Module):
             )
             self.layers.append(layer)
 
-        # Decoder layers
+        # 解码 layers / Decoder layers
         self.layers_up = nn.ModuleList()
         self.concat_back_dim = nn.ModuleList()
         for i in range(num_layers):
@@ -195,7 +202,7 @@ class VSSM(nn.Module):
         self.norm = norm_layer(self.num_features)
         self.norm_up = norm_layer(self.embed_dim)
 
-        # Final 4x upsample + head
+        # Final 4x 上采样 + 头部 / Final 4x upsample + head
         self.up = FinalPatchExpand_X4(dim=self.embed_dim, dim_scale=4)
         self.output = nn.Conv2d(self.embed_dim, num_classes, kernel_size=1, bias=False)
 
@@ -256,11 +263,12 @@ class VSSM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MambaUNet: wrapper with standard special_arch interface
+# MambaUNet: 封装器 with 标准 special _ arch interface / MambaUNet: wrapper with standard special_arch interface
 # ---------------------------------------------------------------------------
 
 class MambaUNet(nn.Module):
     """Mamba-UNet: Pure VMamba encoder-decoder for medical image segmentation.
+        Mamba-UNet: Pure VMamba 编码器。
 
     Architecture:
       PatchEmbed2D(4x) → 4 VSSLayer encoder stages → 4 VSSLayer_up decoder stages
@@ -296,7 +304,7 @@ class MambaUNet(nn.Module):
         )
 
         if deep_supervision:
-            # Intermediates from decoder: after step 0 → dims[-2], step 1 → dims[-3]
+            # Intermediates from 解码器 / Intermediates from decoder: after step 0 → dims[-2], step 1 → dims[-3]
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(dims[num_layers - 2 - i], num_classes, 1)
                 for i in range(num_layers - 2)

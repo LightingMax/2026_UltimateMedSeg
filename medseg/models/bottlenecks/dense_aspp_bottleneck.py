@@ -1,4 +1,5 @@
-"""Dense ASPP bottleneck."""
+"""Dense ASPP 瓶颈层。
+    Dense ASPP bottleneck."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -24,7 +25,8 @@ class DenseASPPBlock(nn.Module):
 
 @BOTTLENECK_REGISTRY.register("dense_aspp")
 class DenseASPPBottleneck(nn.Module):
-    """Dense ASPP: each dilated conv takes all previous outputs as input."""
+    """密集的 ASPP: each dilated conv takes all previous outputs as 输入。
+        Dense ASPP: each dilated conv takes all previous outputs as input."""
     def __init__(self, in_channels, growth_rate=64, dilations=(3, 6, 12, 18, 24), **kwargs):
         super().__init__()
         self.blocks = nn.ModuleList()

@@ -1,4 +1,5 @@
 """ViM-UNet: Vision Mamba for Biomedical Instance Segmentation.
+    ViM-UNet: Vision Mamba for Biomedical 实例 分割。
 
 Reference:
     Archit et al., "ViM-UNet: Vision Mamba for Biomedical Segmentation",
@@ -26,7 +27,8 @@ from medseg.models.encoders.vmunet_encoder import SS2D, PatchEmbed2D, PatchMergi
 
 
 class _ViMBlock(nn.Module):
-    """Vision Mamba block: bidirectional SS2D + MLP."""
+    """Vision Mamba 块: bidirectional SS2D + MLP。
+        Vision Mamba block: bidirectional SS2D + MLP."""
     def __init__(self, dim, d_state=16, d_conv=3, expand=2):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
@@ -45,7 +47,8 @@ class _ViMBlock(nn.Module):
 
 
 class ViMUNet(nn.Module):
-    """ViM-UNet for biomedical segmentation."""
+    """ViM-UNet for biomedical 分割。
+        ViM-UNet for biomedical segmentation."""
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  embed_dim=64, depths=None, **kwargs):
         super().__init__()
@@ -54,7 +57,7 @@ class ViMUNet(nn.Module):
         self.num_classes = num_classes
         dims = [embed_dim * (2 ** i) for i in range(4)]
 
-        # Encoder stages
+        # 编码器 阶段 / Encoder stages
         self.patch_embed = PatchEmbed2D(patch_size=4,
                                         in_chans=in_channels, embed_dim=dims[0])
         self.stages = nn.ModuleList()
@@ -65,7 +68,7 @@ class ViMUNet(nn.Module):
             if i < 3:
                 self.downsamples.append(PatchMerging2D(dims[i]))
 
-        # Decoder
+        # 解码 / Decoder
         self.decoder_up = nn.ModuleList()
         self.decoder_conv = nn.ModuleList()
         for i in range(3, 0, -1):
@@ -75,7 +78,7 @@ class ViMUNet(nn.Module):
                 nn.Linear(dims[i - 1] * 2, dims[i - 1]),
                 nn.GELU()))
 
-        # Head
+        # 头部 / Head
         self.head = nn.Sequential(
             nn.LayerNorm(dims[0]),
             nn.Linear(dims[0], num_classes))
@@ -89,7 +92,7 @@ class ViMUNet(nn.Module):
         if pad_needed:
             x = F.pad(x, [0, pW - W, 0, pH - H], mode='reflect')
 
-        # Encoder
+        # 编码器 / Encoder
         feats = []
         z = self.patch_embed(x)  # (B, H', W', C)
         for i in range(4):
@@ -99,11 +102,11 @@ class ViMUNet(nn.Module):
             if i < 3:
                 z = self.downsamples[i](z)
 
-        # Decoder
+        # 解码 / Decoder
         z = feats[3]
         for j in range(3):
             z = self.decoder_up[j](z)
-            # Upsample spatially to match skip
+            # Upsample spatially to match 跳跃连接 / Upsample spatially to match skip
             skip = feats[2 - j]
             zH, zW = z.shape[1], z.shape[2]
             sH, sW = skip.shape[1], skip.shape[2]
@@ -114,9 +117,9 @@ class ViMUNet(nn.Module):
             z = torch.cat([z, skip], dim=-1)
             z = self.decoder_conv[j](z)
 
-        # Head
+        # 头部 / Head
         out = self.head(z)  # (B, H', W', num_classes)
         out = rearrange(out, 'b h w c -> b c h w')
-        # Upsample to original resolution
+        # 上采样 to original 分辨率 / Upsample to original resolution
         out = F.interpolate(out, size=(H, W), mode='bilinear', align_corners=False)
         return out

@@ -1,4 +1,5 @@
 """UCTransNet Encoder: faithful port from https://github.com/McGregorWwww/UCTransNet
+    UCTransNet 编码器。
 
 Reference: Wang et al., "UCTransNet: Rethinking the Skip Connections in U-Net
            from a Channel Perspective with Transformer"
@@ -20,9 +21,10 @@ from torch.nn.modules.utils import _pair
 from medseg.registry import ENCODER_REGISTRY
 
 
-# ============= Channel_Embeddings (from CTrans.py) =============
+# = = = = = = = = = = = = = 通道 _ 嵌入 ( from CTrans. py ) = = = = = = = = = = = = = / ============= Channel_Embeddings (from CTrans.py) =============
 class Channel_Embeddings(nn.Module):
-    """Construct the embeddings from patch, position embeddings."""
+    """Construct the 嵌入 from 图块, position 嵌入。
+        Construct the embeddings from patch, position embeddings."""
     def __init__(self, patchsize, img_size, in_channels, dropout_rate=0.1):
         super().__init__()
         img_size = _pair(img_size)
@@ -74,7 +76,7 @@ class Reconstruct(nn.Module):
         return out
 
 
-# ============= Attention_org (from CTrans.py) =============
+# = = = = = = = = = = = = = 注意力 _ org ( from CTrans. py ) = = = = = = = = = = = = = / ============= Attention_org (from CTrans.py) =============
 class Attention_org(nn.Module):
     def __init__(self, channel_num, num_heads=4, KV_size=960, attn_drop=0.1):
         super(Attention_org, self).__init__()
@@ -229,7 +231,7 @@ class Mlp_CTrans(nn.Module):
         return x
 
 
-# ============= Block_ViT (from CTrans.py) =============
+# = = = = = = = = = = = = = 块 _ ViT ( from CTrans. py ) = = = = = = = = = = = = = / ============= Block_ViT (from CTrans.py) =============
 class Block_ViT(nn.Module):
     def __init__(self, channel_num, num_heads=4, KV_size=960,
                  expand_ratio=4, attn_drop=0.1, dropout_rate=0.0):
@@ -289,7 +291,7 @@ class Block_ViT(nn.Module):
         return x1, x2, x3, x4
 
 
-# ============= Encoder (from CTrans.py) =============
+# ============= 编码器 / ============= Encoder (from CTrans.py) =============
 class Encoder_CTrans(nn.Module):
     def __init__(self, channel_num, num_heads=4, num_layers=4, KV_size=960,
                  expand_ratio=4, attn_drop=0.1, dropout_rate=0.0):
@@ -358,7 +360,7 @@ class ChannelTransformer(nn.Module):
         return x1, x2, x3, x4
 
 
-# ============= CNN Encoder Blocks (from UCTransNet.py) =============
+# ============= CNN 编码器 / ============= CNN Encoder Blocks (from UCTransNet.py) =============
 def get_activation(activation_type):
     activation_type = activation_type.lower()
     if hasattr(nn, activation_type):
@@ -399,10 +401,11 @@ class DownBlock(nn.Module):
         return self.nConvs(out)
 
 
-# ============= UCTransNet Encoder =============
+# ============= UCTransNet 编码器 / ============= UCTransNet Encoder =============
 @ENCODER_REGISTRY.register("uctransnet")
 class UCTransNetEncoder(nn.Module):
     """UCTransNet Encoder: CNN backbone + Channel Transformer.
+        UCTransNet 编码器。
     Faithful to https://github.com/McGregorWwww/UCTransNet
     """
 
@@ -426,14 +429,14 @@ class UCTransNetEncoder(nn.Module):
         channel_num = [in_ch, in_ch * 2, in_ch * 4, in_ch * 8]
         KV_size = sum(channel_num)
 
-        # Encoder (from UCTransNet.py)
+        # 编码器 ( from UCTransNet. py ) / Encoder (from UCTransNet.py)
         self.inc = ConvBatchNorm(in_channels, in_ch)
         self.down1 = DownBlock(in_ch, in_ch * 2, nb_Conv=2)
         self.down2 = DownBlock(in_ch * 2, in_ch * 4, nb_Conv=2)
         self.down3 = DownBlock(in_ch * 4, in_ch * 8, nb_Conv=2)
         self.down4 = DownBlock(in_ch * 8, in_ch * 8, nb_Conv=2)
 
-        # Channel Transformer (mtc in original)
+        # 通道 Transformer ( mtc in original ) / Channel Transformer (mtc in original)
         self.mtc = ChannelTransformer(
             img_size=img_size,
             channel_num=channel_num,
@@ -467,7 +470,7 @@ class UCTransNetEncoder(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
 
-        # Channel Transformer on skip features
+        # Channel Transformer on 跳跃连接 / Channel Transformer on skip features
         x1, x2, x3, x4 = self.mtc(x1, x2, x3, x4)
 
         return [x1, x2, x3, x4]

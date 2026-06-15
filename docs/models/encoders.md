@@ -2,7 +2,7 @@
 
 [中文文档](encoders_CN.md)
 
-This project provides 169 registered encoders in two usage modes.
+This project provides 178 registered encoders in two usage modes.
 
 ## Two Encoder Modes
 
@@ -127,6 +127,7 @@ The following are pre-registered and tested timm encoders (partial list):
 | Swin Transformer | `timm_swin_tiny/small/base_patch4_window7_224`, `timm_swinv2_tiny_window8_256` | [unet_swin_tiny.yaml](../../configs/architectures/combinations/general/unet_swin_tiny.yaml) |
 | PVTv2 | `timm_pvt_v2_b0` ~ `b4` | [pvtv2_emcad.yaml](../../configs/architectures/combinations/general/pvtv2_emcad.yaml) |
 | SegFormer MiT | `timm_mit_b0` ~ `b5` | - |
+| MiT Native (pretrained) | `mit_b0` ~ `mit_b5`, `segformer_mit` | [segformer_b0.yaml](../../configs/architectures/networks/general/segformer_b0.yaml) |
 | MaxViT | `timm_maxvit_tiny/small_tf_224` | [maxvit_cascade_full.yaml](../../configs/architectures/combinations/general/maxvit_cascade_full.yaml) |
 | ViT (CLIP) | `timm_vit_clip_base/large/huge` | [unet_vit_clip_base.yaml](../../configs/architectures/combinations/general/unet_vit_clip_base.yaml) |
 | ViT (DINOv2) | `timm_vit_dinov2_base/large/giant` | [unet_vit_dinov2_base.yaml](../../configs/architectures/combinations/general/unet_vit_dinov2_base.yaml) |

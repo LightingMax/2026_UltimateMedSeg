@@ -1,4 +1,5 @@
 """HealthGPT vision encoder (foundation-model encoder).
+    HealthGPT vision encoder (foundation-model 编码器。
 
 HealthGPT (Lin et al., 2025) uses an unmodified OpenAI
 ``clip-vit-large-patch14-336`` as its visual encoder. ViT-L/14-336 has
@@ -33,7 +34,8 @@ PRIMARY_PATCH_SIZE = 14
 
 @ENCODER_REGISTRY.register("healthgpt_vision")
 class HealthGPTVisionEncoder(BaseFoundationEncoder):
-    """HealthGPT vision-tower encoder (CLIP ViT-L/14-336)."""
+    """HealthGPT vision-tower 编码器。
+        HealthGPT vision-tower encoder (CLIP ViT-L/14-336)."""
 
     native_img_size: int = 336
 
@@ -74,7 +76,7 @@ class HealthGPTVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -97,7 +99,7 @@ class HealthGPTVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from typing import Optional, Tuple
 
@@ -51,7 +51,7 @@ class SamPredictor:
         if image_format != self.model.image_format:
             image = image[..., ::-1]
 
-        # Transform the image to the form expected by the model
+        # Transform the 图像 to the form expected by the 模型 / Transform the image to the form expected by the model
         input_image = self.transform.apply_image(image)
         input_image_torch = torch.as_tensor(input_image, device=self.device)
         input_image_torch = input_image_torch.permute(2, 0, 1).contiguous()[
@@ -136,7 +136,7 @@ class SamPredictor:
                 "An image must be set with .set_image(...) before mask prediction."
             )
 
-        # Transform input prompts
+        # Transform 输入 prompts / Transform input prompts
         coords_torch, labels_torch, box_torch, mask_input_torch = None, None, None, None
         if point_coords is not None:
             assert (
@@ -236,7 +236,7 @@ class SamPredictor:
             masks=mask_input,
         )
 
-        # Predict masks
+        # 预测 掩码 / Predict masks
         low_res_masks, iou_predictions = self.model.mask_decoder(
             image_embeddings=self.features,
             image_pe=self.model.prompt_encoder.get_dense_pe(),
@@ -245,7 +245,7 @@ class SamPredictor:
             multimask_output=multimask_output,
         )
 
-        # Upscale the masks to the original image resolution
+        # Upscale the 掩码 to the original 图像 分辨率 / Upscale the masks to the original image resolution
         masks = self.model.postprocess_masks(
             low_res_masks, self.input_size, self.original_size
         )
@@ -275,7 +275,8 @@ class SamPredictor:
         return self.model.device
 
     def reset_image(self) -> None:
-        """Resets the currently set image."""
+        """Resets the currently set 图像。
+            Resets the currently set image."""
         self.is_image_set = False
         self.features = None
         self.orig_h = None

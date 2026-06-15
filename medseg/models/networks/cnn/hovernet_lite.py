@@ -1,4 +1,5 @@
 """Lightweight HoVerNet – nuclei segmentation & classification.
+    轻量级 HoVerNet – 细胞核 分割 & 分类。
 
 Inspired by:
     Graham et al., "HoVer-Net: Simultaneous Segmentation and Classification
@@ -23,7 +24,8 @@ import torch.nn.functional as F
 # ── Building blocks ──────────────────────────────────────────────────────────
 
 class _ConvBlock(nn.Module):
-    """Two 3×3 convs + BN + ReLU with a residual connection."""
+    """Two 3 × 3 convs + BN + ReLU with a 残差 connection。
+        Two 3×3 convs + BN + ReLU with a residual connection."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -44,7 +46,8 @@ class _ConvBlock(nn.Module):
 
 
 class _EncBlock(nn.Module):
-    """Encoder block: ConvBlock + MaxPool, returns pre-pool skip + pooled."""
+    """Encoder block: ConvBlock + MaxPool, returns pre-pool 跳跃连接。
+        Encoder block: ConvBlock + MaxPool, returns pre-pool skip + pooled."""
 
     def __init__(self, in_ch, out_ch, pool=True):
         super().__init__()
@@ -58,7 +61,8 @@ class _EncBlock(nn.Module):
 
 
 class _DecBlock(nn.Module):
-    """Decoder block: upsample + concat skip + ConvBlock."""
+    """Decoder block: upsample + concat 跳跃连接。
+        Decoder block: upsample + concat skip + ConvBlock."""
 
     def __init__(self, in_ch, skip_ch, out_ch):
         super().__init__()
@@ -67,7 +71,7 @@ class _DecBlock(nn.Module):
 
     def forward(self, x, skip):
         x = self.up(x)
-        # Handle potential spatial mismatch
+        # Handle potential 空间的 mismatch / Handle potential spatial mismatch
         if x.shape[2:] != skip.shape[2:]:
             x = F.interpolate(x, size=skip.shape[2:], mode="bilinear", align_corners=False)
         x = torch.cat([x, skip], dim=1)
@@ -78,6 +82,7 @@ class _DecBlock(nn.Module):
 
 class HoverNetLite(nn.Module):
     """Lightweight HoVerNet for nuclei segmentation.
+        轻量级 HoVerNet for 细胞核 分割。
 
     Parameters
     ----------
@@ -88,33 +93,35 @@ class HoverNetLite(nn.Module):
     img_size : int
         Input image size (used only for interface compatibility).
     pretrained : bool
-        Not used (kept for interface compatibility).
+        If True and pretrained_path is set, loads weights from local file.
+        Default is False (train from scratch) as no compatible pretrained
+        weights exist for this lightweight architecture.
     base_filters : int
         Number of filters in the first encoder block. Doubled at each level.
     """
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
-                 pretrained=True, base_filters=32, **kwargs):
+                 pretrained=False, pretrained_path=None, base_filters=32, **kwargs):
         super().__init__()
         f = base_filters
 
-        # Encoder (5 levels)
+        # 编码器 ( 5 levels ) / Encoder (5 levels)
         self.enc1 = _EncBlock(in_channels, f, pool=True)       # -> f, H/2
         self.enc2 = _EncBlock(f, f * 2, pool=True)             # -> 2f, H/4
         self.enc3 = _EncBlock(f * 2, f * 4, pool=True)         # -> 4f, H/8
         self.enc4 = _EncBlock(f * 4, f * 8, pool=True)         # -> 8f, H/16
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = _ConvBlock(f * 8, f * 16)            # -> 16f, H/16
 
-        # Nuclei pixel (NP) decoder – primary segmentation branch
+        # Nuclei pixel (NP) 解码器 / Nuclei pixel (NP) decoder – primary segmentation branch
         self.np_dec4 = _DecBlock(f * 16, f * 8, f * 8)
         self.np_dec3 = _DecBlock(f * 8, f * 4, f * 4)
         self.np_dec2 = _DecBlock(f * 4, f * 2, f * 2)
         self.np_dec1 = _DecBlock(f * 2, f, f)
         self.np_head = nn.Conv2d(f, num_classes, 1)
 
-        # Horizontal-Vertical (HV) decoder – instance boundary branch
+        # Horizontal-Vertical (HV) 解码器 / Horizontal-Vertical (HV) decoder – instance boundary branch
         self.hv_dec4 = _DecBlock(f * 16, f * 8, f * 8)
         self.hv_dec3 = _DecBlock(f * 8, f * 4, f * 4)
         self.hv_dec2 = _DecBlock(f * 4, f * 2, f * 2)
@@ -122,6 +129,21 @@ class HoverNetLite(nn.Module):
         self.hv_head = nn.Conv2d(f, 2, 1)  # horizontal + vertical maps
 
         self._init_weights()
+        if pretrained:
+            self._load_pretrained(pretrained_path)
+
+    def _load_pretrained(self, pretrained_path=None):
+        """加载 HoVerNet 预训练 权重 ( CoNIC / PanNuke / MoNuSAC )。
+            Load HoVerNet pretrained weights (CoNIC / PanNuke / MoNuSAC)."""
+        from medseg.utils.weight_downloader import load_pretrained_standalone
+        load_pretrained_standalone(
+            self,
+            pretrained_path=pretrained_path,
+            registry_key="hovernet_lite_pretrained",
+            model_name="HoverNetLite",
+            filter_prefixes=["head", "classifier", "fc"],
+            strict=False,
+        )
 
     def _init_weights(self):
         for m in self.modules():
@@ -134,28 +156,28 @@ class HoverNetLite(nn.Module):
                 nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         s1, x = self.enc1(x)    # s1: f@H/2
         s2, x = self.enc2(x)    # s2: 2f@H/4
         s3, x = self.enc3(x)    # s3: 4f@H/8
         s4, x = self.enc4(x)    # s4: 8f@H/16
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         x = self.bottleneck(x)  # 16f@H/16
 
-        # NP branch
+        # NP 分支 / NP branch
         np = self.np_dec4(x, s4)
         np = self.np_dec3(np, s3)
         np = self.np_dec2(np, s2)
         np = self.np_dec1(np, s1)
         np_out = self.np_head(np)
 
-        # HV branch
+        # HV 分支 / HV branch
         hv = self.hv_dec4(x, s4)
         hv = self.hv_dec3(hv, s3)
         hv = self.hv_dec2(hv, s2)
         hv = self.hv_dec1(hv, s1)
-        # hv_out = self.hv_head(hv)  # HV maps not used at inference
+        # hv _ out = self. hv _ 头部 ( hv ) # HV 映射 not used at 推理 / hv_out = self.hv_head(hv)  # HV maps not used at inference
 
-        # Decoder output is already at original resolution
+        # 解码 输出 is already at original 分辨率 / Decoder output is already at original resolution
         return np_out

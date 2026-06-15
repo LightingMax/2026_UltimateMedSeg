@@ -1,4 +1,5 @@
 """Text-guided UNet variants (faithful 2D ports of official sources).
+    Text-guided UNet variants ( 忠实 2D ports of official sources )。
 
 This subpackage hosts segmentation models that fuse a textual prompt
 (class name / radiology caption / organ word embedding) with a U-shape

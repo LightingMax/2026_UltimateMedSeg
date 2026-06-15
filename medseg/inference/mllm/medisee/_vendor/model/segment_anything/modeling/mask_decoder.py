@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from typing import List, Tuple, Type
 
@@ -102,7 +102,7 @@ class MaskDecoder(nn.Module):
             dense_prompt_embeddings=dense_prompt_embeddings,
         )
 
-        # Select the correct mask or masks for output
+        # Select the correct 掩码 or 掩码 for 输出 / Select the correct mask or masks for output
         if multimask_output:
             mask_slice = slice(1, None)
         else:
@@ -110,7 +110,7 @@ class MaskDecoder(nn.Module):
         masks = masks[:, mask_slice, :, :]
         iou_pred = iou_pred[:, mask_slice]
 
-        # Prepare output
+        # Prepare 输出 / Prepare output
         return masks, iou_pred
 
     def predict_masks(
@@ -120,8 +120,9 @@ class MaskDecoder(nn.Module):
         sparse_prompt_embeddings: torch.Tensor,
         dense_prompt_embeddings: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Predicts masks. See 'forward' for more details."""
-        # Concatenate output tokens
+        """Predicts 掩码. See ' 前向传播 ' for more details。
+            Predicts masks. See 'forward' for more details."""
+        # 拼接 输出 标记 / Concatenate output tokens
         output_tokens = torch.cat(
             [self.iou_token.weight, self.mask_tokens.weight], dim=0
         )
@@ -131,9 +132,9 @@ class MaskDecoder(nn.Module):
 
         tokens = torch.cat((output_tokens, sparse_prompt_embeddings), dim=1)
 
-        # image_embeddings: [1, C, H, W], tokens: [B, N, C]
-        # dense_prompt_embeddings: [B, C, H, W]
-        # Expand per-image data in batch direction to be per-mask
+        # 图像 _ 嵌入: [ 1, C, H, W ], 标记: [ B, N, C ] / image_embeddings: [1, C, H, W], tokens: [B, N, C]
+        # 密集的 _ prompt _ 嵌入: [ B, C, H, W ] / dense_prompt_embeddings: [B, C, H, W]
+        # Expand per-image 数据 in 批次 direction to be per-mask / Expand per-image data in batch direction to be per-mask
         src = torch.repeat_interleave(image_embeddings, tokens.shape[0], dim=0)
         src = src + dense_prompt_embeddings
         pos_src = torch.repeat_interleave(image_pe, tokens.shape[0], dim=0)
@@ -144,7 +145,7 @@ class MaskDecoder(nn.Module):
         iou_token_out = hs[:, 0, :]
         mask_tokens_out = hs[:, 1 : (1 + self.num_mask_tokens), :]
 
-        # Upscale mask embeddings and predict masks using the mask tokens
+        # Upscale 掩码 嵌入 and 预测 掩码 using the 掩码 标记 / Upscale mask embeddings and predict masks using the mask tokens
         src = src.transpose(1, 2).view(b, c, h, w)
         upscaled_embedding = self.output_upscaling(src)
         hyper_in_list: List[torch.Tensor] = []
@@ -158,7 +159,7 @@ class MaskDecoder(nn.Module):
             b, self.num_mask_tokens, h, w
         )
 
-        # Generate mask quality predictions
+        # 生成 掩码 quality 预测 / Generate mask quality predictions
         iou_pred = self.iou_prediction_head(iou_token_out)
 
         return masks, iou_pred

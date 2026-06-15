@@ -1,4 +1,5 @@
 """UPerNet Decoder - Unified Perceptual Parsing Network decoder.
+    UPerNet Decoder - Unified Perceptual Parsing Network 解码器。
 Reference: Xiao et al. "Unified Perceptual Parsing for Scene Understanding"
 
 Has its own internal FPN-style lateral connections + PPM.
@@ -14,7 +15,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class PPM(nn.Module):
-    """Pyramid Pooling Module from PSPNet."""
+    """金字塔 池化 模块 from PSPNet。
+        Pyramid Pooling Module from PSPNet."""
     def __init__(self, in_ch, pool_sizes=(1, 2, 3, 6)):
         super().__init__()
         out_ch = in_ch // len(pool_sizes)
@@ -45,6 +47,7 @@ class PPM(nn.Module):
 @DECODER_REGISTRY.register("upernet")
 class UPerNetDecoder(nn.Module):
     """UPerNet decoder: PPM on deepest feature + FPN-style lateral connections.
+        UPerNet 解码器。
 
     External skip_connection is IGNORED - UPerNet has its own FPN lateral mechanism.
     """
@@ -86,7 +89,7 @@ class UPerNetDecoder(nn.Module):
         all_features = list(skip_features) + [bottleneck_feat]
         target_size = all_features[0].shape[2:]
 
-        # Apply PPM to deepest feature
+        # 应用 PPM to deepest 特征 / Apply PPM to deepest feature
         all_features[-1] = self.ppm(all_features[-1])
 
         # Build FPN laterals (top-down)
@@ -95,9 +98,9 @@ class UPerNetDecoder(nn.Module):
             laterals[i - 1] = laterals[i - 1] + F.interpolate(
                 laterals[i], size=laterals[i - 1].shape[2:], mode='bilinear', align_corners=False)
 
-        # FPN output
+        # FPN 输出 / FPN output
         fpn_outs = [fpn(lat) for lat, fpn in zip(laterals, self.fpn_convs)]
-        # Upsample all to highest resolution
+        # 上采样 all to highest 分辨率 / Upsample all to highest resolution
         fpn_outs = [F.interpolate(f, size=target_size, mode='bilinear', align_corners=False)
                      if f.shape[2:] != target_size else f for f in fpn_outs]
 

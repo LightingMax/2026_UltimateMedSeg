@@ -1,4 +1,5 @@
 """nnFormer-style Decoder.
+    nnFormer-style 解码器。
 
 Reference: Zhou et al. "nnFormer: Volumetric Medical Image Segmentation via a
 3D Transformer" (https://arxiv.org/abs/2109.03201). This is the 2D adaptation
@@ -54,7 +55,8 @@ def _window_reverse(windows: torch.Tensor, ws: int, H: int, W: int) -> torch.Ten
 # -----------------------------------------------------------------------------
 
 class _WindowAttention(nn.Module):
-    """Window-based multi-head self-attention with relative position bias."""
+    """Window-based 多头 自注意力 with 相对的 position 偏置。
+        Window-based multi-head self-attention with relative position bias."""
 
     def __init__(self, dim: int, window_size: int, num_heads: int, qkv_bias: bool = True):
         super().__init__()
@@ -64,7 +66,7 @@ class _WindowAttention(nn.Module):
         head_dim = dim // num_heads
         self.scale = head_dim ** -0.5
 
-        # Relative position bias table & index (fixed by window_size)
+        # 相对的 position 偏置 table & index ( fixed by 窗口 _ 大小 ) / Relative position bias table & index (fixed by window_size)
         self.rel_pos_bias_table = nn.Parameter(
             torch.zeros((2 * window_size - 1) * (2 * window_size - 1), num_heads))
         coords_h = torch.arange(window_size)
@@ -106,6 +108,7 @@ class _WindowAttention(nn.Module):
 
 class _SwinBlock(nn.Module):
     """Swin Transformer block: window-attn (optionally shifted) + MLP.
+        Swin Transformer 块: window-attn ( optionally shifted ) + MLP。
 
     Operates on channels-first (B, C, H, W) input/output for convenience.
     H and W are assumed to be multiples of ``window_size``.
@@ -148,7 +151,7 @@ class _SwinBlock(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
         ws = self.window_size
-        # Disable shift if window can't fit (degenerate small resolutions).
+        # Disable shift if 窗口 can't fit ( degenerate small resolutions ) / Disable shift if window can't fit (degenerate small resolutions).
         shift = self.shift_size if (H >= ws and W >= ws and self.shift_size < ws) else 0
 
         # (B, C, H, W) -> (B, H, W, C)
@@ -177,7 +180,8 @@ class _SwinBlock(nn.Module):
 
 
 class _PatchExpand(nn.Module):
-    """nnFormer/Swin-UNet PatchExpand: Linear C -> 2C, rearrange to 2x spatial, C/2 channels."""
+    """nnFormer / Swin-UNet PatchExpand: Linear C - > 2C, rearrange to 2x 空间的, C / 2 通道。
+        nnFormer/Swin-UNet PatchExpand: Linear C -> 2C, rearrange to 2x spatial, C/2 channels."""
 
     def __init__(self, in_dim: int):
         super().__init__()
@@ -203,7 +207,7 @@ class _PatchExpand(nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# Decoder
+# 解码 / Decoder
 # -----------------------------------------------------------------------------
 
 def _pick_num_heads(dim: int, preferred: int = 4) -> int:
@@ -217,6 +221,7 @@ def _pick_num_heads(dim: int, preferred: int = 4) -> int:
 @DECODER_REGISTRY.register("nnformer")
 class NnFormerDecoder(nn.Module):
     """nnFormer-style decoder using PatchExpand + Swin blocks with external skip fusion.
+        nnFormer-style 解码器。
 
     Args:
         encoder_channels: Encoder feature channels (shallow -> deep). When the
@@ -257,20 +262,20 @@ class NnFormerDecoder(nn.Module):
         num_stages = len(skip_channels)
         self.num_stages = num_stages
 
-        # Pad bottleneck spatial to a multiple of window_size. Because
-        # subsequent stages just double spatial, every stage is then also a
-        # multiple of window_size. Per spec, the effective image-side multiple
-        # is patch_size * 2^(stages-1) * window_size.
+        # Pad 瓶颈层 / Pad bottleneck spatial to a multiple of window_size. Because
+        # subsequent 阶段 just double 空间的, every 阶段 is then also a / subsequent stages just double spatial, every stage is then also a
+        # multiple of 窗口 _ 大小. Per spec, the effective image-side multiple / multiple of window_size. Per spec, the effective image-side multiple
+        # is 图块 _ 大小 * 2 ^ ( 阶段 - 1 ) * 窗口 _ 大小 / is patch_size * 2^(stages-1) * window_size.
         self.pad_multiple = window_size
         self.image_pad_multiple = patch_size * (2 ** max(num_stages - 1, 0)) * window_size
 
-        # Build per-stage modules (deep -> shallow).
+        # Build per-stage modules ( 深度 - > 浅层 ) / Build per-stage modules (deep -> shallow).
         self.expands = nn.ModuleList()
         self.fusions = nn.ModuleList()        # 1x1 conv after skip-concat
         self.swin_stages = nn.ModuleList()    # ModuleList[ModuleList[_SwinBlock]]
-        # Per-stage skip lookup. Stage 0 has no skip (mirrors swinunet pattern
-        # where the first decoder layer is PatchExpand only). Stages 1..N-1
-        # consume skip features in deep -> shallow order.
+        # Per-stage skip lookup. Stage 0 has no 跳跃连接 / Per-stage skip lookup. Stage 0 has no skip (mirrors swinunet pattern
+        # where the first 解码器 / where the first decoder layer is PatchExpand only). Stages 1..N-1
+        # consume 跳跃连接 / consume skip features in deep -> shallow order.
         self._skip_lookup: List[int] = []
 
         cur_dim = bottleneck_channels
@@ -280,14 +285,14 @@ class NnFormerDecoder(nn.Module):
             self.expands.append(expand)
 
             if i == 0:
-                # No skip at the deepest decoder stage.
+                # No skip at the deepest 解码器 / No skip at the deepest decoder stage.
                 self.fusions.append(nn.Identity())
                 self._skip_lookup.append(-1)
                 target_dim = expanded_dim
             else:
-                # Skip index walks from the deepest available skip to the
-                # shallowest. With len(encoder_channels) = N, stage i (>=1)
-                # uses encoder_channels[N - 1 - i].
+                # Skip index walks from the deepest available 跳跃连接 / Skip index walks from the deepest available skip to the
+                # shallowest. With len ( 编码器 _ 通道 ) = N, 阶段 i ( > = 1 ) / shallowest. With len(encoder_channels) = N, stage i (>=1)
+                # uses 编码器 _ 通道 [ N - 1 - i ] / uses encoder_channels[N - 1 - i].
                 skip_idx = num_stages - 1 - i
                 skip_idx = max(0, min(skip_idx, len(skip_channels) - 1))
                 skip_ch = skip_channels[skip_idx]
@@ -296,8 +301,8 @@ class NnFormerDecoder(nn.Module):
                     fused_ch = skip_connection.get_out_channels(expanded_dim, skip_ch)
                 else:
                     fused_ch = expanded_dim + skip_ch
-                # Target channel = skip_ch so the decoder ladder mirrors the
-                # encoder's channel progression in reverse.
+                # Target channel = skip_ch so the 解码器 / Target channel = skip_ch so the decoder ladder mirrors the
+                # encoder's 通道 progression in reverse / encoder's channel progression in reverse.
                 target_dim = skip_ch
                 self.fusions.append(nn.Conv2d(fused_ch, target_dim,
                                               kernel_size=1, bias=False))
@@ -335,7 +340,8 @@ class NnFormerDecoder(nn.Module):
 
     @staticmethod
     def _pad_to_multiple(x: torch.Tensor, multiple: int):
-        """Right/bottom-pad spatial dims to multiple of ``multiple``."""
+        """Right / bottom-pad 空间的 dims to multiple of ` ` multiple ` `。
+            Right/bottom-pad spatial dims to multiple of ``multiple``."""
         h, w = x.shape[-2:]
         new_h = int(math.ceil(h / multiple) * multiple)
         new_w = int(math.ceil(w / multiple) * multiple)
@@ -346,19 +352,19 @@ class NnFormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # 1. Pad bottleneck so every stage's spatial divides by window_size.
+        # 1. Pad 瓶颈层 / 1. Pad bottleneck so every stage's spatial divides by window_size.
         orig_h, orig_w = bottleneck_feat.shape[-2:]
         x, _, _ = self._pad_to_multiple(bottleneck_feat, self.pad_multiple)
 
-        # 2. Pad each skip independently to the same multiple. Spatial
-        #    mismatches with the decoder are reconciled by interpolation
-        #    inside the loop (robust to encoders that don't perfectly halve).
+        # 2. Pad each 跳跃连接 / 2. Pad each skip independently to the same multiple. Spatial
+        # mismatches with the 解码器 / mismatches with the decoder are reconciled by interpolation
+        # inside the loop ( 鲁棒的 to encoders that don't perfectly halve ) / inside the loop (robust to encoders that don't perfectly halve).
         padded_skips = []
         for sf in skip_features:
             sf_padded, _, _ = self._pad_to_multiple(sf, self.pad_multiple)
             padded_skips.append(sf_padded)
 
-        # 3. Decoder ladder.
+        # 3. 解码器 / 3. Decoder ladder.
         for i in range(self.num_stages):
             x = self.expands[i](x)
             skip_idx = self._skip_lookup[i]
@@ -375,7 +381,7 @@ class NnFormerDecoder(nn.Module):
             for blk in self.swin_stages[i]:
                 x = blk(x)
 
-        # 4. Crop output back to the spatial implied by the original bottleneck.
+        # 4. Crop output back to the spatial implied by the original 瓶颈层 / 4. Crop output back to the spatial implied by the original bottleneck.
         out_h = orig_h * (2 ** self.num_stages)
         out_w = orig_w * (2 ** self.num_stages)
         x = x[:, :, :out_h, :out_w].contiguous()

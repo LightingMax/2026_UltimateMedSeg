@@ -1,4 +1,5 @@
 """TransFuse: Fusing Transformers and CNNs for Medical Image Segmentation.
+    TransFuse: Fusing Transformers and CNNs for 医学的 图像 分割。
 
 Self-contained port of github.com/Rayicer/TransFuse (MICCAI 2021),
 TransFuse-S variant.
@@ -31,7 +32,7 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# DeiT-Small wrapper (timm)
+# DeiT-Small 封装器 ( timm ) / DeiT-Small wrapper (timm)
 # ---------------------------------------------------------------------------
 class _DeiTSmall(nn.Module):
     def __init__(self, img_size=224, in_chans=3, pretrained=True):
@@ -60,7 +61,7 @@ class _DeiTSmall(nn.Module):
 
     def forward(self, x):
         feat = self.vit.forward_features(x)  # (B, 1+N, C)
-        # Strip prefix tokens (cls, and dist if present) by keeping the trailing N
+        # Strip prefix 标记 ( cls, and dist if present ) by keeping the trailing N / Strip prefix tokens (cls, and dist if present) by keeping the trailing N
         B, T, C = feat.shape
         h = x.shape[-2] // self.patch_size
         w = x.shape[-1] // self.patch_size
@@ -71,10 +72,11 @@ class _DeiTSmall(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# BiFusion module
+# BiFusion 模块 / BiFusion module
 # ---------------------------------------------------------------------------
 class _BiFusion(nn.Module):
     """Fuse a CNN feature and a ViT feature at the same spatial scale.
+        融合 a CNN 特征 and a ViT 特征 at the same 空间的 scale。
 
     Combines:
       - channel attention applied to the CNN feature,
@@ -87,7 +89,7 @@ class _BiFusion(nn.Module):
 
     def __init__(self, ch_vit, ch_cnn, ch_out, r=4):
         super().__init__()
-        # Channel attention on ViT branch (faithful to official: ch_2 = ViT)
+        # 通道 注意力 on ViT 分支 ( 忠实 to official: ch _ 2 = ViT ) / Channel attention on ViT branch (faithful to official: ch_2 = ViT)
         red_ca = max(ch_vit // r, 1)
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.ca = nn.Sequential(
@@ -96,7 +98,7 @@ class _BiFusion(nn.Module):
             nn.Conv2d(red_ca, ch_vit, 1, bias=False),
             nn.Sigmoid(),
         )
-        # Spatial attention on CNN branch (faithful to official: ch_1 = CNN)
+        # 空间的 注意力 on CNN 分支 ( 忠实 to official: ch _ 1 = CNN ) / Spatial attention on CNN branch (faithful to official: ch_1 = CNN)
         self.sa = nn.Sequential(
             nn.Conv2d(2, 1, kernel_size=7, padding=3, bias=False),
             nn.Sigmoid(),
@@ -128,10 +130,10 @@ class _BiFusion(nn.Module):
         if vit_feat.shape[-2:] != cnn_feat.shape[-2:]:
             vit_feat = F.interpolate(vit_feat, size=cnn_feat.shape[-2:],
                                      mode='bilinear', align_corners=False)
-        # Channel attention on ViT branch (faithful to official: ch_2 = ViT)
+        # 通道 注意力 on ViT 分支 ( 忠实 to official: ch _ 2 = ViT ) / Channel attention on ViT branch (faithful to official: ch_2 = ViT)
         ca_w = self.ca(self.gap(vit_feat))
         vit_att = vit_feat * ca_w
-        # Spatial attention on CNN branch (faithful to official: ch_1 = CNN)
+        # 空间的 注意力 on CNN 分支 ( 忠实 to official: ch _ 1 = CNN ) / Spatial attention on CNN branch (faithful to official: ch_1 = CNN)
         sa_in = torch.cat([
             cnn_feat.mean(dim=1, keepdim=True),
             cnn_feat.max(dim=1, keepdim=True)[0],
@@ -146,7 +148,8 @@ class _BiFusion(nn.Module):
 
 
 class _UpConv(nn.Module):
-    """Bilinear 2x upsample + 3x3 conv + BN + ReLU."""
+    """Bilinear 2x 上采样 + 3x3 conv + BN + ReLU。
+        Bilinear 2x upsample + 3x3 conv + BN + ReLU."""
     def __init__(self, in_ch, out_ch):
         super().__init__()
         self.conv = nn.Sequential(
@@ -165,7 +168,8 @@ class _UpConv(nn.Module):
 # TransFuse (TransFuse-S)
 # ---------------------------------------------------------------------------
 class TransFuse(nn.Module):
-    """TransFuse-S: parallel ResNet34 + DeiT-Small with BiFusion decoder."""
+    """TransFuse-S: parallel ResNet34 + DeiT-Small with BiFusion 解码器。
+        TransFuse-S: parallel ResNet34 + DeiT-Small with BiFusion decoder."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  pretrained=True, **kwargs):
@@ -174,13 +178,13 @@ class TransFuse(nn.Module):
         self.num_classes = num_classes
         self.img_size = img_size
 
-        # Input adapter so both branches see 3 channels.
+        # 输入 适配器 so both branches see 3 通道 / Input adapter so both branches see 3 channels.
         if in_channels != 3:
             self.input_adapter = nn.Conv2d(in_channels, 3, kernel_size=1)
         else:
             self.input_adapter = nn.Identity()
 
-        # CNN branch: ResNet34
+        # CNN 分支: ResNet34 / CNN branch: ResNet34
         resnet = load_with_ssl_fallback(
             tvmodels.resnet34, pretrained=pretrained)
         self.stem = nn.Sequential(
@@ -190,12 +194,12 @@ class TransFuse(nn.Module):
         self.layer3 = resnet.layer3  # /16, 256
         self.layer4 = resnet.layer4  # /32, 512 (kept for completeness; unused)
 
-        # ViT branch: DeiT-Small/16
+        # ViT 分支: DeiT-Small / 16 / ViT branch: DeiT-Small/16
         self.vit = _DeiTSmall(img_size=img_size, in_chans=3,
                               pretrained=pretrained)
         vit_dim = self.vit.embed_dim  # 384
 
-        # ViT feature projection + upsamples to /8 and /4
+        # ViT 特征 projection + upsamples to / 8 and / 4 / ViT feature projection + upsamples to /8 and /4
         self.vit_proj_16 = nn.Sequential(
             nn.Conv2d(vit_dim, 256, 1, bias=False),
             nn.BatchNorm2d(256),
@@ -209,7 +213,7 @@ class TransFuse(nn.Module):
         self.bifusion_8 = _BiFusion(ch_vit=128, ch_cnn=128, ch_out=128)
         self.bifusion_4 = _BiFusion(ch_vit=64, ch_cnn=64, ch_out=64)
 
-        # Decoder
+        # 解码 / Decoder
         self.dec_16_to_8 = _UpConv(256, 128)
         self.dec_fuse_8 = nn.Sequential(
             nn.Conv2d(128 + 128, 128, 3, padding=1, bias=False),
@@ -223,7 +227,7 @@ class TransFuse(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # Head
+        # 头部 / Head
         self.head = nn.Sequential(
             nn.Conv2d(64, 32, 3, padding=1, bias=False),
             nn.BatchNorm2d(32),
@@ -235,14 +239,14 @@ class TransFuse(nn.Module):
         H, W = x.shape[-2:]
         x_in = self.input_adapter(x)
 
-        # CNN branch
+        # CNN 分支 / CNN branch
         x0 = self.stem(x_in)
         c1 = self.layer1(x0)   # /4,  64
         c2 = self.layer2(c1)   # /8,  128
         c3 = self.layer3(c2)   # /16, 256
-        # self.layer4(c3) intentionally unused (TransFuse-S decoder is /4-/16)
+        # self.layer4(c3) intentionally unused (TransFuse-S 解码器 / self.layer4(c3) intentionally unused (TransFuse-S decoder is /4-/16)
 
-        # ViT branch -> /16 spatial
+        # ViT 分支 - > / 16 空间的 / ViT branch -> /16 spatial
         vit_tokens, hv, wv = self.vit(x_in)
         B = vit_tokens.shape[0]
         v16 = vit_tokens.transpose(1, 2).reshape(
@@ -266,7 +270,7 @@ class TransFuse(nn.Module):
         f8 = self.bifusion_8(v8, c2)
         f4 = self.bifusion_4(v4, c1)
 
-        # Decoder
+        # 解码 / Decoder
         d8 = self.dec_16_to_8(f16)
         if d8.shape[-2:] != f8.shape[-2:]:
             d8 = F.interpolate(d8, size=f8.shape[-2:], mode='bilinear',

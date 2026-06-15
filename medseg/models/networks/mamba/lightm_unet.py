@@ -1,4 +1,5 @@
 """LightM-UNet: Lightweight Mamba UNet for Medical Image Segmentation.
+    LightM-UNet: 轻量级 Mamba UNet for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/MrBlankness/LightM-UNet  (2024)
@@ -23,11 +24,12 @@ from .umamba import MambaSSM
 
 
 # ---------------------------------------------------------------------------
-# DWConv Layer (depthwise separable convolution)
+# DWConv 层 ( depthwise separable 卷积 ) / DWConv Layer (depthwise separable convolution)
 # ---------------------------------------------------------------------------
 
 class DWConv(nn.Module):
-    """Depthwise separable convolution."""
+    """Depthwise separable 卷积。
+        Depthwise separable convolution."""
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, bias=False):
         super().__init__()
         self.depth_conv = nn.Conv2d(in_channels, in_channels,
@@ -43,11 +45,12 @@ class DWConv(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MambaLayer for 2D features
+# MambaLayer for 2D 特征 / MambaLayer for 2D features
 # ---------------------------------------------------------------------------
 
 class LightMambaLayer(nn.Module):
     """Mamba layer with optional channel projection + skip scaling.
+        Mamba layer with optional channel projection + 跳跃连接。
 
     Faithful to LightM-UNet's MambaLayer implementation.
     """
@@ -78,11 +81,12 @@ class LightMambaLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# ResMambaBlock: residual block with Mamba layers
+# ResMambaBlock: 残差 块 with Mamba layers / ResMambaBlock: residual block with Mamba layers
 # ---------------------------------------------------------------------------
 
 class ResMambaBlock(nn.Module):
     """Residual block with two Mamba layers.
+        残差 块 with two Mamba layers。
 
     Faithful to LightM-UNet's ResMambaBlock.
     """
@@ -106,11 +110,12 @@ class ResMambaBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# ResUpBlock: residual upsampling block with DWConv
+# ResUpBlock: 残差 上采样 块 with DWConv / ResUpBlock: residual upsampling block with DWConv
 # ---------------------------------------------------------------------------
 
 class ResUpBlock(nn.Module):
     """Residual block with DWConv for decoder.
+        Residual block with DWConv for 解码器。
 
     Faithful to LightM-UNet's ResUpBlock.
     """
@@ -131,11 +136,12 @@ class ResUpBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# LightMUNet: main model
+# LightMUNet: main 模型 / LightMUNet: main model
 # ---------------------------------------------------------------------------
 
 class LightMUNet(nn.Module):
     """LightM-UNet: Lightweight Mamba UNet (~1M params).
+        LightM-UNet: 轻量级 Mamba UNet ( ~ 1M params )。
 
     Architecture:
       DWConv init → 4 encoder stages (MambaLayer downsample + ResMambaBlock)
@@ -170,7 +176,7 @@ class LightMUNet(nn.Module):
         # Initial DWConv
         self.conv_init = DWConv(in_channels, init_filters)
 
-        # Encoder
+        # 编码器 / Encoder
         self.down_layers = nn.ModuleList()
         for i, n_blocks in enumerate(blocks_down):
             ch = init_filters * (2 ** i)
@@ -185,7 +191,7 @@ class LightMUNet(nn.Module):
                                     expand=expand) for _ in range(n_blocks)]
             self.down_layers.append(nn.Sequential(downsample, *blocks))
 
-        # Decoder
+        # 解码 / Decoder
         n_up = len(blocks_up)
         self.up_samples = nn.ModuleList()
         self.up_layers = nn.ModuleList()
@@ -200,7 +206,7 @@ class LightMUNet(nn.Module):
                 *[ResUpBlock(out_ch) for _ in range(blocks_up[i])]
             ))
 
-        # Final head
+        # Final 头部 / Final head
         self.conv_final = nn.Sequential(
             nn.GroupNorm(min(8, init_filters), init_filters),
             nn.ReLU(inplace=True),
@@ -214,7 +220,7 @@ class LightMUNet(nn.Module):
 
         self.deep_supervision = deep_supervision
         if deep_supervision:
-            # DS heads for decoder intermediates (all except last stage)
+            # DS heads for 解码器 / DS heads for decoder intermediates (all except last stage)
             n_up = len(self.blocks_up)
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(init_filters * (2 ** (n_up - 1 - i)), num_classes, 1)
@@ -227,16 +233,16 @@ class LightMUNet(nn.Module):
         if self.dropout is not None:
             x = self.dropout(x)
 
-        # Encoder
+        # 编码器 / Encoder
         down_x = []
         for down in self.down_layers:
             x = down(x)
             down_x.append(x)
 
-        # Reverse for decoder skip connections
+        # Reverse for 解码器 / Reverse for decoder skip connections
         down_x.reverse()
 
-        # Decoder
+        # 解码 / Decoder
         ds_collect = self.training and self.deep_supervision
         intermediates = []
         for i, (up_sample, up_layer) in enumerate(zip(self.up_samples, self.up_layers)):

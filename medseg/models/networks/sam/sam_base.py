@@ -1,4 +1,5 @@
-"""SAMBase — common base for all SAM-family medical seg models."""
+"""SAMBase — common base for all SAM-family 医学的 seg models。
+    SAMBase — common base for all SAM-family medical seg models."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import torch.nn as nn
 
 def load_with_ssl_fallback(load_fn, *args, **kwargs):
     """Load pretrained weights: official HF, mirror fallback, then SSL retry.
+        加载 预训练 权重: official HF, mirror fallback, then SSL retry。
 
     Does NOT silently fall back to random init or a different model.
     """

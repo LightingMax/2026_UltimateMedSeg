@@ -1,4 +1,5 @@
 """TransAttUNet — self-contained port.
+    TransAttUNet — self-contained 移植。
 
 Reference:
     Chen et al., "TransAttUnet: Multi-level Attention-guided U-Net with
@@ -70,7 +71,8 @@ class _DownBlock(nn.Module):
 
 
 class _UpBlock(nn.Module):
-    """Transposed conv -> concat skip -> ConvBlock."""
+    """Transposed conv -> concat 跳跃连接。
+        Transposed conv -> concat skip -> ConvBlock."""
 
     def __init__(self, in_ch: int, skip_ch: int, out_ch: int):
         super().__init__()
@@ -86,11 +88,12 @@ class _UpBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Transformer Self-Attention (TSA) module — bottleneck
+# Transformer Self-Attention (TSA) module — 瓶颈层 / Transformer Self-Attention (TSA) module — bottleneck
 # ---------------------------------------------------------------------------
 
 class _TSA(nn.Module):
     """Standard transformer encoder layer over flattened spatial tokens.
+        Standard transformer 编码器。
 
     No positional embedding is used so the module is resolution-agnostic.
     """
@@ -128,11 +131,12 @@ class _TSA(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Global Spatial Attention (GSA) — multi-scale decoder fusion
+# Global Spatial Attention (GSA) — multi-scale 解码器 / Global Spatial Attention (GSA) — multi-scale decoder fusion
 # ---------------------------------------------------------------------------
 
 class _GSA(nn.Module):
     """Fuse decoder features at multiple scales with softmax spatial attention.
+        Fuse 解码器。
 
     Each input is projected to ``out_channels`` via a 1x1 conv, upsampled
     bilinearly to the largest decoder resolution, concatenated, and the
@@ -156,7 +160,7 @@ class _GSA(nn.Module):
         )
 
     def forward(self, features):
-        # ``features`` ordered coarse -> fine, fuse at finest resolution.
+        # ` ` 特征 ` ` ordered coarse - > fine, 融合 at finest 分辨率 / ``features`` ordered coarse -> fine, fuse at finest resolution.
         target_size = features[-1].shape[-2:]
         projected = []
         for proj, feat in zip(self.projs, features):
@@ -178,7 +182,8 @@ class _GSA(nn.Module):
 # ---------------------------------------------------------------------------
 
 class TransAttUNet(nn.Module):
-    """TransAttUNet — UNet + Transformer Self-Attention + Global Spatial Attention."""
+    """TransAttUNet — UNet + Transformer Self-Attention + 全局的 空间的 注意力。
+        TransAttUNet — UNet + Transformer Self-Attention + Global Spatial Attention."""
 
     def __init__(
         self,
@@ -196,26 +201,26 @@ class TransAttUNet(nn.Module):
         self.img_size = img_size
 
         f = base_features
-        # Encoder
+        # 编码器 / Encoder
         self.inc = _ConvBlock(in_channels, f)
         self.down1 = _DownBlock(f, f * 2)
         self.down2 = _DownBlock(f * 2, f * 4)
         self.down3 = _DownBlock(f * 4, f * 8)
         self.down4 = _DownBlock(f * 8, f * 16)
 
-        # Bottleneck transformer
+        # 瓶颈层 Transformer / Bottleneck transformer
         self.tsa = _TSA(f * 16, num_heads=tsa_heads, mlp_ratio=tsa_mlp_ratio)
 
-        # Decoder
+        # 解码 / Decoder
         self.up1 = _UpBlock(f * 16, f * 8, f * 8)
         self.up2 = _UpBlock(f * 8, f * 4, f * 4)
         self.up3 = _UpBlock(f * 4, f * 2, f * 2)
         self.up4 = _UpBlock(f * 2, f, f)
 
-        # Global Spatial Attention over multi-scale decoder features
+        # Global Spatial Attention over multi-scale 解码器 / Global Spatial Attention over multi-scale decoder features
         self.gsa = _GSA([f * 8, f * 4, f * 2, f], f)
 
-        # Output head: fuse decoder-finest with GSA, then 1x1 classifier
+        # Output head: fuse 解码器 / Output head: fuse decoder-finest with GSA, then 1x1 classifier
         self.fuse = nn.Sequential(
             nn.Conv2d(f * 2, f, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(f),
@@ -248,26 +253,26 @@ class TransAttUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H, W = x.shape[-2:]
 
-        # Encoder
+        # 编码器 / Encoder
         x1 = self.inc(x)        # (B,  f,   H,   W)
         x2 = self.down1(x1)     # (B, 2f,  H/2, W/2)
         x3 = self.down2(x2)     # (B, 4f,  H/4, W/4)
         x4 = self.down3(x3)     # (B, 8f,  H/8, W/8)
         x5 = self.down4(x4)     # (B, 16f, H/16, W/16)
 
-        # Bottleneck transformer self-attention
+        # 瓶颈层 Transformer 自注意力 / Bottleneck transformer self-attention
         x5 = self.tsa(x5)
 
-        # Decoder
+        # 解码 / Decoder
         d1 = self.up1(x5, x4)   # (B, 8f,  H/8,  W/8)
         d2 = self.up2(d1, x3)   # (B, 4f,  H/4,  W/4)
         d3 = self.up3(d2, x2)   # (B, 2f,  H/2,  W/2)
         d4 = self.up4(d3, x1)   # (B,  f,   H,    W)
 
-        # Global Spatial Attention across all decoder scales
+        # Global Spatial Attention across all 解码器 / Global Spatial Attention across all decoder scales
         gsa = self.gsa([d1, d2, d3, d4])    # (B, f, H, W)
 
-        # Fuse + classify
+        # 融合 + classify / Fuse + classify
         merged = torch.cat([d4, gsa], dim=1)
         merged = self.fuse(merged)
         out = self.out_conv(merged)

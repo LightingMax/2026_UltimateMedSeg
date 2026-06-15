@@ -1,4 +1,5 @@
 """EndoViT foundation-model encoder (endoscopy).
+    EndoViT foundation-model 编码器。
 
 Reference: Batic et al., "EndoViT: pretraining vision transformers on a
 large collection of endoscopic images" (Int J CARS, 2024).
@@ -27,7 +28,7 @@ from medseg.models.encoders.foundation._base import (BaseFoundationEncoder, hf_h
                      HuggingFaceViTWrapper, DPTHead)
 
 
-# Architecture constants.
+# 架构 constants / Architecture constants.
 _ENDOVIT_EMBED_DIM = 768
 _ENDOVIT_PATCH_SIZE = 16
 
@@ -38,6 +39,7 @@ PRIMARY_BACKBONE_NAME = _PRIMARY_HF_NAME
 @ENCODER_REGISTRY.register("endo_vit")
 class EndoViTEncoder(BaseFoundationEncoder):
     """EndoViT (endoscopy MAE ViT-B/16) encoder with DPT-style multi-block output.
+        EndoViT (endoscopy MAE ViT-B/16) 编码器。
 
     The backbone is a ViT-Base/16 (``embed_dim=768``, ``patch_size=16``).
     ``out_channels = [dim/8, dim/4, dim/2, dim]`` (deepest LAST).
@@ -61,14 +63,14 @@ class EndoViTEncoder(BaseFoundationEncoder):
             inference_only=inference_only, **kwargs,
         )
 
-        # ---- channel adapter for non-RGB inputs (EndoViT is RGB-only) ----
+        # - - - - 通道 适配器 for non-RGB inputs ( EndoViT is RGB-only ) - - - - / ---- channel adapter for non-RGB inputs (EndoViT is RGB-only) ----
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3,
                                                      kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # ---- backbone — HF ViTModel + weight download --------------------
+        # - - - - 骨干网络 — HF ViTModel + 权重 download - - - - - - - - - - - - - - - - - - - - / ---- backbone — HF ViTModel + weight download --------------------
         if pretrained:
             import transformers
             _cfg = transformers.ViTConfig(
@@ -105,7 +107,7 @@ class EndoViTEncoder(BaseFoundationEncoder):
             )
         self._backbone_name = PRIMARY_BACKBONE_NAME
 
-        # ---- optional local checkpoint -----------------------------------
+        # - - - - 可选 局部的 检查点 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- optional local checkpoint -----------------------------------
         if pretrained_path:
             try:
                 state = torch.load(pretrained_path, map_location="cpu")
@@ -133,13 +135,13 @@ class EndoViTEncoder(BaseFoundationEncoder):
                     f"'{pretrained_path}': {e}"
                 )
 
-        # ---- backbone introspection -------------------------------------
+        # - - - - 骨干网络 introspection - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- backbone introspection -------------------------------------
         self.patch_size = int(self.backbone.patch_embed.patch_size)
         self.embed_dim = int(self.backbone.embed_dim)
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -178,7 +180,7 @@ class EndoViTEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

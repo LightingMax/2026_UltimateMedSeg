@@ -1,4 +1,4 @@
-# Chapter 03: Data and Preprocessing
+﻿# Chapter 03: Data and Preprocessing
 
 [Previous: U-Net](02_unet.md) | [中文文档](03_data_CN.md) | [Next: Training and Evaluation](04_training.md)
 
@@ -13,7 +13,7 @@ Data quality and preprocessing directly determine segmentation performance. In m
 - **Small datasets**: Many medical datasets have only hundreds of samples
 - **Class imbalance**: Target structures (tumors, lesions) are often tiny compared to background
 
-UltimateMedSeg provides a unified data pipeline that handles 25 built-in datasets with 4 split strategies and 24 augmentation methods, all configurable through YAML.
+APRIL-MedSeg provides a unified data pipeline that handles 25 built-in datasets with 4 split strategies and 24 augmentation methods, all configurable through YAML.
 
 ---
 
@@ -31,7 +31,7 @@ UltimateMedSeg provides a unified data pipeline that handles 25 built-in dataset
 
 ### 2.2 Directory Conventions
 
-UltimateMedSeg supports two directory layouts:
+APRIL-MedSeg supports two directory layouts:
 
 **Layout A: Explicit train/val/test directories**
 
@@ -168,7 +168,7 @@ training:
 
 ---
 
-## 4. Hands-On with UltimateMedSeg
+## 4. Hands-On with APRIL-MedSeg
 
 ### 4.1 Setting Up a Custom Dataset
 

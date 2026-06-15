@@ -1,4 +1,5 @@
 """G-CASCADE Decoder – Efficient Cascaded Graph Convolutional Decoding.
+    G-CASCADE 解码器。
 
 Faithfully ported from: https://github.com/SLDGroup/G-CASCADE
 Paper: G-CASCADE: Efficient Cascaded Graph Convolutional Decoding
@@ -24,7 +25,8 @@ from ..gcn_lib import Grapher
 
 
 def channel_shuffle(x, groups):
-    """Channel shuffle (from ShuffleNet)."""
+    """通道 shuffle ( from ShuffleNet )。
+        Channel shuffle (from ShuffleNet)."""
     batchsize, num_channels, height, width = x.data.size()
     channels_per_group = num_channels // groups
     x = x.view(batchsize, groups, channels_per_group, height, width)
@@ -39,10 +41,11 @@ def _gcd(a, b):
     return a
 
 
-# ── UCB (Up-Convolution Block) ──────────────────────────────────────────────
+# ─ ─ UCB ( Up-Convolution 块 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── UCB (Up-Convolution Block) ──────────────────────────────────────────────
 
 class UCB(nn.Module):
-    """Up-convolution block: upsample + DW-separable conv + 1x1 pointwise."""
+    """Up-convolution 块: 上采样 + DW-separable conv + 1x1 pointwise。
+        Up-convolution block: upsample + DW-separable conv + 1x1 pointwise."""
 
     def __init__(self, in_channels, out_channels, kernel_size=3):
         super().__init__()
@@ -63,10 +66,11 @@ class UCB(nn.Module):
         return x
 
 
-# ── SPA (Spatial Attention) ──────────────────────────────────────────────────
+# ─ ─ SPA ( 空间的 注意力 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── SPA (Spatial Attention) ──────────────────────────────────────────────────
 
 class SPA(nn.Module):
-    """Spatial attention block (CBAM-style spatial branch)."""
+    """空间的 注意力 块 ( CBAM-style 空间的 分支 )。
+        Spatial attention block (CBAM-style spatial branch)."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -81,11 +85,12 @@ class SPA(nn.Module):
         return self.sigmoid(self.conv(out))
 
 
-# ── GCASCADE Decoder (additive skip) ────────────────────────────────────────
+# ── GCASCADE 解码器 / ── GCASCADE Decoder (additive skip) ────────────────────────────────────────
 
 @DECODER_REGISTRY.register("gcascade")
 class GCASCADEDecoder(nn.Module):
     """G-CASCADE decoder with additive skip aggregation.
+        G-CASCADE 解码器。
 
     Automatically adapts to any encoder: builds N decoder stages where
     N = len(encoder_channels). Each stage: UCB (upsample) + GCB (graph conv)
@@ -114,12 +119,12 @@ class GCASCADEDecoder(nn.Module):
         self.img_size = img_size
         n_skips = len(encoder_channels)
 
-        # Build channel list: [bottleneck, skip_deep, ..., skip_shallow]
+        # Build 通道 list: [ 瓶颈层, 跳跃 _ 深度,..., 跳跃 _ 浅层 ] / Build channel list: [bottleneck, skip_deep, ..., skip_shallow]
         skip_chs = list(reversed(encoder_channels))
         channels = [bottleneck_channels] + skip_chs
 
-        # GCB blocks (one per channel level)
-        # Use max(16, ...) to ensure enough tokens for KNN at small img_size
+        # GCB blocks ( one per 通道 level ) / GCB blocks (one per channel level)
+        # Use max ( 16,... ) to ensure enough 标记 for KNN at small img _ 大小 / Use max(16, ...) to ensure enough tokens for KNN at small img_size
         n_spatial = max(16, (img_size // 16) ** 2)
         self.gcb_blocks = nn.ModuleList([
             Grapher(ch, kernel_size=k, dilation=1, conv=conv, act=gcb_act,
@@ -127,7 +132,7 @@ class GCASCADEDecoder(nn.Module):
             for ch in channels
         ])
 
-        # UCB blocks (upsample between stages)
+        # UCB blocks ( 上采样 between 阶段 ) / UCB blocks (upsample between stages)
         self.ucb_blocks = nn.ModuleList([
             UCB(channels[i], channels[i + 1])
             for i in range(n_skips)
@@ -136,12 +141,12 @@ class GCASCADEDecoder(nn.Module):
         # SPA (shared)
         self.spa = SPA()
 
-        # 1x1 convs for additive skip aggregation
+        # 1x1 convs for additive 跳跃连接 / 1x1 convs for additive skip aggregation
         self.skip_convs = nn.ModuleList([
             nn.Conv2d(ch, ch, 1, bias=False) for ch in skip_chs
         ])
 
-        # Channel reduction for multi-scale supervision
+        # 通道 reduction for 多尺度 supervision / Channel reduction for multi-scale supervision
         shallowest_ch = channels[-1]
         self.h_1x1s = nn.ModuleList([
             nn.Sequential(
@@ -152,7 +157,7 @@ class GCASCADEDecoder(nn.Module):
             for ch in skip_chs[:-1]
         ])
 
-        # Activation
+        # 激活 / Activation
         if activation.lower() == 'relu':
             self.act = nn.ReLU(inplace=True)
         elif activation.lower() == 'relu6':
@@ -170,12 +175,12 @@ class GCASCADEDecoder(nn.Module):
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))  # deep to shallow
 
-        # Stage 0: GCB + SPA on bottleneck
+        # Stage 0: GCB + SPA on 瓶颈层 / Stage 0: GCB + SPA on bottleneck
         x = self.gcb_blocks[0](bottleneck_feat)
         x = self.act(x)
         x = self.spa(x) * x
 
-        # Remaining stages: UCB + interpolate + GCB + SPA + skip
+        # Remaining stages: UCB + interpolate + GCB + SPA + 跳跃连接 / Remaining stages: UCB + interpolate + GCB + SPA + skip
         for i, (ucb, gcb, skip) in enumerate(zip(self.ucb_blocks, self.gcb_blocks[1:], skips)):
             x = ucb(x)
             if x.shape[2:] != skip.shape[2:]:
@@ -187,11 +192,12 @@ class GCASCADEDecoder(nn.Module):
         return x
 
 
-# ── GCASCADE Decoder (concatenation skip) ───────────────────────────────────
+# ── GCASCADE 解码器 / ── GCASCADE Decoder (concatenation skip) ───────────────────────────────────
 
 @DECODER_REGISTRY.register("gcascade_cat")
 class GCASCADECatDecoder(nn.Module):
     """G-CASCADE decoder with concatenation skip aggregation.
+        G-CASCADE 解码器。
 
     Same architecture as GCASCADEDecoder but uses concatenation instead of
     additive skip. Extra 1x1 convolutions reduce concatenated channels.
@@ -232,7 +238,7 @@ class GCASCADECatDecoder(nn.Module):
         # SPA
         self.spa = SPA()
 
-        # Channel reduction after concat (2x channels -> 1x)
+        # 通道 reduction after concat ( 2x 通道 - > 1x ) / Channel reduction after concat (2x channels -> 1x)
         self.cv_convs = nn.ModuleList([
             nn.Conv2d(ch * 2, ch, 1, bias=False) for ch in skip_chs
         ])
@@ -265,12 +271,12 @@ class GCASCADECatDecoder(nn.Module):
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))
 
-        # Stage 0: GCB + SPA on bottleneck
+        # Stage 0: GCB + SPA on 瓶颈层 / Stage 0: GCB + SPA on bottleneck
         x = self.gcb_blocks[0](bottleneck_feat)
         x = self.act(x)
         x = self.spa(x) * x
 
-        # Remaining stages: UCB + concat skip + reduce + GCB + SPA
+        # Remaining stages: UCB + concat 跳跃连接 / Remaining stages: UCB + concat skip + reduce + GCB + SPA
         for i, (ucb, gcb, skip, cv) in enumerate(
             zip(self.ucb_blocks, self.gcb_blocks[1:], skips, self.cv_convs)
         ):

@@ -1,4 +1,5 @@
 """MedGemma vision-tower encoder (FoundationEncoder).
+    MedGemma vision-tower 编码器。
 
 MedGemma (Google, 2025) is a medical multimodal LLM whose vision tower is the
 SigLIP-So400m/14 ViT (embed_dim=1152, depth=27, patch_size=14). We only need
@@ -36,7 +37,8 @@ _PATCH_SIZE = 14
 
 @ENCODER_REGISTRY.register("medgemma_vision")
 class MedGemmaVisionEncoder(BaseFoundationEncoder):
-    """MedGemma (SigLIP-So400m/14) vision encoder with multi-scale output."""
+    """MedGemma (SigLIP-So400m/14) vision 编码器。
+        MedGemma (SigLIP-So400m/14) vision encoder with multi-scale output."""
 
     native_img_size: int = 448
 
@@ -72,7 +74,7 @@ class MedGemmaVisionEncoder(BaseFoundationEncoder):
                     f"ensure network access, or provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Extract the vision tower from the Gemma-3 multimodal model.
+            # 提取 the vision tower from the Gemma - 3 multimodal 模型 / Extract the vision tower from the Gemma-3 multimodal model.
             _visual = None
             for attr in ("vision_model", "vision_tower", "visual", "image_encoder"):
                 _visual = getattr(_full_model, attr, None)
@@ -110,7 +112,7 @@ class MedGemmaVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -133,7 +135,7 @@ class MedGemmaVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

@@ -1,4 +1,5 @@
 """CBAM (Convolutional Block Attention Module) bottleneck.
+    CBAM (Convolutional Block Attention Module) 瓶颈层。
 
 Reference: Woo et al., "CBAM: Convolutional Block Attention Module", ECCV 2018.
 
@@ -12,7 +13,8 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 
 class ChannelAttention(nn.Module):
-    """Channel attention: squeeze spatial dims, learn channel weights."""
+    """通道 注意力: squeeze 空间的 dims, learn 通道 权重。
+        Channel attention: squeeze spatial dims, learn channel weights."""
     def __init__(self, channels, reduction=16):
         super().__init__()
         mid = max(channels // reduction, 1)
@@ -32,7 +34,8 @@ class ChannelAttention(nn.Module):
 
 
 class SpatialAttention(nn.Module):
-    """Spatial attention: channel-wise pool, learn spatial weights."""
+    """空间的 注意力: channel-wise pool, learn 空间的 权重。
+        Spatial attention: channel-wise pool, learn spatial weights."""
     def __init__(self, kernel_size=7):
         super().__init__()
         self.conv = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
@@ -47,6 +50,7 @@ class SpatialAttention(nn.Module):
 @BOTTLENECK_REGISTRY.register("cbam")
 class CBAMBottleneck(nn.Module):
     """CBAM bottleneck: sequential channel + spatial attention with conv refinement.
+        CBAM 瓶颈层。
 
     Args:
         in_channels: Number of input channels.

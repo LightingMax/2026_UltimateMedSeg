@@ -1,4 +1,5 @@
 """Cascade Full Decoder – representative CASCADE-style cascaded attention decoder.
+    Cascade Full Decoder – representative CASCADE-style cascaded attention 解码器。
 
 A standalone decoder that mirrors the cascade-attention concat pattern used in
 CASCADE (Medical Image Segmentation via Cascaded Attention Decoding, WACV 2023)
@@ -22,7 +23,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class _ChannelAttention(nn.Module):
-    """CBAM-style channel attention (avg + max pool, shared MLP)."""
+    """CBAM-style 通道 注意力 ( avg + max pool, shared MLP )。
+        CBAM-style channel attention (avg + max pool, shared MLP)."""
 
     def __init__(self, in_planes: int, ratio: int = 16):
         super().__init__()
@@ -41,7 +43,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """CBAM-style spatial attention (avg + max along channel)."""
+    """CBAM-style 空间的 注意力 ( avg + max along 通道 )。
+        CBAM-style spatial attention (avg + max along channel)."""
 
     def __init__(self, kernel_size: int = 7):
         super().__init__()
@@ -60,6 +63,7 @@ class _SpatialAttention(nn.Module):
 @DECODER_REGISTRY.register("cascade_full")
 class CADecoder(nn.Module):
     """Cascade-attention decoder (representative concat pattern).
+        Cascade-attention 解码器。
 
     Args:
         encoder_channels: Skip-connection channels (shallow -> deep). Typically
@@ -80,10 +84,10 @@ class CADecoder(nn.Module):
         self.skip_connection = skip_connection
         self.img_size = img_size
 
-        # Skips are processed from deep -> shallow during decoding.
+        # Skips are processed from 深度 - > 浅层 during decoding / Skips are processed from deep -> shallow during decoding.
         skip_channels = list(reversed(encoder_channels))
 
-        # Channel attention modules operate on the post-fusion tensor.
+        # 通道 注意力 modules operate on the post-fusion 张量 / Channel attention modules operate on the post-fusion tensor.
         self.channel_attns = nn.ModuleList()
         self.spatial_attns = nn.ModuleList()
         self.convs = nn.ModuleList()
@@ -105,7 +109,7 @@ class CADecoder(nn.Module):
             ))
             in_ch = out_ch
 
-        # Per spec: out_channels = shallowest encoder channel.
+        # Per spec: out_channels = shallowest 编码器 / Per spec: out_channels = shallowest encoder channel.
         self._out_channels = encoder_channels[0] if encoder_channels else bottleneck_channels
 
     @property
@@ -114,7 +118,7 @@ class CADecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # Walk skips from deepest to shallowest in lockstep with the up stages.
+        # Walk skips from deepest to shallowest in lockstep with the up 阶段 / Walk skips from deepest to shallowest in lockstep with the up stages.
         skips = list(reversed(skip_features))
 
         x = bottleneck_feat
@@ -122,19 +126,19 @@ class CADecoder(nn.Module):
             zip(self.channel_attns, self.spatial_attns, self.convs)
         ):
             skip = skips[i]
-            # 1) interpolate-up to the skip's spatial size
+            # 1) interpolate-up to the 跳跃连接 / 1) interpolate-up to the skip's spatial size
             if x.shape[2:] != skip.shape[2:]:
                 x = F.interpolate(x, size=skip.shape[2:],
                                   mode='bilinear', align_corners=False)
-            # 2) skip-concat (external skip module, else default concat)
+            # 2) skip-concat (external 跳跃连接 / 2) skip-concat (external skip module, else default concat)
             if self.skip_connection is not None:
                 x = self.skip_connection(x, skip)
             else:
                 x = torch.cat([x, skip], dim=1)
-            # 3) channel attention
+            # 3 ) 通道 注意力 / 3) channel attention
             x = ca(x) * x
-            # 4) spatial attention
+            # 4 ) 空间的 注意力 / 4) spatial attention
             x = sa(x) * x
-            # 5) 3x3 conv (channel reduction to this stage's target)
+            # 5 ) 3x3 conv ( 通道 reduction to this stage's 目标 ) / 5) 3x3 conv (channel reduction to this stage's target)
             x = conv(x)
         return x

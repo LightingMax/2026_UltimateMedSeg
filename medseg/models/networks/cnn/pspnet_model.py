@@ -1,4 +1,5 @@
 """PSPNet: Pyramid Scene Parsing Network for semantic segmentation.
+    PSPNet: 金字塔 Scene Parsing 网络 for 语义的 分割。
 
 Reference:
     Zhao et al., "Pyramid Scene Parsing Network", CVPR 2017.
@@ -28,7 +29,8 @@ class _ConvBNReLU(nn.Module):
 
 
 class _ResBlock(nn.Module):
-    """Residual block with optional downsampling."""
+    """残差 块 with 可选 下采样。
+        Residual block with optional downsampling."""
 
     def __init__(self, in_ch, out_ch, stride=1):
         super().__init__()
@@ -54,6 +56,7 @@ class _ResBlock(nn.Module):
 
 class _PyramidPoolModule(nn.Module):
     """Pyramid Pooling Module (PPM).
+        金字塔 池化 模块 ( PPM )。
 
     Adaptive average pooling at 4 scales (1×1, 2×2, 3×3, 6×6) → 1×1 conv
     to reduce channels → bilinear upsample back to input resolution →
@@ -72,7 +75,7 @@ class _PyramidPoolModule(nn.Module):
                 nn.BatchNorm2d(out_ch),
                 nn.ReLU(inplace=True),
             ))
-        # Bottleneck conv: in_ch + out_ch * len(pool_sizes) -> in_ch
+        # 瓶颈层 conv: in _ ch + out _ ch * len ( pool _ sizes ) - > in _ ch / Bottleneck conv: in_ch + out_ch * len(pool_sizes) -> in_ch
         total = in_ch + out_ch * len(pool_sizes)
         self.bottleneck = nn.Sequential(
             nn.Conv2d(total, in_ch, 3, padding=1, bias=False),
@@ -95,6 +98,7 @@ class _PyramidPoolModule(nn.Module):
 
 class PSPNet(nn.Module):
     """Pyramid Scene Parsing Network.
+        金字塔 Scene Parsing 网络。
 
     Architecture:
         - ResNet-like encoder with 4 stages
@@ -109,13 +113,13 @@ class PSPNet(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224):
         super().__init__()
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             _ConvBNReLU(in_channels, 64, 3, 1, 1),
             _ConvBNReLU(64, 64, 3, 1, 1),
         )
 
-        # Encoder stages
+        # 编码器 阶段 / Encoder stages
         self.enc1 = nn.Sequential(
             _ResBlock(64, 64, stride=2),   # /2
             _ResBlock(64, 64),
@@ -133,35 +137,35 @@ class PSPNet(nn.Module):
             _ResBlock(512, 512),
         )
 
-        # Pyramid Pooling Module
+        # 金字塔 池化 模块 / Pyramid Pooling Module
         self.ppm = _PyramidPoolModule(512)
 
-        # Dropout for regularization (as in original PSPNet)
+        # 随机丢弃 for 正则化 ( as in original PSPNet ) / Dropout for regularization (as in original PSPNet)
         self.dropout = nn.Dropout2d(0.1)
 
-        # Output conv
+        # 输出 conv / Output conv
         self.out_conv = nn.Conv2d(512, num_classes, 1)
 
     def forward(self, x):
         inp_size = x.shape[2:]
 
-        # Stem
+        # 主干 / Stem
         s = self.stem(x)
 
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.enc1(s)   # /2
         e2 = self.enc2(e1)  # /4
         e3 = self.enc3(e2)  # /8
         e4 = self.enc4(e3)  # /16
 
-        # Pyramid Pooling Module
+        # 金字塔 池化 模块 / Pyramid Pooling Module
         p = self.ppm(e4)
 
-        # Dropout + output conv
+        # 随机丢弃 + 输出 conv / Dropout + output conv
         p = self.dropout(p)
         out = self.out_conv(p)
 
-        # Upsample to input resolution
+        # 上采样 to 输入 分辨率 / Upsample to input resolution
         out = F.interpolate(out, size=inp_size, mode='bilinear', align_corners=True)
 
         return out

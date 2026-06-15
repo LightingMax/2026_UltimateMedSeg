@@ -1,4 +1,5 @@
 """ScaleFormer – self-contained port from github.com/ZJUGiveLab/ScaleFormer.
+    ScaleFormer – self-contained 移植 from github. com / ZJUGiveLab / ScaleFormer。
 
 ScaleFormer: Revisiting the Transformer-based Backbones from a Scale-wise
 Perspective for Medical Image Segmentation (IJCAI 2022).
@@ -14,7 +15,7 @@ import numpy as np
 
 
 # ---------------------------------------------------------------------------
-# Basic building blocks
+# 基本 building blocks / Basic building blocks
 # ---------------------------------------------------------------------------
 class _Conv2dReLU(nn.Sequential):
     def __init__(self, in_channels, out_channels, kernel_size, padding=0,
@@ -79,7 +80,7 @@ class _DWConv(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# CNN Encoder (U-Net style, 5 stages)
+# CNN 编码器 / CNN Encoder (U-Net style, 5 stages)
 # ---------------------------------------------------------------------------
 class _UEncoder(nn.Module):
     def __init__(self, in_channels=3):
@@ -112,7 +113,7 @@ class _UEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Dual-axis attention (lightweight MHSA)
+# Dual-axis 注意力 ( 轻量级 MHSA ) / Dual-axis attention (lightweight MHSA)
 # ---------------------------------------------------------------------------
 class _DualAxis(nn.Module):
     def __init__(self, input_size, channels, d_h, d_v, d_w, heads, dropout):
@@ -207,7 +208,7 @@ class _FFNMultiLN(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Intra-scale transformer block (Dual-axis + IRFFN)
+# Intra-scale Transformer 块 ( Dual-axis + IRFFN ) / Intra-scale transformer block (Dual-axis + IRFFN)
 # ---------------------------------------------------------------------------
 class _IntraTransBlock(nn.Module):
     def __init__(self, img_size, d_h, d_v, d_w, num_heads, R=4, in_channels=46):
@@ -234,7 +235,7 @@ class _IntraTransBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# TransEncoder (4-stage transformer encoder)
+# TransEncoder (4-stage transformer 编码器 / TransEncoder (4-stage transformer encoder)
 # ---------------------------------------------------------------------------
 class _TransEncoder(nn.Module):
     def __init__(self, img_size=224):
@@ -280,7 +281,7 @@ class _TransEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Multi-scale attention & inter-scale transformer
+# Multi-scale 注意力 & inter-scale Transformer / Multi-scale attention & inter-scale transformer
 # ---------------------------------------------------------------------------
 class _MLP(nn.Module):
     def __init__(self, dim):
@@ -371,7 +372,7 @@ class _SpatialAwareTrans(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Parallel encoder (CNN + TransEncoder + fusion)
+# Parallel 编码器 / Parallel encoder (CNN + TransEncoder + fusion)
 # ---------------------------------------------------------------------------
 class _ParallEncoder(nn.Module):
     def __init__(self, in_channels=3, img_size=224):
@@ -398,7 +399,7 @@ class _ParallEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder blocks
+# 解码 blocks / Decoder blocks
 # ---------------------------------------------------------------------------
 class _DecoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -426,6 +427,7 @@ class _SegmentationHead(nn.Sequential):
 # ---------------------------------------------------------------------------
 class ScaleFormer(nn.Module):
     """ScaleFormer: ParallelEncoder + 4-stage UNet decoder.
+        ScaleFormer: ParallelEncoder + 4-stage UNet 解码器。
 
     Args:
         in_channels: Number of input image channels (default 3).

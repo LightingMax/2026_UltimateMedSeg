@@ -1,4 +1,5 @@
 """LLaVA / LLaVA-NeXT grounding wrapper.
+    LLaVA / LLaVA-NeXT grounding 封装器。
 
 # Reference: https://github.com/haotian-liu/LLaVA
 # Reference: https://github.com/LLaVA-VL/LLaVA-NeXT
@@ -31,7 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 class LLaVAGrounder(GenericVLGrounder):
-    """LLaVA / LLaVA-NeXT grounding wrapper (inference-only)."""
+    """LLaVA / LLaVA-NeXT grounding 封装器 ( inference-only )。
+        LLaVA / LLaVA-NeXT grounding wrapper (inference-only)."""
 
     # LLaVA emits free-form text; the prompt asks for normalised [0, 1] coords.
     COORD_SCALE = 1.0
@@ -86,7 +88,7 @@ class LLaVAGrounder(GenericVLGrounder):
                 f"{self.model_id} on {self.device}"
             )
         except Exception:
-            # Strict: no mock fallback on load failure. Re-raise the
+            # Strict: no mock fallback on 加载 failure. Re-raise the / Strict: no mock fallback on load failure. Re-raise the
             # original error so the caller sees what actually broke.
             raise
 
@@ -121,7 +123,7 @@ class LLaVAGrounder(GenericVLGrounder):
                 max_new_tokens=self.max_new_tokens,
                 do_sample=False,
             )
-        # Strip the input prompt tokens
+        # Strip the 输入 prompt 标记 / Strip the input prompt tokens
         prompt_len = inputs["input_ids"].shape[1]
         gen_ids = out_ids[0, prompt_len:]
         return self.processor.tokenizer.decode(gen_ids, skip_special_tokens=True)

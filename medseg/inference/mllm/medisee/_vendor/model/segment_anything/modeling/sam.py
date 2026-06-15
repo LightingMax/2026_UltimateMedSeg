@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from typing import Any, Dict, List, Tuple
 
@@ -164,7 +164,7 @@ class Sam(nn.Module):
             mode="bilinear",
             align_corners=False,
         )
-        # masks = masks.to(dtype)
+        # 掩码 = 掩码. to ( dtype ) / masks = masks.to(dtype)
         masks = masks[..., : input_size[0], : input_size[1]]
         masks = F.interpolate(
             masks, original_size, mode="bilinear", align_corners=False
@@ -172,8 +172,9 @@ class Sam(nn.Module):
         return masks
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad

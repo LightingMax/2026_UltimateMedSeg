@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -149,10 +149,10 @@ class SamAutomaticMaskGenerator:
                  the mask, given in XYWH format.
         """
 
-        # Generate masks
+        # 生成 掩码 / Generate masks
         mask_data = self._generate_masks(image)
 
-        # Filter small disconnected regions and holes in masks
+        # Filter small disconnected regions and holes in 掩码 / Filter small disconnected regions and holes in masks
         if self.min_mask_region_area > 0:
             mask_data = self.postprocess_small_regions(
                 mask_data,
@@ -160,7 +160,7 @@ class SamAutomaticMaskGenerator:
                 max(self.box_nms_thresh, self.crop_nms_thresh),
             )
 
-        # Encode masks
+        # 编码 掩码 / Encode masks
         if self.output_mode == "coco_rle":
             mask_data["segmentations"] = [
                 coco_encode_rle(rle) for rle in mask_data["rles"]
@@ -170,7 +170,7 @@ class SamAutomaticMaskGenerator:
         else:
             mask_data["segmentations"] = mask_data["rles"]
 
-        # Write mask records
+        # Write 掩码 records / Write mask records
         curr_anns = []
         for idx in range(len(mask_data["segmentations"])):
             ann = {
@@ -192,15 +192,15 @@ class SamAutomaticMaskGenerator:
             orig_size, self.crop_n_layers, self.crop_overlap_ratio
         )
 
-        # Iterate over image crops
+        # Iterate over 图像 crops / Iterate over image crops
         data = MaskData()
         for crop_box, layer_idx in zip(crop_boxes, layer_idxs):
             crop_data = self._process_crop(image, crop_box, layer_idx, orig_size)
             data.cat(crop_data)
 
-        # Remove duplicate masks between crops
+        # Remove duplicate 掩码 between crops / Remove duplicate masks between crops
         if len(crop_boxes) > 1:
-            # Prefer masks from smaller crops
+            # Prefer 掩码 from smaller crops / Prefer masks from smaller crops
             scores = 1 / box_area(data["crop_boxes"])
             scores = scores.to(data["boxes"].device)
             keep_by_nms = batched_nms(
@@ -221,7 +221,7 @@ class SamAutomaticMaskGenerator:
         crop_layer_idx: int,
         orig_size: Tuple[int, ...],
     ) -> MaskData:
-        # Crop the image and calculate embeddings
+        # Crop the 图像 and 计算 嵌入 / Crop the image and calculate embeddings
         x0, y0, x1, y1 = crop_box
         cropped_im = image[y0:y1, x0:x1, :]
         cropped_im_size = cropped_im.shape[:2]
@@ -231,7 +231,7 @@ class SamAutomaticMaskGenerator:
         points_scale = np.array(cropped_im_size)[None, ::-1]
         points_for_image = self.point_grids[crop_layer_idx] * points_scale
 
-        # Generate masks for this crop in batches
+        # 生成 掩码 for this crop in batches / Generate masks for this crop in batches
         data = MaskData()
         for (points,) in batch_iterator(self.points_per_batch, points_for_image):
             batch_data = self._process_batch(
@@ -250,7 +250,7 @@ class SamAutomaticMaskGenerator:
         )
         data.filter(keep_by_nms)
 
-        # Return to the original image frame
+        # 返回 to the original 图像 帧 / Return to the original image frame
         data["boxes"] = uncrop_boxes_xyxy(data["boxes"], crop_box)
         data["points"] = uncrop_points(data["points"], crop_box)
         data["crop_boxes"] = torch.tensor([crop_box for _ in range(len(data["rles"]))])
@@ -266,7 +266,7 @@ class SamAutomaticMaskGenerator:
     ) -> MaskData:
         orig_h, orig_w = orig_size
 
-        # Run model on this batch
+        # Run 模型 on this 批次 / Run model on this batch
         transformed_points = self.predictor.transform.apply_coords(points, im_size)
         in_points = torch.as_tensor(transformed_points, device=self.predictor.device)
         in_labels = torch.ones(
@@ -279,7 +279,7 @@ class SamAutomaticMaskGenerator:
             return_logits=True,
         )
 
-        # Serialize predictions and store in MaskData
+        # Serialize 预测 and store in MaskData / Serialize predictions and store in MaskData
         data = MaskData(
             masks=masks.flatten(0, 1),
             iou_preds=iou_preds.flatten(0, 1),
@@ -292,7 +292,7 @@ class SamAutomaticMaskGenerator:
             keep_mask = data["iou_preds"] > self.pred_iou_thresh
             data.filter(keep_mask)
 
-        # Calculate stability score
+        # 计算 stability score / Calculate stability score
         data["stability_score"] = calculate_stability_score(
             data["masks"],
             self.predictor.model.mask_threshold,
@@ -302,7 +302,7 @@ class SamAutomaticMaskGenerator:
             keep_mask = data["stability_score"] >= self.stability_score_thresh
             data.filter(keep_mask)
 
-        # Threshold masks and calculate boxes
+        # 阈值 掩码 and 计算 boxes / Threshold masks and calculate boxes
         data["masks"] = data["masks"] > self.predictor.model.mask_threshold
         data["boxes"] = batched_mask_to_box(data["masks"])
 
@@ -347,7 +347,7 @@ class SamAutomaticMaskGenerator:
             unchanged = unchanged and not changed
 
             new_masks.append(torch.as_tensor(mask).unsqueeze(0))
-            # Give score=0 to changed masks and score=1 to unchanged masks
+            # Give score = 0 to changed 掩码 and score = 1 to unchanged 掩码 / Give score=0 to changed masks and score=1 to unchanged masks
             # so NMS will prefer ones that didn't need postprocessing
             scores.append(float(unchanged))
 
@@ -361,7 +361,7 @@ class SamAutomaticMaskGenerator:
             iou_threshold=nms_thresh,
         )
 
-        # Only recalculate RLEs for masks that have changed
+        # Only recalculate RLEs for 掩码 that have changed / Only recalculate RLEs for masks that have changed
         for i_mask in keep_by_nms:
             if scores[i_mask] == 0.0:
                 mask_torch = masks[i_mask].unsqueeze(0)

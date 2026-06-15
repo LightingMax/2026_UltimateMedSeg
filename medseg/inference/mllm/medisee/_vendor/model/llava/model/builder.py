@@ -48,7 +48,7 @@ def load_pretrained_model(
         kwargs["torch_dtype"] = torch.float16
 
     if "llava" in model_name.lower():
-        # Load LLaVA model
+        # 加载 LLaVA 模型 / Load LLaVA model
         if "lora" in model_name.lower() and model_base is not None:
             lora_cfg_pretrained = AutoConfig.from_pretrained(model_path)
             tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
@@ -148,9 +148,9 @@ def load_pretrained_model(
                     model_path, low_cpu_mem_usage=True, **kwargs
                 )
     else:
-        # Load language model
+        # 加载 language 模型 / Load language model
         if model_base is not None:
-            # PEFT model
+            # PEFT 模型 / PEFT model
             from peft import PeftModel
 
             tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)

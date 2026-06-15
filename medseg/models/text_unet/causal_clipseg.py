@@ -1,8 +1,9 @@
 # CausalCLIPSeg (MICCAI 2024)
-# Reference: https://github.com/WUTCM-Lab/CausalCLIPSeg
+# 参考: https: / / github. com / WUTCM-Lab / CausalCLIPSeg / Reference: https://github.com/WUTCM-Lab/CausalCLIPSeg
 # Paper: https://arxiv.org/abs/2407.16447
 # Implemented from paper formulas; not a copy of the official repo.
 """CausalCLIPSeg: a causal-intervention CLIP-based text-guided medical
+    CausalCLIPSeg: a causal-intervention CLIP-based text-guided 医学的。
 image segmentation network (MICCAI 2024).
 
 Algorithm (faithful to the paper, NOT copied from the repo):
@@ -55,7 +56,7 @@ from medseg.utils.weight_downloader import hf_from_pretrained
 
 
 # ---------------------------------------------------------------------------
-# optional HF dependency
+# 可选 HF dependency / optional HF dependency
 # ---------------------------------------------------------------------------
 try:
     from transformers import CLIPModel  # type: ignore
@@ -65,10 +66,11 @@ except Exception:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Visual backbone (ResNet-50 stages, mirrors CLIP-RN50 stage signature)
+# Visual 骨干网络 ( ResNet - 50 阶段, mirrors CLIP-RN 50 阶段 signature ) / Visual backbone (ResNet-50 stages, mirrors CLIP-RN50 stage signature)
 # ---------------------------------------------------------------------------
 class _ResNet50Backbone(nn.Module):
-    """ResNet-50 stages: C2(/8) C3(/16) C4(/32). Out channels (512, 1024, 2048)."""
+    """ResNet - 50 阶段: C2 ( / 8 ) C3 ( / 16 ) C4 ( / 32 ). Out 通道 ( 512, 1024, 2048 )。
+        ResNet-50 stages: C2(/8) C3(/16) C4(/32). Out channels (512, 1024, 2048)."""
 
     out_channels = (512, 1024, 2048)
 
@@ -98,7 +100,7 @@ class _ResNet50Backbone(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# CLIP-style text encoder (optionally seeded from HF CLIP)
+# CLIP-style text 编码器 / CLIP-style text encoder (optionally seeded from HF CLIP)
 # ---------------------------------------------------------------------------
 class _CLIPTextEncoder(nn.Module):
     def __init__(
@@ -173,7 +175,7 @@ class _CLIPTextEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# FPN-style cross-modal neck with text fusion at the deepest stage
+# FPN-style cross-modal neck with text 融合 at the deepest 阶段 / FPN-style cross-modal neck with text fusion at the deepest stage
 # ---------------------------------------------------------------------------
 class _CrossModalNeck(nn.Module):
     def __init__(self, in_channels=(512, 1024, 2048), out_channels: int = 512, text_dim: int = 512):
@@ -213,7 +215,7 @@ class _CrossModalNeck(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Cross-modal attention (pixel tokens query word tokens)
+# Cross-modal 注意力 ( pixel 标记 query word 标记 ) / Cross-modal attention (pixel tokens query word tokens)
 # ---------------------------------------------------------------------------
 class _CrossModalAttention(nn.Module):
     def __init__(self, dim: int, n_heads: int = 8):
@@ -237,10 +239,11 @@ class _CrossModalAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class CausalCLIPSeg(nn.Module):
-    """Causal-intervention CLIP-based medical segmentation network."""
+    """Causal-intervention CLIP-based 医学的 分割 网络。
+        Causal-intervention CLIP-based medical segmentation network."""
 
     is_text_guided = True
 
@@ -282,7 +285,7 @@ class CausalCLIPSeg(nn.Module):
         )
         self.fusion = _CrossModalAttention(dim=neck_dim, n_heads=n_heads)
 
-        # Per-pixel projection head -> embed_dim
+        # Per-pixel projection 头部 - > embed _ dim / Per-pixel projection head -> embed_dim
         self.projector = nn.Sequential(
             nn.Conv2d(neck_dim, neck_dim, 3, 1, 1, bias=False),
             nn.BatchNorm2d(neck_dim), nn.ReLU(inplace=True),
@@ -293,7 +296,7 @@ class CausalCLIPSeg(nn.Module):
         self.W_t = nn.Linear(embed_dim, embed_dim, bias=False)
         self.W_c = nn.Linear(embed_dim, embed_dim, bias=False)
 
-        # Class text embedding (fallback when text=None)
+        # Class text 嵌入 ( fallback when text = None ) / Class text embedding (fallback when text=None)
         self.class_text_embedding = nn.Parameter(torch.zeros(num_classes, embed_dim))
         nn.init.trunc_normal_(self.class_text_embedding, std=0.02)
 
@@ -301,7 +304,7 @@ class CausalCLIPSeg(nn.Module):
         self.context_prompt = nn.Parameter(torch.zeros(num_classes, embed_dim))
         nn.init.trunc_normal_(self.context_prompt, std=0.02)
 
-        # Backdoor mixing weight λ ∈ [0,1] (sigmoid of an unconstrained param)
+        # Backdoor mixing 权重 λ ∈ [ 0, 1 ] ( sigmoid of an unconstrained param ) / Backdoor mixing weight λ ∈ [0,1] (sigmoid of an unconstrained param)
         self._lambda_raw = nn.Parameter(
             torch.tensor(_logit(causal_lambda_init), dtype=torch.float32)
         )
@@ -363,6 +366,7 @@ class CausalCLIPSeg(nn.Module):
     # ------------------------------------------------------------------
     def forward(self, image: torch.Tensor, text: Any = None) -> torch.Tensor:
         """forward(image, text=None) -> (B, num_classes, H, W) logits.
+            前向传播 ( 图像, text = None ) - > ( B, num _ classes, H, W ) logits。
 
         Implements the causal backdoor adjustment::
 
@@ -380,21 +384,21 @@ class CausalCLIPSeg(nn.Module):
         sent_pool = sent_per_class.mean(dim=1)
         F_m = self.neck(c2, c3, c4, sent_pool)
 
-        # Cross-modal fusion (pixel tokens query text tokens)
+        # Cross-modal 融合 ( pixel 标记 query text 标记 ) / Cross-modal fusion (pixel tokens query text tokens)
         B, D, Hm, Wm = F_m.shape
         v_tok = F_m.flatten(2).transpose(1, 2)
         v_tok = self.fusion(v_tok, word, t_mask)
         F_m = v_tok.transpose(1, 2).reshape(B, D, Hm, Wm)
 
-        # Projector + L2-normalised pixel embedding
+        # Projector + L2-normalised pixel 嵌入 / Projector + L2-normalised pixel embedding
         F_p = self.projector(F_m)
         F_p = F.normalize(F_p, dim=1)
 
-        # Factual branch
+        # Factual 分支 / Factual branch
         t_proj = F.normalize(self.W_t(sent_per_class), dim=-1)
         sim_factual = torch.einsum("bcd,bdhw->bchw", t_proj, F_p)
 
-        # Counterfactual branch (per-class context prompt, broadcast over batch)
+        # Counterfactual 分支 ( per-class context prompt, broadcast over 批次 ) / Counterfactual branch (per-class context prompt, broadcast over batch)
         c_proj = F.normalize(self.W_c(self.context_prompt), dim=-1)
         c_proj = c_proj.unsqueeze(0).expand(B, -1, -1)
         sim_cf = torch.einsum("bcd,bdhw->bchw", c_proj, F_p)

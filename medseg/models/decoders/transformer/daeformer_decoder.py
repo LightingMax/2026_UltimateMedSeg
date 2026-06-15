@@ -1,4 +1,5 @@
 """DAEFormer decoder module.
+    DAEFormer 解码器。
 
 Extracted from networks/transformer/daeformer_model.py for modular reuse.
 Faithful to the original: CrossAttentionBlock for fusing encoder features
@@ -189,11 +190,12 @@ class CrossAttentionBlock(nn.Module):
         return tx + self.mlp(self.norm2(tx), self.H, self.W)
 
 
-# ── DAEFormer Decoder ───────────────────────────────────────────────────────
+# ── DAEFormer 解码器 / ── DAEFormer Decoder ───────────────────────────────────────────────────────
 
 @DECODER_REGISTRY.register("daeformer")
 class DAEFormerDecoder(nn.Module):
     """DAEFormer cross-attention decoder.
+        DAEFormer cross-attention 解码器。
 
     Standard interface: ``forward(bottleneck_feat, skip_features)``
     where skip_features = [x1(64ch,56x56), x2(128ch,28x28)].
@@ -213,19 +215,19 @@ class DAEFormerDecoder(nn.Module):
                  token_mlp="mix_skip", head_count=1,
                  **kwargs):
         super().__init__()
-        # Adapt to actual encoder channels
-        # skip_features[-1] = encoder_channels[-1] (last skip), bottleneck = bottleneck_channels
+        # Adapt to actual 编码器 / Adapt to actual encoder channels
+        # skip_features[-1] = encoder_channels[-1] (last 跳跃连接 / skip_features[-1] = encoder_channels[-1] (last skip), bottleneck = bottleneck_channels
         skip_ch = encoder_channels[-1] if len(encoder_channels) > 0 else 128
         bneck_ch = bottleneck_channels
-        # The CrossAttentionBlock reprojection doubles channels, so we need
-        # in_dim[2] == in_dim[1] for the concat to work. Project bottleneck if needed.
+        # The CrossAttentionBlock reprojection doubles 通道, so we need / The CrossAttentionBlock reprojection doubles channels, so we need
+        # in_dim[2] == in_dim[1] for the concat to work. Project 瓶颈层 / in_dim[2] == in_dim[1] for the concat to work. Project bottleneck if needed.
         if in_dim is None:
             in_dim = [skip_ch, skip_ch, skip_ch]
         if key_dim is None:
             key_dim = list(in_dim)
 
         H, W = image_size, image_size
-        # Determine spatial sizes based on encoder strides
+        # Determine spatial sizes based on 编码器 / Determine spatial sizes based on encoder strides
         n_stages = len(encoder_channels)
         if n_stages >= 4:
             h2, w2 = H // 16, W // 16  # skip at stride /16
@@ -237,7 +239,7 @@ class DAEFormerDecoder(nn.Module):
             h2, w2 = H // 4, W // 4
             h3, w3 = H // 8, W // 8
 
-        # Project bottleneck to skip_ch if dimensions differ
+        # Project 瓶颈层 / Project bottleneck to skip_ch if dimensions differ
         self.bneck_proj = (nn.Conv2d(bneck_ch, skip_ch, 1)
                            if bneck_ch != skip_ch else nn.Identity())
 
@@ -269,7 +271,7 @@ class DAEFormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # Project bottleneck to match skip channels if needed
+        # Project bottleneck to match 跳跃连接 / Project bottleneck to match skip channels if needed
         x3 = self.bneck_proj(bottleneck_feat)
         x2 = skip_features[-1]
         B = x3.shape[0]
@@ -277,7 +279,7 @@ class DAEFormerDecoder(nn.Module):
         _, _, h2, w2 = x2.shape
 
         x3_seq = x3.flatten(2).transpose(1, 2)
-        # Rebuild cross_attn_3 spatial dims if changed (different encoder)
+        # Rebuild cross_attn_3 spatial dims if changed (different 编码器 / Rebuild cross_attn_3 spatial dims if changed (different encoder)
         if (h3, w3) != getattr(self, '_cached_h3w3', (None, None)):
             self._cached_h3w3 = (h3, w3)
             self.cross_attn_3.H = h3
@@ -294,7 +296,7 @@ class DAEFormerDecoder(nn.Module):
 
         x3_4d = x3_cross.view(B, h3, w3, -1).permute(0, 3, 1, 2)
         x3_up = self.d3(x3_4d)
-        # Align spatial size to x2 if needed
+        # Align 空间的 大小 to x2 if needed / Align spatial size to x2 if needed
         if x3_up.shape[2:] != x2.shape[2:]:
             x3_up = F.interpolate(x3_up, size=x2.shape[2:], mode='bilinear',
                                   align_corners=False)

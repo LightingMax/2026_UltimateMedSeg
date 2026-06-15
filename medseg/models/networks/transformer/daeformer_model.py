@@ -1,4 +1,5 @@
 """DAEFormer – self-contained port from github.com/xmindflow/DAEFormer.
+    DAEFormer – self-contained 移植 from github. com / xmindflow / DAEFormer。
 
 Combines DAEFormer.py and segformer.py into a single file.
 Official repo: https://github.com/xmindflow/DAEFormer
@@ -86,7 +87,7 @@ class OverlapPatchEmbeddings(nn.Module):
         return self.norm(fx), H, W
 
 
-# ── DAEFormer-specific attention modules ─────────────────────────────────────
+# ─ ─ DAEFormer-specific 注意力 modules ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── DAEFormer-specific attention modules ─────────────────────────────────────
 class Cross_Attention(nn.Module):
     def __init__(self, key_channels, value_channels, height, width,
                  head_count=1):
@@ -310,7 +311,7 @@ class MiT(nn.Module):
         return outs
 
 
-# ── Decoder components ───────────────────────────────────────────────────────
+# ── 解码器 / ── Decoder components ───────────────────────────────────────────────────────
 class PatchExpand(nn.Module):
     def __init__(self, input_resolution, dim, dim_scale=2, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -467,7 +468,8 @@ class _DAEFormer(nn.Module):
 
 
 class DAEFormer(nn.Module):
-    """DAEFormer wrapper with standard UltimateMedSeg interface."""
+    """DAEFormer 封装器 with 标准 UltimateMedSeg interface。
+        DAEFormer wrapper with standard UltimateMedSeg interface."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()

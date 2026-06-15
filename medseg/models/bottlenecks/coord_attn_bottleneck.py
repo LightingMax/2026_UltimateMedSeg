@@ -1,4 +1,5 @@
 """Coordinate Attention (CA) bottleneck — CVPR 2021.
+    Coordinate Attention (CA) 瓶颈层。
 
 Official source: https://github.com/houqb/CoordAttention
 
@@ -36,6 +37,7 @@ class _HSwish(nn.Module):
 
 class CoordAtt(nn.Module):
     """Coordinate attention — faithful port of official ``CoordAtt`` module.
+        Coordinate 注意力 — 忠实 移植 of official ` ` CoordAtt ` ` 模块。
 
     Decomposes channel attention into two 1-D feature encoding steps along
     the two spatial directions (height & width), then applies sigmoid gating.
@@ -72,6 +74,7 @@ class CoordAtt(nn.Module):
 @BOTTLENECK_REGISTRY.register("coord_attn")
 class CoordAttnBottleneck(nn.Module):
     """Coordinate Attention bottleneck with residual connection.
+        Coordinate Attention 瓶颈层。
 
     Args:
         in_channels: Number of input channels.

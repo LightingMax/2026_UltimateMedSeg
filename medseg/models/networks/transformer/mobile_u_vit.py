@@ -1,4 +1,5 @@
 """Mobile-U-ViT: Large Kernel + U-shaped Vision Transformer.
+    Mobile-U-ViT: Large 卷积核 + U-shaped Vision Transformer。
 
 Lightweight hybrid network combining large-kernel depthwise convolutions
 with U-shaped ViT for efficient medical image segmentation.
@@ -22,7 +23,8 @@ from typing import List, Optional
 
 
 class _LargeKernelDWConv(nn.Module):
-    """Large kernel depthwise separable convolution."""
+    """Large 卷积核 depthwise separable 卷积。
+        Large kernel depthwise separable convolution."""
 
     def __init__(self, dim, kernel_size=7):
         super().__init__()
@@ -37,7 +39,8 @@ class _LargeKernelDWConv(nn.Module):
 
 
 class _MobileBlock(nn.Module):
-    """Mobile building block: large-kernel DWConv + FFN."""
+    """Mobile building 块: large-kernel DWConv + FFN。
+        Mobile building block: large-kernel DWConv + FFN."""
 
     def __init__(self, dim, mlp_ratio=4.0):
         super().__init__()
@@ -58,7 +61,8 @@ class _MobileBlock(nn.Module):
 
 
 class _ViTBlock(nn.Module):
-    """Lightweight ViT block with reduced heads."""
+    """轻量级 ViT 块 with reduced heads。
+        Lightweight ViT block with reduced heads."""
 
     def __init__(self, dim, num_heads=4, mlp_ratio=4.0):
         super().__init__()
@@ -80,6 +84,7 @@ class _ViTBlock(nn.Module):
 
 class MobileUViT(nn.Module):
     """Mobile-U-ViT: Large kernel conv + U-shaped ViT.
+        Mobile-U-ViT: Large 卷积核 conv + U-shaped ViT。
 
     Args:
         in_channels: Input channels.
@@ -104,14 +109,14 @@ class MobileUViT(nn.Module):
         embed_dims = embed_dims or [32, 64, 128, 256]
         depths = depths or [2, 2, 2, 2]
 
-        # Stem: large kernel
+        # 主干: large 卷积核 / Stem: large kernel
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0], 7, 2, 3, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
             nn.GELU(),
         )
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc_stages = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         for i in range(len(embed_dims)):
@@ -123,7 +128,7 @@ class MobileUViT(nn.Module):
                     nn.BatchNorm2d(embed_dims[i + 1]),
                 ))
 
-        # Bottleneck: ViT block
+        # 瓶颈层: ViT 块 / Bottleneck: ViT block
         if use_vit:
             self.bottleneck = nn.Sequential(
                 _ViTBlock(embed_dims[-1], num_heads=4),
@@ -135,7 +140,7 @@ class MobileUViT(nn.Module):
                 _MobileBlock(embed_dims[-1]),
             )
 
-        # Decoder
+        # 解码 / Decoder
         self.upsamples = nn.ModuleList()
         self.dec_stages = nn.ModuleList()
         for i in range(len(embed_dims) - 1, 0, -1):
@@ -146,7 +151,7 @@ class MobileUViT(nn.Module):
                 *[_MobileBlock(embed_dims[i - 1]) for _ in range(depths[i - 1])]
             ))
 
-        # Head
+        # 头部 / Head
         self.head = nn.Sequential(
             nn.Conv2d(embed_dims[0], embed_dims[0], 3, 1, 1, bias=False),
             nn.BatchNorm2d(embed_dims[0]),
@@ -158,7 +163,7 @@ class MobileUViT(nn.Module):
         H_in, W_in = x.shape[2:]
         x = self.stem(x)
 
-        # Encoder
+        # 编码器 / Encoder
         skips = []
         for i, stage in enumerate(self.enc_stages):
             x = stage(x)
@@ -166,10 +171,10 @@ class MobileUViT(nn.Module):
             if i < len(self.downsamples):
                 x = self.downsamples[i](x)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         x = self.bottleneck(x)
 
-        # Decoder
+        # 解码 / Decoder
         for i, (up, dec) in enumerate(zip(self.upsamples, self.dec_stages)):
             x = up(x)
             skip = skips[len(skips) - 2 - i]

@@ -1,4 +1,5 @@
-"""Model builder: assembles encoder + bottleneck + decoder + skip into a full segmentation model."""
+"""Model builder: assembles 编码器。
+    Model builder: assembles encoder + bottleneck + decoder + skip into a full segmentation model."""
 
 import torch
 import torch.nn as nn
@@ -14,7 +15,7 @@ from .registry import (
     LOSS_REGISTRY,
 )
 
-# Import subpackages to trigger component registration
+# Import subpackages to 触发 component 配准 / Import subpackages to trigger component registration
 from .models import encoders  # noqa: F401
 from .models import decoders  # noqa: F401
 from .models import bottlenecks  # noqa: F401
@@ -22,12 +23,14 @@ from .models import skip_connections  # noqa: F401
 
 
 class IncompatibleEncoderError(ValueError):
-    """Raised when a decoder requires a specific encoder that is not provided."""
+    """Raised when a decoder requires a specific 编码器。
+        Raised when a decoder requires a specific encoder that is not provided."""
     pass
 
 
 class FeatureAdapter(nn.Module):
     """Adapts encoder feature count to match decoder requirements.
+        Adapts 编码器。
 
     When encoder provides fewer features than decoder needs, generates
     additional downsampled features (deeper stages) via stride-2 convolutions.
@@ -40,7 +43,7 @@ class FeatureAdapter(nn.Module):
         self.n_extra = max(0, target_stages - n_have)
         self.target_stages = target_stages
 
-        # Create downsampling convs for extra features (deeper stages)
+        # Create 下采样 convs for extra 特征 ( deeper 阶段 ) / Create downsampling convs for extra features (deeper stages)
         self.down_convs = nn.ModuleList()
         if self.n_extra > 0 and n_have > 0:
             last_ch = encoder_channels[-1]
@@ -58,7 +61,7 @@ class FeatureAdapter(nn.Module):
 
     def forward(self, features: List[torch.Tensor]) -> List[torch.Tensor]:
         if self.n_extra > 0:
-            # Keep all originals, append downsampled extras at the end (deep)
+            # Keep all originals, append downsampled extras at the end ( 深度 ) / Keep all originals, append downsampled extras at the end (deep)
             adapted = list(features)
             x = features[-1]  # deepest feature
             for conv in self.down_convs:
@@ -73,6 +76,7 @@ class FeatureAdapter(nn.Module):
 
 class SegmentationModel(nn.Module):
     """Modular segmentation model assembled from registry components.
+        模块化的 分割 模型 assembled from 注册表 components。
 
     Architecture: Input -> Encoder -> Bottleneck -> Decoder (with Skip connections) -> Head -> Output
     """
@@ -94,6 +98,7 @@ class SegmentationModel(nn.Module):
 
     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Forward pass.
+            前向传播 pass。
 
         Args:
             x: input image batch (B, C, H, W)
@@ -107,33 +112,33 @@ class SegmentationModel(nn.Module):
                 bespoke to that architecture and not exposed through this
                 generic builder path.
         """
-        # Encoder: returns multi-scale features [stage1, stage2, ..., stageN]
+        # 编码器: 返回 多尺度 特征 [ stage1, stage2,..., stageN ] / Encoder: returns multi-scale features [stage1, stage2, ..., stageN]
         features = self.encoder(x)
 
-        # Bottleneck: processes the deepest feature
+        # 瓶颈层: 处理 the deepest 特征 / Bottleneck: processes the deepest feature
         bottleneck_feat = self.bottleneck(features[-1])
 
-        # Inject data-side mask into any mask-aware skip module(s)
+        # Inject data-side mask into any mask-aware 跳跃连接 / Inject data-side mask into any mask-aware skip module(s)
         mask_targets = self._collect_mask_targets() if mask is not None else []
         for skip_mod in mask_targets:
             skip_mod.set_mask(mask)
 
         try:
-            # Adapt skip features if encoder/decoder stage count mismatch
+            # Adapt skip features if 编码器 / Adapt skip features if encoder/decoder stage count mismatch
             skip_feats = features[:-1]
             if self.skip_adapter is not None:
                 skip_feats = self.skip_adapter(skip_feats)
-            # Decoder: takes bottleneck output + skip features, returns decoded feature
+            # Decoder: takes bottleneck output + 跳跃连接 / Decoder: takes bottleneck output + skip features, returns decoded feature
             decoded = self.decoder(bottleneck_feat, skip_feats)
         finally:
-            # Always clear after decoder runs to avoid state leaking across batches
+            # Always clear after 解码器 / Always clear after decoder runs to avoid state leaking across batches
             for skip_mod in mask_targets:
                 skip_mod.clear_mask()
 
-        # Segmentation head
+        # 分割 头部 / Segmentation head
         out = self.head(decoded)
 
-        # Upsample to input size if needed
+        # 上采样 to 输入 大小 if needed / Upsample to input size if needed
         if out.shape[2:] != x.shape[2:]:
             out = F.interpolate(out, size=x.shape[2:], mode="bilinear", align_corners=False)
 
@@ -141,6 +146,7 @@ class SegmentationModel(nn.Module):
 
     def _collect_mask_targets(self):
         """Walk the decoder subtree to find any skip module exposing
+            Walk the 解码器。
         ``set_mask``/``clear_mask`` (e.g. GABSkip). Returns a list of modules.
         """
         targets = []
@@ -152,7 +158,8 @@ class SegmentationModel(nn.Module):
 
 
 class SegmentationHead(nn.Module):
-    """Simple segmentation head: Conv 1x1 to num_classes."""
+    """简单 分割 头部: Conv 1x1 to num _ classes。
+        Simple segmentation head: Conv 1x1 to num_classes."""
 
     def __init__(self, in_channels: int, num_classes: int):
         super().__init__()
@@ -164,6 +171,7 @@ class SegmentationHead(nn.Module):
 
 def build_model(cfg: Dict[str, Any]) -> nn.Module:
     """Build a segmentation model from config dict.
+        Build a 分割 模型 from 配置 dict。
 
     Args:
         cfg: Configuration dict with keys: encoder, decoder, skip_connection, bottleneck, num_classes.
@@ -174,7 +182,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
     """
     model_cfg = cfg.get("model", cfg)
 
-    # Ensemble of multiple sub-models (logit averaging)
+    # 集成 of multiple sub-models ( logit averaging ) / Ensemble of multiple sub-models (logit averaging)
     model_type = model_cfg.get("type", None)
     if model_type in ("ensemble", "logit_ensemble"):
         from medseg.inference.ensemble import build_ensemble_from_config
@@ -188,13 +196,13 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
 
     num_classes = model_cfg.get("num_classes", 2)
     img_size = model_cfg.get("img_size", 224)
-    # 'native' keyword: defer to encoder's native_img_size attribute
+    # 'native' keyword: defer to 编码器 / 'native' keyword: defer to encoder's native_img_size attribute
     if img_size == "native":
         enc_cls_for_native = ENCODER_REGISTRY.get(model_cfg["encoder"]["name"])
         img_size = getattr(enc_cls_for_native, "native_img_size", 224)
         print(f"[model_builder] img_size='native' resolved to {img_size} for encoder {model_cfg['encoder']['name']}")
 
-    # Build encoder
+    # Build 编码器 / Build encoder
     enc_cfg = model_cfg["encoder"]
     enc_name = enc_cfg["name"]
     enc_cls = ENCODER_REGISTRY.get(enc_name)
@@ -205,7 +213,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
         **enc_cfg.get("params", {}),
     )
 
-    # Apply freeze policy from yaml if the encoder supports it
+    # Apply freeze policy from yaml if the 编码器 / Apply freeze policy from yaml if the encoder supports it
     freeze_cfg = enc_cfg.get("freeze_cfg", {}) or {}
     if freeze_cfg and hasattr(encoder, "set_freeze_policy"):
         encoder.set_freeze_policy(
@@ -216,7 +224,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
 
     encoder_channels = encoder.out_channels  # List of channel dims per stage
 
-    # Build bottleneck
+    # Build 瓶颈层 / Build bottleneck
     btn_cfg = model_cfg.get("bottleneck", {"name": "none"})
     btn_name = btn_cfg["name"]
     btn_cls = BOTTLENECK_REGISTRY.get(btn_name)
@@ -226,15 +234,15 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
     )
     bottleneck_channels = getattr(bottleneck, "out_channels", encoder_channels[-1])
 
-    # Build decoder
+    # Build 解码器 / Build decoder
     dec_cfg = model_cfg["decoder"]
     dec_name = dec_cfg["name"]
     dec_cls = DECODER_REGISTRY.get(dec_name)
 
-    # Check if decoder has internal skip mechanism
+    # Check if 解码器 / Check if decoder has internal skip mechanism
     has_internal_skip = getattr(dec_cls, "has_internal_skip", False)
 
-    # Build skip connection only for decoders that use external skip
+    # Build skip connection only for decoders that use external 跳跃连接 / Build skip connection only for decoders that use external skip
     skip_connection = None
     if not has_internal_skip:
         skip_cfg = model_cfg.get("skip_connection", {"name": "concat"})
@@ -242,12 +250,12 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
         skip_cls = SKIP_REGISTRY.get(skip_name)
         skip_connection = skip_cls(**skip_cfg.get("params", {}))
 
-    # Determine if we need a feature adapter for stage count mismatch
+    # Determine if we need a 特征 适配器 for 阶段 count mismatch / Determine if we need a feature adapter for stage count mismatch
     skip_adapter = None
     required_stages = getattr(dec_cls, "required_skip_stages", None)
     skip_channels = encoder_channels[:-1]  # raw skip channels from encoder
 
-    # Check if decoder requires a specific encoder type (incompatible with generic)
+    # Check if decoder requires a specific 编码器 / Check if decoder requires a specific encoder type (incompatible with generic)
     requires_encoder = getattr(dec_cls, "requires_encoder", None)
     if requires_encoder is not None and enc_name != requires_encoder:
         raise IncompatibleEncoderError(
@@ -258,7 +266,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
 
     if required_stages is not None and len(skip_channels) != required_stages:
         skip_adapter = FeatureAdapter(skip_channels, required_stages)
-        # Compute adapted channel list for decoder
+        # Compute adapted channel list for 解码器 / Compute adapted channel list for decoder
         n_have = len(skip_channels)
         n_keep = min(n_have, required_stages) if required_stages < n_have else n_have
         adapted_channels = list(skip_channels[-n_keep:]) if n_keep < n_have else list(skip_channels)
@@ -276,14 +284,15 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
     )
     decoder_out_channels = getattr(decoder, "out_channels", encoder_channels[0])
 
-    # Segmentation head
+    # 分割 头部 / Segmentation head
     head = SegmentationHead(decoder_out_channels, num_classes)
 
     return SegmentationModel(encoder, decoder, bottleneck, head, skip_adapter)
 
 
 def build_model_from_yaml(yaml_path: str) -> nn.Module:
-    """Build model from a YAML config file."""
+    """Build 模型 from a YAML 配置 file。
+        Build model from a YAML config file."""
     with open(yaml_path, "r") as f:
         cfg = yaml.safe_load(f)
     return build_model(cfg)

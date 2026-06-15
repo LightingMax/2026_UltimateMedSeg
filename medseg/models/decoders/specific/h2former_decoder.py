@@ -1,4 +1,5 @@
 """H2Former decoder module.
+    H2Former 解码器。
 
 Extracted from networks/transformer/h2former_model.py for modular reuse.
 Faithful to the original H2Former decoder: bilinear 2x upsample + concat skip
@@ -17,7 +18,8 @@ from medseg.registry import DECODER_REGISTRY
 
 
 class _DecoderStep(nn.Module):
-    """Single decoder step: bilinear 2x up -> concat skip -> 2x Conv-BN-ReLU."""
+    """Single 解码器。
+        Single decoder step: bilinear 2x up -> concat skip -> 2x Conv-BN-ReLU."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -40,6 +42,7 @@ class _DecoderStep(nn.Module):
 @DECODER_REGISTRY.register("h2former")
 class H2FormerDecoder(nn.Module):
     """H2Former-style UNet decoder with bilinear upsampling + concat skip.
+        H2Former-style UNet 解码器。
 
     Automatically adapts to any encoder: builds one decoder stage per skip
     feature. Each stage does bilinear 2x upsample + concat skip + two
@@ -54,9 +57,9 @@ class H2FormerDecoder(nn.Module):
     def __init__(self, encoder_channels: List[int], bottleneck_channels: int,
                  skip_connection=None, **kwargs):
         super().__init__()
-        # encoder_channels = [c0, c1, ..., cN] shallow→deep (skip channels)
-        # Build decoder from deep to shallow:
-        #   first step: bottleneck -> c_deep
+        # 编码器 _ 通道 = [ c0, c1,..., cN ] 浅层 → 深度 ( 跳跃 通道 ) / encoder_channels = [c0, c1, ..., cN] shallow→deep (skip channels)
+        # Build 解码器 / Build decoder from deep to shallow:
+        # first step: 瓶颈层 / first step: bottleneck -> c_deep
         #   subsequent steps: c_i -> c_{i-1}
         skips_reversed = list(reversed(encoder_channels))  # [deep, ..., shallow]
         in_channels = [bottleneck_channels] + skips_reversed[:-1]
@@ -74,7 +77,7 @@ class H2FormerDecoder(nn.Module):
 
     def forward(self, bottleneck_feat: torch.Tensor,
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
-        # skip_features: [shallow, ..., deep]
+        # 跳跃 _ 特征: [ 浅层,..., 深度 ] / skip_features: [shallow, ..., deep]
         skips_reversed = list(reversed(skip_features))  # [deep, ..., shallow]
 
         x = bottleneck_feat

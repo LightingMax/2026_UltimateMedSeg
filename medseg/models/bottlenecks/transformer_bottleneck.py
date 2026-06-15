@@ -1,4 +1,5 @@
-"""Transformer bottleneck."""
+"""Transformer 瓶颈层。
+    Transformer bottleneck."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -29,7 +30,8 @@ class TransformerLayer(nn.Module):
 
 @BOTTLENECK_REGISTRY.register("transformer")
 class TransformerBottleneck(nn.Module):
-    """Transformer bottleneck: applies transformer layers to bottleneck features."""
+    """Transformer bottleneck: applies transformer layers to 瓶颈层。
+        Transformer bottleneck: applies transformer layers to bottleneck features."""
     def __init__(self, in_channels, num_layers=2, num_heads=8, mlp_ratio=4.0, **kwargs):
         super().__init__()
         self.layers = nn.ModuleList([

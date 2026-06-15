@@ -1,4 +1,5 @@
 """MT-UNet Encoder: faithful port from https://github.com/Dootmaan/MT-UNet
+    MT-UNet 编码器。
 
 Reference: Wang et al., "Mixed Transformer U-Net for Medical Image Segmentation"
 All class/attribute names match the original for pretrained weight loading.
@@ -28,9 +29,10 @@ class ConvBNReLU(nn.Module):
         return self.layer(x)
 
 
-# ============= U_encoder (CNN stem) =============
+# = = = = = = = = = = = = = U _ 编码器 ( CNN 主干 ) = = = = = = = = = = = = = / ============= U_encoder (CNN stem) =============
 class U_encoder(nn.Module):
-    """CNN stem for MT-UNet."""
+    """CNN 主干 for MT-UNet。
+        CNN stem for MT-UNet."""
     def __init__(self):
         super(U_encoder, self).__init__()
         self.econv0 = nn.Sequential(
@@ -75,9 +77,10 @@ class Stem(nn.Module):
         return x, features
 
 
-# ============= Attention modules =============
+# = = = = = = = = = = = = = 注意力 modules = = = = = = = = = = = = = / ============= Attention modules =============
 class WinAttention(nn.Module):
-    """Window attention for MT-UNet."""
+    """窗口 注意力 for MT-UNet。
+        Window attention for MT-UNet."""
     def __init__(self, dim, win_size=4, num_heads=8):
         super(WinAttention, self).__init__()
         self.num_heads = num_heads
@@ -92,13 +95,13 @@ class WinAttention(nn.Module):
         B, N, C = x.shape
         H = W = int(np.sqrt(N))
         x = x.view(B, H, W, C)
-        # Pad if not divisible by window size
+        # Pad if not divisible by 窗口 大小 / Pad if not divisible by window size
         pad_h = (self.win_size - H % self.win_size) % self.win_size
         pad_w = (self.win_size - W % self.win_size) % self.win_size
         if pad_h > 0 or pad_w > 0:
             x = F.pad(x, (0, 0, 0, pad_w, 0, pad_h))
         Hp, Wp = x.shape[1], x.shape[2]
-        # Window partition
+        # 窗口 partition / Window partition
         nH = Hp // self.win_size
         nW = Wp // self.win_size
         x = x.view(B, nH, self.win_size, nW, self.win_size, C)
@@ -111,10 +114,10 @@ class WinAttention(nn.Module):
         x = (attn @ v).transpose(1, 2).reshape(x.shape[0], self.win_size * self.win_size, C)
         x = self.proj(x)
 
-        # Window reverse
+        # 窗口 reverse / Window reverse
         x = x.view(B, nH, nW, self.win_size, self.win_size, C)
         x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, Hp, Wp, C)
-        # Remove padding
+        # Remove 填充 / Remove padding
         if pad_h > 0 or pad_w > 0:
             x = x[:, :H, :W, :]
         x = x.reshape(B, H * W, C)
@@ -122,7 +125,8 @@ class WinAttention(nn.Module):
 
 
 class DlightConv(nn.Module):
-    """Depth-wise lightweight convolution."""
+    """Depth-wise 轻量级 卷积。
+        Depth-wise lightweight convolution."""
     def __init__(self, dim, win_size=4):
         super(DlightConv, self).__init__()
         self.linear = nn.Linear(dim, dim)
@@ -133,7 +137,7 @@ class DlightConv(nn.Module):
         H = W = int(np.sqrt(N))
         x = self.linear(x)
         x = x.view(B, H, W, C).permute(0, 3, 1, 2)
-        # Pad if not divisible by window size
+        # Pad if not divisible by 窗口 大小 / Pad if not divisible by window size
         pad_h = (self.win_size - H % self.win_size) % self.win_size
         pad_w = (self.win_size - W % self.win_size) % self.win_size
         if pad_h > 0 or pad_w > 0:
@@ -153,7 +157,8 @@ class DlightConv(nn.Module):
 
 
 class GaussianTrans(nn.Module):
-    """Gaussian transform attention."""
+    """Gaussian transform 注意力。
+        Gaussian transform attention."""
     def __init__(self):
         super(GaussianTrans, self).__init__()
         self.bias = nn.Parameter(torch.tensor([0.0]))
@@ -163,7 +168,8 @@ class GaussianTrans(nn.Module):
 
 
 class CSAttention(nn.Module):
-    """Combined Spatial Attention for MT-UNet."""
+    """Combined 空间的 注意力 for MT-UNet。
+        Combined Spatial Attention for MT-UNet."""
     def __init__(self, dim, configs):
         super(CSAttention, self).__init__()
         self.win_attn = WinAttention(dim, configs.get("win_size", 4), configs.get("head", 8))
@@ -178,7 +184,8 @@ class CSAttention(nn.Module):
 
 
 class MEAttention(nn.Module):
-    """Mixed Efficient Attention for MT-UNet."""
+    """Mixed 高效的 注意力 for MT-UNet。
+        Mixed Efficient Attention for MT-UNet."""
     def __init__(self, dim, configs):
         super(MEAttention, self).__init__()
         self.num_heads = configs.get("head", 8)
@@ -204,7 +211,8 @@ class MEAttention(nn.Module):
 
 # ============= EAmodule =============
 class EAmodule(nn.Module):
-    """Mixed transform block: CSAttention + MEAttention."""
+    """Mixed transform 块: CSAttention + MEAttention。
+        Mixed transform block: CSAttention + MEAttention."""
     def __init__(self, dim, configs=None):
         super(EAmodule, self).__init__()
         if configs is None:
@@ -226,7 +234,7 @@ class EAmodule(nn.Module):
         return x
 
 
-# ============= encoder_block =============
+# = = = = = = = = = = = = = 编码器 _ 块 = = = = = = = = = = = = = / ============= encoder_block =============
 class encoder_block(nn.Module):
     def __init__(self, dim, configs=None):
         super(encoder_block, self).__init__()
@@ -250,6 +258,7 @@ class encoder_block(nn.Module):
 @ENCODER_REGISTRY.register("mtunet")
 class MTUNetEncoder(nn.Module):
     """MT-UNet Encoder wrapper.
+        MT-UNet 编码器。
     Faithful to https://github.com/Dootmaan/MT-UNet
     """
 
@@ -274,7 +283,7 @@ class MTUNetEncoder(nn.Module):
             EAmodule(1024, configs),
             EAmodule(1024, configs))
 
-        # out_channels: stem features [64, 128, 256] + encoder skips [256, 512] + bottleneck [1024]
+        # out_channels: stem features [64, 128, 256] + 编码器 / out_channels: stem features [64, 128, 256] + encoder skips [256, 512] + bottleneck [1024]
         self._out_channels = [64, 128, 256, 256, 512, 1024]
 
     @property
@@ -299,6 +308,6 @@ class MTUNetEncoder(nn.Module):
         H = W = int(np.sqrt(N))
         bottleneck_feat = x.view(B, H, W, C).permute(0, 3, 1, 2)
 
-        # Return all multi-scale features
+        # 返回 all 多尺度 特征 / Return all multi-scale features
         all_features = stem_features + skips + [bottleneck_feat]
         return all_features

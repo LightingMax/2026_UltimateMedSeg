@@ -1,4 +1,5 @@
 """xLSTM-UNet 2D: UNet with Vision-LSTM (xLSTM) for Medical Image Segmentation.
+    xLSTM-UNet 2D: UNet with Vision-LSTM ( xLSTM ) for 医学的 图像 分割。
 
 Faithful reimplementation from:
   https://github.com/tianrun-chen/xLSTM-UNet-PyTorch  (arXiv 2407.01530)
@@ -69,7 +70,8 @@ def parallel_stabilized_simple(
         igate_preact, fgate_preact,
         lower_triangular_matrix=None,
         stabilize_rowwise=True, eps=1e-6):
-    """mLSTM cell in parallel form (stabilized)."""
+    """mLSTM 细胞 in 并行的 form ( stabilized )。
+        mLSTM cell in parallel form (stabilized)."""
     B, NH, S, DH = queries.shape
     _dtype, _device = queries.dtype, queries.device
 
@@ -105,7 +107,8 @@ def parallel_stabilized_simple(
 
 
 class _LayerNorm(nn.Module):
-    """LayerNorm with optional bias and residual weight (from ViL)."""
+    """LayerNorm with 可选 偏置 and 残差 权重 ( from ViL )。
+        LayerNorm with optional bias and residual weight (from ViL)."""
     def __init__(self, ndim, weight=True, bias=False, eps=1e-5, residual_weight=True):
         super().__init__()
         self.weight = nn.Parameter(torch.zeros(ndim)) if weight else None
@@ -158,7 +161,7 @@ class LinearHeadwiseExpand(nn.Module):
             nn.init.zeros_(self.bias.data)
 
     def forward(self, x):
-        # x: (..., dim) -> rearrange to (..., num_heads, dim_per_head)
+        # x: (..., dim ) - > rearrange to (..., num _ heads, dim _ per _ 头部 ) / x: (..., dim) -> rearrange to (..., num_heads, dim_per_head)
         shape = x.shape[:-1]
         nh = self.num_heads
         dh = x.shape[-1] // nh
@@ -172,7 +175,8 @@ class LinearHeadwiseExpand(nn.Module):
 
 
 class CausalConv1d(nn.Module):
-    """Causal depthwise 1D convolution (from ViL)."""
+    """Causal depthwise 1D 卷积 ( from ViL )。
+        Causal depthwise 1D convolution (from ViL)."""
     def __init__(self, dim, kernel_size=4, bias=True):
         super().__init__()
         self.pad = kernel_size - 1
@@ -186,7 +190,8 @@ class CausalConv1d(nn.Module):
 
 
 class MatrixLSTMCell(nn.Module):
-    """mLSTM cell with multi-head structure (from ViL)."""
+    """mLSTM 细胞 with 多头 structure ( from ViL )。
+        mLSTM cell with multi-head structure (from ViL)."""
     def __init__(self, dim, num_heads):
         super().__init__()
         self.dim = dim
@@ -230,7 +235,8 @@ class MatrixLSTMCell(nn.Module):
 
 
 class ViLLayerInner(nn.Module):
-    """Inner ViL layer: up-proj -> conv1d -> mLSTM -> down-proj (from ViL)."""
+    """Inner ViL 层: up-proj - > conv1d - > mLSTM - > down-proj ( from ViL )。
+        Inner ViL layer: up-proj -> conv1d -> mLSTM -> down-proj (from ViL)."""
     def __init__(self, dim, direction, expansion=2, qkv_block_size=4,
                  proj_bias=False, conv_bias=True, kernel_size=4):
         super().__init__()
@@ -287,7 +293,8 @@ class ViLLayerInner(nn.Module):
 
 
 class ViLBlock(nn.Module):
-    """Vision-LSTM block: LayerNorm -> ViLLayer + residual (from ViL)."""
+    """Vision-LSTM 块: LayerNorm - > ViLLayer + 残差 ( from ViL )。
+        Vision-LSTM block: LayerNorm -> ViLLayer + residual (from ViL)."""
     def __init__(self, dim, direction=SequenceTraversal.ROWWISE_FROM_TOP_LEFT):
         super().__init__()
         self.norm = _LayerNorm(ndim=dim, weight=True, bias=False)
@@ -298,11 +305,12 @@ class ViLBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# xLSTMLayer: wraps ViLBlock for 2D feature maps (analogous to MambaLayer)
+# xLSTMLayer: wraps ViLBlock for 2D 特征图 ( analogous to MambaLayer ) / xLSTMLayer: wraps ViLBlock for 2D feature maps (analogous to MambaLayer)
 # ---------------------------------------------------------------------------
 
 class XLSTMLayer(nn.Module):
     """xLSTM layer for 2D features with optional channel_token mode.
+        xLSTM 层 for 2D 特征 with 可选 通道 _ 标记 mode。
 
     Faithful to xLSTM-UNet source:
       - forward_patch_token: spatial tokens (H*W) with channel features (default)
@@ -343,12 +351,12 @@ class XLSTMLayer(nn.Module):
         if x.dtype == torch.float16:
             x = x.float()
         if self.channel_token:
-            # channel_token mode: check spatial token count
+            # 通道 _ 标记 mode: check 空间的 标记 count / channel_token mode: check spatial token count
             n_tokens = x.shape[2:].numel()
             if n_tokens > self._MAX_TOKENS:
                 return x  # skip to avoid O(n^2) memory
             return self.forward_channel_token(x)
-        # patch_token mode: check spatial token count
+        # 图块 _ 标记 mode: check 空间的 标记 count / patch_token mode: check spatial token count
         n_tokens = x.shape[2:].numel()
         if n_tokens > self._MAX_TOKENS:
             return x  # skip to avoid O(n^2) memory
@@ -356,11 +364,12 @@ class XLSTMLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# ResidualXLSTMEncoder (faithful to source: alternating xLSTMLayers)
+# ResidualXLSTMEncoder ( 忠实 to 来源: alternating xLSTMLayers ) / ResidualXLSTMEncoder (faithful to source: alternating xLSTMLayers)
 # ---------------------------------------------------------------------------
 
 class ResidualXLSTMEncoder(nn.Module):
     """Encoder with alternating xLSTM layers at each stage (faithful to source).
+        编码器 with alternating xLSTM layers at each 阶段 ( 忠实 to 来源 )。
 
     Same alternating pattern as U-Mamba Enc but with xLSTM instead of Mamba.
     """
@@ -391,7 +400,7 @@ class ResidualXLSTMEncoder(nn.Module):
         self.conv_pad_sizes = [k // 2 for k in kernel_sizes]
         self.conv_bias = conv_bias
 
-        # Compute feature map sizes and channel_token flags
+        # 计算 特征图 sizes and 通道 _ 标记 flags / Compute feature map sizes and channel_token flags
         do_channel_token = [False] * n_stages
         feature_map_sizes = []
         feature_map_size = list(input_size)
@@ -401,7 +410,7 @@ class ResidualXLSTMEncoder(nn.Module):
             if int(np.prod(feature_map_size)) <= features_per_stage[s]:
                 do_channel_token[s] = True
 
-        # Stem (stage 0)
+        # 主干 ( 阶段 0 ) / Stem (stage 0)
         stem_ch = features_per_stage[0]
         ks0 = kernel_sizes[0]
         pad0 = ks0 // 2
@@ -412,8 +421,8 @@ class ResidualXLSTMEncoder(nn.Module):
               for _ in range(n_blocks_per_stage[0] - 1)]
         )
 
-        # Alternating xLSTM layers for ALL stages
-        # Pattern: bool(s%2) ^ bool(n_stages%2) guarantees last stage has xLSTM
+        # Alternating xLSTM layers for ALL 阶段 / Alternating xLSTM layers for ALL stages
+        # Pattern: bool ( s % 2 ) ^ bool ( n _ 阶段 % 2 ) guarantees last 阶段 has xLSTM / Pattern: bool(s%2) ^ bool(n_stages%2) guarantees last stage has xLSTM
         xlstm_layers = []
         for s in range(n_stages):
             if bool(s % 2) ^ bool(n_stages % 2):
@@ -426,7 +435,7 @@ class ResidualXLSTMEncoder(nn.Module):
                 xlstm_layers.append(nn.Identity())
         self.xlstm_layers = nn.ModuleList(xlstm_layers)
 
-        # Conv stages 1..n_stages-1
+        # Conv 阶段 1.. n _ 阶段 - 1 / Conv stages 1..n_stages-1
         stages = []
         ch = stem_ch
         for s in range(1, n_stages):
@@ -454,11 +463,12 @@ class ResidualXLSTMEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# XLSTMUNetBot: UNet encoder + xLSTMLayer at bottleneck + UNet decoder
+# XLSTMUNetBot: UNet 编码器 / XLSTMUNetBot: UNet encoder + xLSTMLayer at bottleneck + UNet decoder
 # ---------------------------------------------------------------------------
 
 class XLSTMUNetBot(nn.Module):
     """xLSTM-UNet Bot: Standard UNet with xLSTM layer at bottleneck.
+        xLSTM-UNet Bot: Standard UNet with xLSTM layer at 瓶颈层。
 
     Faithful to source: encoder(x) -> xLSTM at bottleneck -> decoder(skips).
     """
@@ -508,11 +518,12 @@ class XLSTMUNetBot(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# XLSTMUNetEnc: ResidualXLSTMEncoder + UNet decoder
+# XLSTMUNetEnc: ResidualXLSTMEncoder + UNet 解码器 / XLSTMUNetEnc: ResidualXLSTMEncoder + UNet decoder
 # ---------------------------------------------------------------------------
 
 class XLSTMUNetEnc(nn.Module):
     """xLSTM-UNet Enc: ResidualXLSTMEncoder + UNet decoder.
+        xLSTM-UNet Enc: ResidualXLSTMEncoder + UNet 解码器。
 
     Faithful to source: alternating xLSTM layers in encoder, deep supervision in decoder.
     """

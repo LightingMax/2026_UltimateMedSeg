@@ -1,4 +1,5 @@
 """FCBFormer: FCN-Transformer Feature Fusion for Polyp Segmentation.
+    FCBFormer: FCN-Transformer 特征 融合 for 息肉 分割。
 
 Faithful port from github.com/ESandML/FCBFormer (MIUA 2022).
 
@@ -25,7 +26,8 @@ import torch.nn.functional as F
 # ── PVTv2 Building Blocks ────────────────────────────────────────────────────
 
 class _DWConv(nn.Module):
-    """Depthwise convolution for spatial reduction in PVTv2."""
+    """深度可分离卷积 for 空间的 reduction in PVTv2。
+        Depthwise convolution for spatial reduction in PVTv2."""
     def __init__(self, dim, sr_ratio):
         super().__init__()
         self.sr = nn.Conv2d(dim, dim, kernel_size=sr_ratio, stride=sr_ratio)
@@ -40,7 +42,8 @@ class _DWConv(nn.Module):
 
 
 class _PVTAttention(nn.Module):
-    """PVTv2 attention with spatial reduction."""
+    """PVTv2 注意力 with 空间的 reduction。
+        PVTv2 attention with spatial reduction."""
     def __init__(self, dim, num_heads, sr_ratio):
         super().__init__()
         self.num_heads = num_heads
@@ -74,7 +77,8 @@ class _PVTAttention(nn.Module):
 
 
 class _PVTBlock(nn.Module):
-    """PVTv2 transformer block."""
+    """PVTv2 Transformer 块。
+        PVTv2 transformer block."""
     def __init__(self, dim, num_heads, mlp_ratio, sr_ratio):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim, eps=1e-6)
@@ -91,7 +95,8 @@ class _PVTBlock(nn.Module):
 
 
 class _PVTStage(nn.Module):
-    """PVTv2 stage with patch embed + transformer blocks."""
+    """PVTv2 阶段 with 图块 embed + Transformer blocks。
+        PVTv2 stage with patch embed + transformer blocks."""
     def __init__(self, in_dim, out_dim, depth, num_heads, mlp_ratio,
                  sr_ratio, patch_size=2):
         super().__init__()
@@ -120,7 +125,7 @@ class _PVTStage(nn.Module):
 
         H_out = H if self.patch_embed is None else x.shape[1] // 1
         if self.patch_embed is not None:
-            # Recompute H, W from sequence length
+            # Recompute H, W from 序列 length / Recompute H, W from sequence length
             N = x.shape[1]
             H = W = int(N ** 0.5)
 
@@ -135,6 +140,7 @@ class _PVTStage(nn.Module):
 
 class _PVTv2Backbone(nn.Module):
     """PVTv2-B3 backbone (self-contained, no pretrained weights).
+        PVTv2-B 3 骨干网络 ( self-contained, no 预训练 权重 )。
 
     Config: embed_dims=[64,128,320,512], depths=[3,4,18,3],
             num_heads=[1,2,5,8], mlp_ratios=[8,8,4,4], sr_ratios=[8,4,2,1]
@@ -147,7 +153,7 @@ class _PVTv2Backbone(nn.Module):
         mlp_ratios = [8, 8, 4, 4]
         sr_ratios = [8, 4, 2, 1]
 
-        # Stage 0: patch embed from image
+        # 阶段 0: 图块 embed from 图像 / Stage 0: patch embed from image
         self.patch_embed1 = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0], 4, 4),
             nn.LayerNorm(embed_dims[0], eps=1e-6))
@@ -162,7 +168,7 @@ class _PVTv2Backbone(nn.Module):
 
     def forward(self, x):
         B = x.shape[0]
-        # Stage 0: initial patch embedding
+        # 阶段 0: initial 图块 嵌入 / Stage 0: initial patch embedding
         x_pe = self.patch_embed1[0](x)  # conv
         H, W = x_pe.shape[2], x_pe.shape[3]
         x_seq = x_pe.flatten(2).transpose(1, 2)
@@ -174,7 +180,7 @@ class _PVTv2Backbone(nn.Module):
         for i, stage in enumerate(self.stages):
             out, H, W = stage(inp)
             pyramid.append(out)
-            # Prepare input for next stage
+            # Prepare 输入 for next 阶段 / Prepare input for next stage
             inp = out
 
         return pyramid
@@ -209,6 +215,7 @@ class RB(nn.Module):
 
 class FCB(nn.Module):
     """Fully Convolutional Branch (official implementation).
+        Fully 卷积的 分支 ( official implementation )。
 
     6-level CNN with GroupNorm+SiLU+RB, min_level_channels=32,
     channel_mults=[1,1,2,2,4,4].
@@ -280,6 +287,7 @@ class FCB(nn.Module):
 
 class TB(nn.Module):
     """Transformer Branch (official implementation).
+        Transformer 分支 ( official implementation )。
 
     Uses PVTv2 backbone with Local Enhancement (LE) and
     Scale Feature Aggregation (SFA) modules.
@@ -288,7 +296,7 @@ class TB(nn.Module):
         super().__init__()
         self.backbone = _PVTv2Backbone(in_channels)
 
-        # Local Enhancement modules - upsample each pyramid level to fixed size
+        # 局部的 Enhancement modules - 上采样 each 金字塔 level to fixed 大小 / Local Enhancement modules - upsample each pyramid level to fixed size
         self.LE = nn.ModuleList([])
         for i in range(4):
             self.LE.append(
@@ -296,10 +304,10 @@ class TB(nn.Module):
                     RB([64, 128, 320, 512][i], 64), RB(64, 64),
                 )
             )
-        # Store target upsample size (computed dynamically in forward)
+        # Store 目标 上采样 大小 ( computed dynamically in 前向传播 ) / Store target upsample size (computed dynamically in forward)
         self._target_size = None
 
-        # Scale Feature Aggregation
+        # Scale 特征 Aggregation / Scale Feature Aggregation
         self.SFA = nn.ModuleList([])
         for i in range(3):
             self.SFA.append(nn.Sequential(RB(128, 64), RB(64, 64)))
@@ -308,7 +316,7 @@ class TB(nn.Module):
         B, _, H_in, W_in = x.shape
         pyramid = self.backbone(x)
 
-        # Compute target size for LE upsample (H_in/4 to match FCB output)
+        # 计算 目标 大小 for LE 上采样 ( H _ in / 4 to match FCB 输出 ) / Compute target size for LE upsample (H_in/4 to match FCB output)
         target_h = H_in // 4
         target_w = W_in // 4
 
@@ -330,6 +338,7 @@ class TB(nn.Module):
 
 class FCBFormer(nn.Module):
     """FCBFormer: FCN-Transformer Feature Fusion (official architecture).
+        FCBFormer: FCN-Transformer 特征 融合 ( official 架构 )。
 
     TB (PVTv2) + FCB (GroupNorm+SiLU CNN) -> concat -> PH (RB+RB+conv).
 
@@ -359,7 +368,7 @@ class FCBFormer(nn.Module):
         H_in, W_in = x.shape[2:]
         x1 = self.TB(x)
         x2 = self.FCB(x)
-        # Upsample TB output to match FCB output size (full resolution)
+        # 上采样 TB 输出 to match FCB 输出 大小 ( full 分辨率 ) / Upsample TB output to match FCB output size (full resolution)
         x1 = F.interpolate(x1, size=(H_in, W_in), mode="bilinear",
                            align_corners=False)
         x_cat = torch.cat((x1, x2), dim=1)

@@ -1,6 +1,9 @@
 # Swin-UNet (Cao et al., 2022)
+# Swin-UNet 分割网络
 # Swin-UNet (Cao et al., 2022)
+# Swin-UNet 分割网络
 # Standalone architecture: swinunet
+# 独立架构: swinunet
 
 model:
   num_classes: 2
@@ -8,7 +11,13 @@ model:
   architecture: swinunet
   encoder:
     in_channels: 3
-  arch_params: {}
+  arch_params:
+    embed_dim: 96
+    depths: [2, 2, 2, 2]
+    num_heads: [3, 6, 12, 24]
+    window_size: 8
+    patch_size: 4
+    drop_path_rate: 0.1
 
 data:
   type: generic

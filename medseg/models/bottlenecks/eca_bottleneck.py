@@ -1,4 +1,5 @@
 """ECA (Efficient Channel Attention) bottleneck — CVPR 2020.
+    ECA (Efficient Channel Attention) 瓶颈层。
 
 Official source: https://github.com/BangguWu/ECANet
 
@@ -15,6 +16,7 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 class ECALayer(nn.Module):
     """Efficient Channel Attention — faithful port of official ``eca_layer``.
+        高效的 通道 注意力 — 忠实 移植 of official ` ` eca _ 层 ` `。
 
     Adaptive 1-D convolution instead of dimensionality reduction, achieving
     linear complexity w.r.t. channels.
@@ -32,11 +34,11 @@ class ECALayer(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # Feature descriptor on the global spatial information
+        # 特征 descriptor on the 全局的 空间的 information / Feature descriptor on the global spatial information
         y = self.avg_pool(x)
-        # Two different branches of ECA module
+        # Two different branches of ECA 模块 / Two different branches of ECA module
         y = self.conv(y.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
-        # Multi-scale information fusion
+        # Multi-scale information 融合 / Multi-scale information fusion
         y = self.sigmoid(y)
         return x * y.expand_as(x)
 
@@ -44,6 +46,7 @@ class ECALayer(nn.Module):
 @BOTTLENECK_REGISTRY.register("eca")
 class ECABottleneck(nn.Module):
     """ECA bottleneck with residual connection.
+        ECA 瓶颈层。
 
     Args:
         in_channels: Number of input channels.

@@ -1,4 +1,5 @@
-"""ConvNeXt encoder using timm's `convnext_tiny` with SSL-fallback for pretrained weights."""
+"""ConvNeXt 编码器。
+    ConvNeXt encoder using timm's `convnext_tiny` with SSL-fallback for pretrained weights."""
 # Source: UNCHECKED — please verify
 
 import torch
@@ -29,6 +30,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 @ENCODER_REGISTRY.register("convnext")
 class ConvNeXtEncoder(nn.Module):
     """ConvNeXt-Tiny encoder via timm `features_only=True`.
+        ConvNeXt-Tiny 编码器。
 
     Returns a list of multi-scale feature maps with the deepest feature LAST.
     out_channels is exposed from timm's `feature_info.channels()`.
@@ -38,7 +40,7 @@ class ConvNeXtEncoder(nn.Module):
                  pretrained: bool = True, **kwargs):
         super().__init__()
 
-        # If non-RGB input, prepend a 1x1 conv stem to map to 3 channels.
+        # If non-RGB 输入, prepend a 1x1 conv 主干 to 映射 to 3 通道 / If non-RGB input, prepend a 1x1 conv stem to map to 3 channels.
         if in_channels != 3:
             self.stem_adapter = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             backbone_in = 3
@@ -60,7 +62,7 @@ class ConvNeXtEncoder(nn.Module):
         if self.stem_adapter is not None:
             x = self.stem_adapter(x)
         features = self.model(x)
-        # Ensure BCHW (ConvNeXt in timm returns BCHW already, but normalize defensively).
+        # Ensure BCHW ( ConvNeXt in timm 返回 BCHW already, but 归一化 defensively ) / Ensure BCHW (ConvNeXt in timm returns BCHW already, but normalize defensively).
         out = []
         for i, f in enumerate(features):
             if f.ndim == 4:

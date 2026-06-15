@@ -1,7 +1,11 @@
 # Evaluate CVC-ClinicDB model trained with 80/20 split (same random_state as training).
+# Evaluate CVC-ClinicDB model trained with 80/20 split (same random_state as training). (中文翻译待补充)
 # Usage:
+# Usage: (中文翻译待补充)
 #   python test.py --config configs/intro_to_datasets/cvc_clinicdb_eval.yaml \
+# python test.py --config configs/intro_to_datasets/cvc_clinicdb_eval.yaml \ (中文翻译待补充)
 #       --checkpoint output/cvc_clinicdb/best_model.pth --save_pred
+# --checkpoint output/cvc_clinicdb/best_model.pth --save_pred (中文翻译待补充)
 
 model:
   num_classes: 2

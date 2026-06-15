@@ -1,4 +1,5 @@
 """Swin-UNet Encoder: faithful port from https://github.com/HuCaoFighting/Swin-Unet
+    Swin-UNet 编码器。
 
 Reference: Cao et al., "Swin-Unet: Unet-like Pure Transformer for Medical Image Segmentation"
 File: networks/swin_transformer_unet_skip_expand_decoder_sys.py
@@ -50,7 +51,8 @@ def window_reverse(windows, window_size, H, W):
 
 
 class WindowAttention(nn.Module):
-    r"""Window based multi-head self attention (W-MSA) module with relative position bias."""
+    r"""窗口 based 多头 self 注意力 ( W-MSA ) 模块 with 相对的 position 偏置。
+        Window based multi-head self attention (W-MSA) module with relative position bias."""
 
     def __init__(self, dim, window_size, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__()
@@ -113,7 +115,8 @@ class WindowAttention(nn.Module):
 
 
 class SwinTransformerBlock(nn.Module):
-    r"""Swin Transformer Block."""
+    r"""Swin Transformer 块。
+        Swin Transformer Block."""
 
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
@@ -198,7 +201,8 @@ class SwinTransformerBlock(nn.Module):
 
 
 class PatchMerging(nn.Module):
-    r"""Patch Merging Layer."""
+    r"""图块 Merging 层。
+        Patch Merging Layer."""
 
     def __init__(self, input_resolution, dim, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -226,7 +230,8 @@ class PatchMerging(nn.Module):
 
 
 class PatchEmbed(nn.Module):
-    r"""Image to Patch Embedding."""
+    r"""图像 to 图块 嵌入。
+        Image to Patch Embedding."""
 
     def __init__(self, img_size=224, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
         super().__init__()
@@ -256,7 +261,8 @@ class PatchEmbed(nn.Module):
 
 
 class BasicLayer(nn.Module):
-    """A basic Swin Transformer layer for one stage."""
+    """A 基本 Swin Transformer 层 for one 阶段。
+        A basic Swin Transformer layer for one stage."""
 
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
@@ -296,6 +302,7 @@ class BasicLayer(nn.Module):
 
 class SwinTransformerSys(nn.Module):
     r"""Swin Transformer - faithful to original SwinTransformerSys.
+        Swin Transformer - 忠实 to original SwinTransformerSys。
     Attribute names match https://github.com/HuCaoFighting/Swin-Unet exactly.
     """
 
@@ -318,7 +325,7 @@ class SwinTransformerSys(nn.Module):
         self.mlp_ratio = mlp_ratio
         self.final_upsample = final_upsample
 
-        # split image into non-overlapping patches
+        # split 图像 into non-overlapping 图块 / split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None)
@@ -326,17 +333,17 @@ class SwinTransformerSys(nn.Module):
         patches_resolution = self.patch_embed.patches_resolution
         self.patches_resolution = patches_resolution
 
-        # absolute position embedding
+        # 绝对的 position 嵌入 / absolute position embedding
         if self.ape:
             self.absolute_pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
             trunc_normal_(self.absolute_pos_embed, std=.02)
 
         self.pos_drop = nn.Dropout(p=drop_rate)
 
-        # stochastic depth
+        # stochastic 深度 / stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
 
-        # build encoder layers
+        # build 编码器 / build encoder layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
             layer = BasicLayer(dim=int(embed_dim * 2 ** i_layer),
@@ -375,7 +382,8 @@ class SwinTransformerSys(nn.Module):
         return {'relative_position_bias_table'}
 
     def forward_features(self, x):
-        """Extract multi-scale encoder features."""
+        """Extract multi-scale 编码器。
+            Extract multi-scale encoder features."""
         x = self.patch_embed(x)
         if self.ape:
             x = x + self.absolute_pos_embed
@@ -397,6 +405,7 @@ class SwinTransformerSys(nn.Module):
 @ENCODER_REGISTRY.register("swinunet")
 class SwinUNetEncoder(nn.Module):
     """Swin-UNet encoder wrapper.
+        Swin-UNet 编码器。
     
     Internally uses SwinTransformerSys with exact original weight names.
     Returns multi-scale features as List[torch.Tensor] in (B, C, H, W) format.
@@ -432,7 +441,7 @@ class SwinUNetEncoder(nn.Module):
         state = torch.load(path, map_location='cpu')
         if 'model' in state:
             state = state['model']
-        # Filter encoder-only keys
+        # Filter 编码器 / Filter encoder-only keys
         encoder_state = {}
         for k, v in state.items():
             if k.startswith('layers_up') or k.startswith('concat_back_dim') or \

@@ -1,4 +1,5 @@
 """U-Lite: Lightweight U-Net with Axial Depthwise Convolution.
+    U-Lite: 轻量级 U-Net with Axial 深度可分离卷积。
 
 Faithful reimplementation from:
   https://github.com/duong-db/U-Lite  (2023, ~878K params)
@@ -20,7 +21,8 @@ import torch.nn.functional as F
 # ---------------------------------------------------------------------------
 
 class AxialDW(nn.Module):
-    """Axial depthwise convolution: separate H and W 1D convolutions."""
+    """Axial 深度可分离卷积: separate H and W 1D convolutions。
+        Axial depthwise convolution: separate H and W 1D convolutions."""
     def __init__(self, dim, mixer_kernel, dilation=1):
         super().__init__()
         h, w = mixer_kernel
@@ -34,7 +36,7 @@ class AxialDW(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder / Decoder / Bottleneck blocks
+# Encoder / 解码器 / Encoder / Decoder / Bottleneck blocks
 # ---------------------------------------------------------------------------
 
 class EncoderBlock(nn.Module):
@@ -72,7 +74,8 @@ class DecoderBlock(nn.Module):
 
 
 class BottleNeckBlock(nn.Module):
-    """Axial dilated DW convolution bottleneck."""
+    """Axial dilated DW convolution 瓶颈层。
+        Axial dilated DW convolution bottleneck."""
     def __init__(self, dim):
         super().__init__()
         gc = dim // 4
@@ -96,7 +99,8 @@ class BottleNeckBlock(nn.Module):
 # ---------------------------------------------------------------------------
 
 class ULite(nn.Module):
-    """U-Lite: Lightweight UNet with Axial Depthwise Convolution."""
+    """U-Lite: 轻量级 UNet with Axial 深度可分离卷积。
+        U-Lite: Lightweight UNet with Axial Depthwise Convolution."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  channels=(16, 32, 64, 128, 256, 512), deep_supervision=False, **kwargs):
@@ -104,7 +108,7 @@ class ULite(nn.Module):
         c = list(channels)
         self.deep_supervision = deep_supervision
 
-        # Encoder
+        # 编码器 / Encoder
         self.conv_in = nn.Conv2d(in_channels, c[0], kernel_size=7, padding=3)
         self.e1 = EncoderBlock(c[0], c[1])
         self.e2 = EncoderBlock(c[1], c[2])
@@ -112,10 +116,10 @@ class ULite(nn.Module):
         self.e4 = EncoderBlock(c[3], c[4])
         self.e5 = EncoderBlock(c[4], c[5])
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.b5 = BottleNeckBlock(c[5])
 
-        # Decoder
+        # 解码 / Decoder
         self.d5 = DecoderBlock(c[5], c[4])
         self.d4 = DecoderBlock(c[4], c[3])
         self.d3 = DecoderBlock(c[3], c[2])
@@ -123,7 +127,7 @@ class ULite(nn.Module):
         self.d1 = DecoderBlock(c[1], c[0])
         self.conv_out = nn.Conv2d(c[0], num_classes, kernel_size=1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(c[4], num_classes, 1),

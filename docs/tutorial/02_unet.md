@@ -1,4 +1,4 @@
-# Chapter 02: U-Net in Detail
+﻿# Chapter 02: U-Net in Detail
 
 [Previous: Introduction](01_introduction.md) | [中文文档](02_unet_CN.md) | [Next: Data and Preprocessing](03_data.md)
 
@@ -80,7 +80,7 @@ The decoder needs to increase spatial resolution. Two main approaches:
 | **Transposed Conv** (Deconv) | Learned upsampling via transposed convolution | Trainable upsampling kernel | Checkerboard artifacts possible |
 | **Bilinear + Conv** | Fixed bilinear interpolation followed by convolution | No artifacts, simpler | Upsampling not learned |
 
-In UltimateMedSeg, both are available as decoders:
+In APRIL-MedSeg, both are available as decoders:
 - `decoder: bilinear` -- bilinear upsampling + convolution
 - `decoder: deconv` -- transposed convolution
 
@@ -141,7 +141,7 @@ The bottleneck sits at the deepest point of the U, processing the most compresse
 
 ---
 
-## 4. Hands-On with UltimateMedSeg
+## 4. Hands-On with APRIL-MedSeg
 
 ### 4.1 Mode 1: Complete Network
 
@@ -329,9 +329,9 @@ Same encoder, different decoders:
 
 ### Related Documentation
 
-- [Networks Guide](../models/networks.md) -- All 128 complete network architectures
-- [Encoder Guide](../models/encoders.md) -- 169 encoders including U-Net variants
-- [Decoder Guide](../models/decoders.md) -- 40 decoders with design rationale
+- [Networks Guide](../models/networks.md) -- All 146 complete network architectures
+- [Encoder Guide](../models/encoders.md) -- 178 encoders including U-Net variants
+- [Decoder Guide](../models/decoders.md) -- 45 decoders with design rationale
 - [Skip Connections](../models/skip_connections.md) -- 25 skip connection implementations
 - [Bottlenecks](../models/bottlenecks.md) -- 17 bottleneck modules
 

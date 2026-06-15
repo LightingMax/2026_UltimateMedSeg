@@ -1,4 +1,5 @@
 """TransNetR: Transformer-based Residual Network for Segmentation.
+    TransNetR: Transformer-based 残差 网络 for 分割。
 
 Encoder-decoder with transformer blocks at the bottleneck and residual
 connections throughout for efficient biomedical image segmentation.
@@ -64,6 +65,7 @@ class _TransformerBlock(nn.Module):
 
 class TransNetR(nn.Module):
     """TransNetR: Transformer + Residual network.
+        TransNetR: Transformer + 残差 网络。
 
     Args:
         in_channels: Input channels.
@@ -88,7 +90,7 @@ class TransNetR(nn.Module):
             base_channels = embed_dim
         c = base_channels
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = nn.Sequential(_ResBlock(in_channels, c), _ResBlock(c, c))
         self.pool1 = nn.MaxPool2d(2)
         self.enc2 = nn.Sequential(_ResBlock(c, c * 2), _ResBlock(c * 2, c * 2))
@@ -98,12 +100,12 @@ class TransNetR(nn.Module):
         self.enc4 = nn.Sequential(_ResBlock(c * 4, c * 8), _ResBlock(c * 8, c * 8))
         self.pool4 = nn.MaxPool2d(2)
 
-        # Transformer bottleneck
+        # Transformer 瓶颈层 / Transformer bottleneck
         self.transformer = nn.Sequential(
             *[_TransformerBlock(c * 8) for _ in range(transformer_depth)]
         )
 
-        # Decoder with residual connections
+        # 解码 with 残差 connections / Decoder with residual connections
         self.up4 = nn.ConvTranspose2d(c * 8, c * 4, 2, 2)
         self.dec4 = nn.Sequential(_ResBlock(c * 8 + c * 4, c * 4), _ResBlock(c * 4, c * 4))
         self.up3 = nn.ConvTranspose2d(c * 4, c * 2, 2, 2)

@@ -1,4 +1,4 @@
-# UltimateMedSeg — Complete User Tutorial (From Zero to Hero)
+﻿# APRIL-MedSeg — Complete User Tutorial (From Zero to Hero)
 
 > A hands-on guide covering installation, dataset preparation, training, evaluation, advanced paradigms, deployment, and custom extensions.
 
@@ -31,15 +31,15 @@
 
 ## 1. Introduction
 
-**UltimateMedSeg** is a modular 2D medical image segmentation toolbox built on PyTorch. It provides:
+**APRIL-MedSeg** is a modular 2D medical image segmentation toolbox built on PyTorch. It provides:
 
-- **128** complete network architectures (CNN, Transformer, Mamba, RWKV, KAN, SAM family, etc.)
-- **169** encoders (including 35 foundation models across 9 medical modalities + dynamic timm wrapper)
-- **40** decoders (cascade, attention, transformer, MLP, etc.)
-- **88** loss functions (supervised, distillation, domain adaptation, weakly supervised)
+- **146** complete network architectures (CNN, Transformer, Mamba, RWKV, KAN, SAM family, etc.)
+- **178** encoders (including 35 foundation models across 9 medical modalities + dynamic timm wrapper)
+- **45** decoders (cascade, attention, transformer, MLP, etc.)
+- **89** loss functions (supervised, distillation, domain adaptation, weakly supervised)
 - **25** skip connection types
 - **6** training paradigms (supervised, semi-supervised, domain adaptation, distillation, weakly supervised, text-guided)
-- **876** ready-to-use YAML configs
+- **921** ready-to-use YAML configs
 - **24** augmentation methods configurable via YAML
 
 **Why use this framework?**
@@ -62,8 +62,8 @@
 ### 2.2 Clone and Install
 
 ```bash
-git clone https://github.com/juntaoJianggavin/UltimateMedSeg.git
-cd UltimateMedSeg
+git clone https://github.com/juntaoJianggavin/APRIL-MedSeg.git
+cd APRIL-MedSeg
 
 # Install core dependencies
 pip install -r requirements.txt
@@ -142,14 +142,14 @@ python -m medseg.utils.weight_downloader check
 ## 3. Project Structure Overview
 
 ```
-UltimateMedSeg/
+APRIL-MedSeg/
 ├── medseg/                    # Core framework (pip installable)
 │   ├── models/
-│   │   ├── encoders/          # 169 encoders (CNN, Transformer, Mamba, RWKV, timm, foundation)
-│   │   ├── decoders/          # 40 decoders
+│   │   ├── encoders/          # 178 encoders (CNN, Transformer, Mamba, RWKV, timm, foundation)
+│   │   ├── decoders/          # 45 decoders
 │   │   ├── skip_connections/  # 25 skip connection types
 │   │   ├── bottlenecks/       # 17 bottlenecks
-│   │   ├── networks/          # 128 complete pre-assembled architectures
+│   │   ├── networks/          # 146 complete pre-assembled architectures
 │   │   └── text_unet/         # 13 text-guided models
 │   ├── training/              # Training paradigm implementations
 │   │   ├── semi/              # 21 semi-supervised methods
@@ -160,12 +160,12 @@ UltimateMedSeg/
 │   │   ├── ensemble.py        # Multi-model ensemble
 │   │   ├── tta.py             # Test-Time Augmentation
 │   │   └── mllm/              # MLLM grounding+segmentation pipeline
-│   ├── losses/                # 88 loss functions
+│   ├── losses/                # 89 loss functions
 │   ├── datasets/              # Dataset classes and augmentations
 │   ├── utils/                 # Config, AMP/DDP, logger, warmup, metrics, etc.
 │   ├── model_builder.py       # YAML → model assembler
 │   └── registry.py            # Component registries
-├── configs/                   # 876 YAML configs
+├── configs/                   # 921 YAML configs
 ├── scripts/                   # Utility scripts (ONNX export, visualization, etc.)
 ├── train.py                   # Supervised training entry point
 ├── semi_train.py              # Semi-supervised training
@@ -742,7 +742,7 @@ model:
   architecture: transunet    # or swinunet, medsam, vmunet, etc.
 ```
 
-128 complete architectures are available. Some popular ones:
+146 complete architectures are available. Some popular ones:
 
 | Category | Examples |
 |----------|----------|
@@ -818,7 +818,7 @@ The project includes pre-built ablation configs:
 
 ```
 configs/architectures/
-├── decoder_study/      # 3 encoders × 40 decoders = 121 configs
+├── decoder_study/      # 3 encoders × 45 decoders = 133 configs
 ├── skip_study/         # 3 encoders × 25 skips = 75 configs
 ├── bottleneck_study/   # 3 encoders × 17 bottlenecks = 51 configs
 └── combinations/       # Free encoder+decoder combos = 167 configs
@@ -1663,4 +1663,4 @@ training:
 
 ---
 
-*This tutorial covers the complete UltimateMedSeg workflow from installation to deployment. For detailed documentation on specific components, see the [docs/](../docs/) directory and the [tutorial series](README.md).*
+*This tutorial covers the complete APRIL-MedSeg workflow from installation to deployment. For detailed documentation on specific components, see the [docs/](../docs/) directory and the [tutorial series](README.md).*

@@ -2,7 +2,7 @@
 
 [English](decoders.md)
 
-本项目提供 40 个解码器模块，按类别分组如下。
+本项目提供 45 个解码器模块，按类别分组如下。
 
 ## 基础 (4)
 
@@ -58,7 +58,7 @@ MLP 解码器。
 | `mlp` | 通用 MLP 解码器 | [mlp_resnet34.yaml](../../configs/architectures/combinations/general/mlp_resnet34.yaml) |
 | `segformer` | SegFormer 风格 MLP 解码器 | [swinunet_segformer.yaml](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 
-## 特定网络专属 (12)
+## 特定网络专属 (15)
 
 特定网络专属解码器。
 
@@ -76,6 +76,9 @@ MLP 解码器。
 | `scaleformer` | ScaleFormer | [scaleformer_cascade_full.yaml](../../configs/architectures/combinations/general/scaleformer_cascade_full.yaml) |
 | `malunet` | MALUNet | [basic_malunet.yaml](../../configs/architectures/decoder_study/general/basic_malunet.yaml) |
 | `ege_unet` | EGE-UNet | [basic_ege_unet.yaml](../../configs/architectures/decoder_study/general/basic_ege_unet.yaml) |
+| `deeplabv3` | DeepLabV3（ASPP 解码器） | [resnet50_deeplabv3.yaml](../../configs/architectures/combinations/general/resnet50_deeplabv3.yaml) |
+| `banet` | BANet 边界感知网络 | [basic_banet.yaml](../../configs/architectures/decoder_study/general/basic_banet.yaml) |
+| `ffparser` | FF-Parser 频率滤波器 | [basic_ffparser.yaml](../../configs/architectures/decoder_study/general/basic_ffparser.yaml) |
 
 ## Transformer (5)
 
@@ -89,7 +92,7 @@ Transformer 解码器。
 | `swinunet` | Swin-UNet 解码器 | [swinunet_segformer.yaml](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 | `uctransnet` | UCTransNet 解码器 | [uctransnet.yaml](../../configs/architectures/combinations/general/uctransnet.yaml) |
 
-## 注意力 (3)
+## 注意力 (5)
 
 注意力机制解码器。
 
@@ -98,6 +101,8 @@ Transformer 解码器。
 | `attention` | 注意力门控解码器 | [attention_unet_basic.yaml](../../configs/architectures/combinations/general/attention_unet_basic.yaml) |
 | `ham` | HAM 混合注意力 | [ham_resnet34.yaml](../../configs/architectures/combinations/general/ham_resnet34.yaml) |
 | `lawin` | Lawin 大窗口注意力 | [lawin_resnet50.yaml](../../configs/architectures/combinations/general/lawin_resnet50.yaml) |
+| `ocrnet` | OCRNet 空间 OCR（ECCV 2020） | [basic_ocrnet.yaml](../../configs/architectures/decoder_study/general/basic_ocrnet.yaml) |
+| `ccnet` | CCNet 十字交叉注意力（ICCV 2019） | [basic_ccnet.yaml](../../configs/architectures/decoder_study/general/basic_ccnet.yaml) |
 
 ## Mamba (1)
 

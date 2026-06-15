@@ -1,4 +1,5 @@
 """SA-UNet: Spatial Attention UNet for medical image segmentation.
+    SA-UNet: 空间的 注意力 UNet for 医学的 图像 分割。
 
 Reference:
     Guo et al., "SA-UNet: Spatial Attention UNet for Retinal Vessel
@@ -32,7 +33,8 @@ class _ConvBNReLU(nn.Module):
 
 
 class _DoubleConv(nn.Module):
-    """Two consecutive ConvBNReLU blocks."""
+    """两个连续 ConvBNReLU blocks。
+        Two consecutive ConvBNReLU blocks."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -47,6 +49,7 @@ class _DoubleConv(nn.Module):
 
 class _SpatialAttention(nn.Module):
     """Spatial attention module (CBAM-style, lightweight).
+        空间的 注意力 模块 ( CBAM-style, 轻量级 )。
 
     Applies channel-wise average-pool and max-pool, concatenates along the
     channel axis, then a 7×7 conv + sigmoid to produce a spatial attention map.
@@ -67,7 +70,8 @@ class _SpatialAttention(nn.Module):
 
 
 class _SAEncoder(nn.Module):
-    """Encoder block with spatial attention at the output."""
+    """编码器 块 with 空间的 注意力 at the 输出。
+        Encoder block with spatial attention at the output."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -83,7 +87,8 @@ class _SAEncoder(nn.Module):
 
 
 class SADecoder(nn.Module):
-    """Decoder block: upsample → concat skip → double-conv → spatial attn."""
+    """Decoder block: upsample → concat 跳跃连接。
+        Decoder block: upsample → concat skip → double-conv → spatial attn."""
 
     def __init__(self, in_ch, skip_ch, out_ch):
         super().__init__()
@@ -106,6 +111,7 @@ class SADecoder(nn.Module):
 
 class SAUNet(nn.Module):
     """SA-UNet: Spatial Attention UNet.
+        SA-UNet: 空间的 注意力 UNet。
 
     Args:
         in_channels: number of input channels.
@@ -115,35 +121,35 @@ class SAUNet(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224):
         super().__init__()
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _SAEncoder(in_channels, 32)
         self.enc2 = _SAEncoder(32, 64)
         self.enc3 = _SAEncoder(64, 128)
         self.enc4 = _SAEncoder(128, 256)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = _DoubleConv(256, 512)
 
-        # Decoder
+        # 解码 / Decoder
         self.dec4 = SADecoder(512, 256, 256)
         self.dec3 = SADecoder(256, 128, 128)
         self.dec2 = SADecoder(128, 64, 64)
         self.dec1 = SADecoder(64, 32, 32)
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(32, num_classes, 1)
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         s1, d1 = self.enc1(x)
         s2, d2 = self.enc2(d1)
         s3, d3 = self.enc3(d2)
         s4, d4 = self.enc4(d3)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.bottleneck(d4)
 
-        # Decoder
+        # 解码 / Decoder
         d = self.dec4(b, s4)
         d = self.dec3(d, s3)
         d = self.dec2(d, s2)

@@ -1,4 +1,5 @@
 """RWKV-UNet Decoder: adapted from the official implementation.
+    RWKV-UNet 解码器。
 
 Reference: "RWKV-UNet: Improving UNet with Linear Complexity for Medical Image
 Segmentation" — https://github.com/juntaoJianggavin/RWKV-UNet
@@ -42,6 +43,7 @@ from medseg.models.encoders.rwkv_encoder import (
 
 class UpBlock(nn.Module):
     """RWKV-UNet decoder block.
+        RWKV-UNet 解码器。
 
     Pipeline: optional norm -> 1x1 conv -> (DWConv k=dw_ks, optionally with SE,
     optional residual via has_skip) -> 1x1 proj -> dropout -> bilinear 2x up.
@@ -96,11 +98,12 @@ class UpBlock(nn.Module):
         return x
 
 
-# ---------- CCMix (generalized for N skip features) ----------
+# ---------- CCMix (generalized for N 跳跃连接 / ---------- CCMix (generalized for N skip features) ----------
 
 
 class CCMix(nn.Module):
     """Cross-Channel Mixer: fuses N skip features through VRWKV_ChannelMix.
+        Cross-Channel Mixer: fuses N 跳跃连接。
 
     Args:
         in_dims: per-skip channel counts in the order ``[deep, ..., shallow]``.
@@ -128,33 +131,33 @@ class CCMix(nn.Module):
         self.final_projections = nn.ModuleList([
             nn.Conv2d(target_dim, c, kernel_size=1) for c in self.in_dims
         ])
-        # Original spatial sizes: each skip is at a progressively larger scale
-        # deepest skip at target_size//2^(n-1), shallowest at target_size
+        # Original spatial sizes: each 跳跃连接 / Original spatial sizes: each skip is at a progressively larger scale
+        # deepest 跳跃连接 / deepest skip at target_size//2^(n-1), shallowest at target_size
         self.original_sizes = []
         for i in range(self.n_skips):
             scale = 2 ** (self.n_skips - 1 - i)
             self.original_sizes.append(target_size // scale)
 
     def forward(self, features: List[torch.Tensor]) -> List[torch.Tensor]:
-        # Step 1: bring every skip up to (target_dim, target_size).
+        # Step 1: bring every 跳跃连接 / Step 1: bring every skip up to (target_dim, target_size).
         upsampled = []
         for i, feat in enumerate(features):
             feat = F.interpolate(feat, size=self.target_size, mode="bilinear", align_corners=False)
             feat = self.projections[i](feat)
             upsampled.append(feat)
 
-        # Step 2: concat along channels, reshape to sequence and apply VRWKV_ChannelMix.
+        # Step 2: concat along 通道, 重塑 to 序列 and 应用 VRWKV _ ChannelMix / Step 2: concat along channels, reshape to sequence and apply VRWKV_ChannelMix.
         cat = torch.cat(upsampled, dim=1)  # (B, target_dim*N, T, T)
         B, C, H, W = cat.shape
         cat_seq = cat.view(B, C, -1).permute(0, 2, 1).contiguous()  # (B, N_seq, C)
         attn = cat_seq + self.drop_path(self.ln1(self.channel(cat_seq, (self.target_size, self.target_size))))
 
-        # Step 3: reshape back to (B, C, H, W).
+        # Step 3: 重塑 back to ( B, C, H, W ) / Step 3: reshape back to (B, C, H, W).
         B2, N_seq, hidden = attn.shape
         h = w = int(math.sqrt(N_seq))
         attn = attn.permute(0, 2, 1).contiguous().view(B2, hidden, h, w)
 
-        # Step 4: split per-skip, project back to original channels and resize.
+        # Step 4: split per-skip, project back to original 通道 and resize / Step 4: split per-skip, project back to original channels and resize.
         chunks = torch.split(attn, self.target_dim, dim=1)
         outputs = []
         for i, chunk in enumerate(chunks):
@@ -164,12 +167,13 @@ class CCMix(nn.Module):
         return outputs
 
 
-# ---------- Full RWKV-UNet decoder (adaptive) ----------
+# ---------- Full RWKV-UNet 解码器 / ---------- Full RWKV-UNet decoder (adaptive) ----------
 
 
 @DECODER_REGISTRY.register("rwkv_unet")
 class RWKVUNetDecoder(nn.Module):
     """Adaptive RWKV-UNet decoder head.
+        Adaptive RWKV-UNet 解码器。
 
     Automatically adapts to any encoder: the number of decoder stages and
     CCMix features are derived from encoder_channels.
@@ -199,12 +203,12 @@ class RWKVUNetDecoder(nn.Module):
     ):
         super().__init__()
         n_skips = len(encoder_channels)
-        # encoder_channels = [c0, c1, ..., cN] shallow -> deep
+        # 编码器 _ 通道 = [ c0, c1,..., cN ] 浅层 - > 深度 / encoder_channels = [c0, c1, ..., cN] shallow -> deep
         c_shallow = encoder_channels[0]
         c_deep = encoder_channels[-1]
         self._final_channels = final_channels
 
-        # CCMix: fuses [deep, ..., shallow] skip features
+        # CCMix: fuses [deep, ..., shallow] 跳跃连接 / CCMix: fuses [deep, ..., shallow] skip features
         skips_reversed = list(reversed(encoder_channels))  # [deep, ..., shallow]
         self.ccm = CCMix(
             in_dims=skips_reversed,
@@ -212,18 +216,18 @@ class RWKVUNetDecoder(nn.Module):
             target_size=img_size // 2,
         )
 
-        # Build decoder UpBlock chain:
-        # Block 0: bottleneck -> c_deep (no skip concat)
-        # Block 1..N-1: concat with fused skip -> next level
-        # Block N: concat with shallowest fused skip -> final_channels
+        # Build 解码器 / Build decoder UpBlock chain:
+        # Block 0: bottleneck -> c_deep (no 跳跃连接 / Block 0: bottleneck -> c_deep (no skip concat)
+        # Block 1..N-1: concat with fused 跳跃连接 / Block 1..N-1: concat with fused skip -> next level
+        # Block N: concat with shallowest fused 跳跃连接 / Block N: concat with shallowest fused skip -> final_channels
         self.decoder_blocks = nn.ModuleList()
 
-        # First block: bottleneck to deepest skip channels
+        # First block: bottleneck to deepest 跳跃连接 / First block: bottleneck to deepest skip channels
         self.decoder_blocks.append(
             UpBlock(bottleneck_channels, c_deep, dw_ks=dw_ks, se_ratio=se_ratio)
         )
 
-        # Intermediate blocks: concat fused skip (doubling channels) -> next level
+        # Intermediate blocks: concat fused 跳跃连接 / Intermediate blocks: concat fused skip (doubling channels) -> next level
         for i in range(n_skips - 1):
             in_ch = skips_reversed[i] * 2  # concat with fused skip
             out_ch = skips_reversed[i + 1]
@@ -231,7 +235,7 @@ class RWKVUNetDecoder(nn.Module):
                 UpBlock(in_ch, out_ch, dw_ks=dw_ks, se_ratio=se_ratio)
             )
 
-        # Final block: concat shallowest fused skip -> final_channels
+        # Final block: concat shallowest fused 跳跃连接 / Final block: concat shallowest fused skip -> final_channels
         in_ch = skips_reversed[-1] * 2  # concat with shallowest fused skip
         self.decoder_blocks.append(
             UpBlock(in_ch, final_channels, dw_ks=dw_ks, se_ratio=se_ratio)
@@ -246,17 +250,17 @@ class RWKVUNetDecoder(nn.Module):
         bottleneck_feat: torch.Tensor,
         skip_features: List[torch.Tensor],
     ) -> torch.Tensor:
-        # skip_features: [shallow, ..., deep]
+        # 跳跃 _ 特征: [ 浅层,..., 深度 ] / skip_features: [shallow, ..., deep]
         n_skips = len(skip_features)
         skips_reversed = list(reversed(skip_features))  # [deep, ..., shallow]
 
-        # CCMix fuses [deep, ..., shallow] and returns in the same order
+        # CCMix 融合 [ 深度,..., 浅层 ] and 返回 in the same order / CCMix fuses [deep, ..., shallow] and returns in the same order
         fused = self.ccm(skips_reversed)  # [fused_deep, ..., fused_shallow]
 
-        # Block 0: bottleneck -> upsample
+        # Block 0: 瓶颈层 / Block 0: bottleneck -> upsample
         x = self.decoder_blocks[0](bottleneck_feat)
 
-        # Blocks 1..N: concat with fused skip -> upsample
+        # Blocks 1..N: concat with fused 跳跃连接 / Blocks 1..N: concat with fused skip -> upsample
         for i in range(n_skips):
             if x.shape[2:] != fused[i].shape[2:]:
                 x = F.interpolate(x, size=fused[i].shape[2:], mode="bilinear", align_corners=False)

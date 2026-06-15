@@ -1,4 +1,5 @@
-"""Spatial Attention Bridge (SAB) skip connection."""
+"""Spatial Attention Bridge (SAB) 跳跃连接。
+    Spatial Attention Bridge (SAB) skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -8,7 +9,8 @@ from medseg.registry import SKIP_REGISTRY
 
 @SKIP_REGISTRY.register("sab")
 class SABSkip(nn.Module):
-    """Spatial Attention Bridge: applies spatial attention to skip features before fusion."""
+    """Spatial Attention Bridge: applies spatial attention to 跳跃连接。
+        Spatial Attention Bridge: applies spatial attention to skip features before fusion."""
     def __init__(self, kernel_size=7, **kwargs):
         super().__init__()
         self.spatial_attn = nn.Sequential(

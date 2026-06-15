@@ -1,4 +1,5 @@
-"""Bottleneck modules."""
+"""瓶颈层 modules。
+    Bottleneck modules."""
 
 from . import none_bottleneck
 from . import basic_bottleneck

@@ -1,6 +1,9 @@
 # Attention UNet (Oktay et al., 2018)
+# Attention UNet 分割网络
 # Attention UNet (Oktay et al., 2018)
+# Attention UNet 分割网络
 # Standalone architecture: attention_unet
+# 独立架构: attention_unet
 
 model:
   num_classes: 2

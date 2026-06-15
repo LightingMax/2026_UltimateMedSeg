@@ -22,7 +22,8 @@ import torch.nn as nn
 
 
 def load_with_ssl_fallback(load_fn, *args, **kwargs):
-    """Load pretrained weights: official HF, mirror fallback, then SSL retry."""
+    """加载 预训练 权重: official HF, mirror fallback, then SSL retry。
+        Load pretrained weights: official HF, mirror fallback, then SSL retry."""
     if kwargs.get("pretrained", True) is False:
         return load_fn(*args, **kwargs)
 
@@ -59,6 +60,7 @@ def load_with_ssl_fallback(load_fn, *args, **kwargs):
 def hf_hub_download_vision_weights(repo_id: str, filename: str = None,
                                    prefix_strip: tuple = ()) -> dict:
     """Auto-download weights from HuggingFace Hub and return a state-dict.
+        Auto-download 权重 from HuggingFace Hub and 返回 a state-dict。
 
     Uses ``huggingface_hub.hf_hub_download`` to fetch the checkpoint, loads
     it (supports ``.safetensors`` and ``.bin``), and optionally strips common
@@ -94,7 +96,7 @@ def hf_hub_download_vision_weights(repo_id: str, filename: str = None,
             f"Tried files: {candidates}. Last error: {last_err}"
         ) from last_err
 
-    # Load the checkpoint.
+    # 加载 the 检查点 / Load the checkpoint.
     if str(path).endswith(".safetensors"):
         try:
             from safetensors.torch import load_file
@@ -107,7 +109,7 @@ def hf_hub_download_vision_weights(repo_id: str, filename: str = None,
     else:
         state = torch.load(path, map_location="cpu", weights_only=False)
 
-    # Unwrap nested dicts.
+    # Unwrap 嵌套的 dicts / Unwrap nested dicts.
     if isinstance(state, dict):
         for key in ("state_dict", "model"):
             if key in state and isinstance(state[key], dict):
@@ -158,7 +160,7 @@ def convert_timm_vit_state_to_hf(state: dict) -> dict:
             hf[base.replace("qkv", "value") + (".weight" if "weight" in nk else ".bias")] = v[2*dim:]
             continue
 
-        # Skip timm-specific keys (head, dist_token, etc.)
+        # 跳跃 timm-specific keys ( 头部, dist _ 标记, etc. ) / Skip timm-specific keys (head, dist_token, etc.)
         if any(skip in k for skip in ("head.", "dist_token", "fc_norm")):
             continue
         hf[nk] = v
@@ -167,6 +169,7 @@ def convert_timm_vit_state_to_hf(state: dict) -> dict:
 
 class FreezeMixin:
     """Mix-in for any encoder to expose freeze controls.
+        Mix-in for any 编码器。
 
     The encoder must expose:
     - self.backbone (nn.Module)  — the part to freeze
@@ -218,7 +221,8 @@ class FreezeMixin:
 
 
 class _Adapter(nn.Module):
-    """Houlsby bottleneck adapter: LN -> down -> GELU -> up + residual. Near-zero init."""
+    """Houlsby 瓶颈层。
+        Houlsby bottleneck adapter: LN -> down -> GELU -> up + residual. Near-zero init."""
     def __init__(self, dim, bottleneck_dim=64):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
@@ -233,7 +237,8 @@ class _Adapter(nn.Module):
 
 
 class _AdapterBlockWrapper(nn.Module):
-    """Wrap a transformer block (timm or HF). Inserts adapters after attn and MLP residuals."""
+    """Wrap a Transformer 块 ( timm or HF ). Inserts adapters after attn and MLP residuals。
+        Wrap a transformer block (timm or HF). Inserts adapters after attn and MLP residuals."""
     def __init__(self, block, dim, bottleneck_dim=64):
         super().__init__()
         self.block = block
@@ -241,7 +246,7 @@ class _AdapterBlockWrapper(nn.Module):
         self.adapter_mlp = _Adapter(dim, bottleneck_dim)
 
     def forward(self, x, *args, **kwargs):
-        # Standard ViT block: norm1, attn, norm2, mlp
+        # 标准 ViT 块: norm1, attn, norm2, mlp / Standard ViT block: norm1, attn, norm2, mlp
         if (hasattr(self.block, 'norm1') and hasattr(self.block, 'attn') and
             hasattr(self.block, 'norm2') and hasattr(self.block, 'mlp')):
             ls1 = getattr(self.block, 'ls1', nn.Identity())
@@ -253,7 +258,7 @@ class _AdapterBlockWrapper(nn.Module):
             x = x + dp2(ls2(self.block.mlp(self.block.norm2(x))))
             x = self.adapter_mlp(x)
             return x
-        # HF-style block: layer_norm1, self_attn, layer_norm2, intermediate+output
+        # HF-style 块: 层 _ norm1, self _ attn, 层 _ norm2, intermediate + 输出 / HF-style block: layer_norm1, self_attn, layer_norm2, intermediate+output
         if (hasattr(self.block, 'layer_norm1') and hasattr(self.block, 'self_attn') and
             hasattr(self.block, 'layer_norm2')):
             residual = x
@@ -274,7 +279,7 @@ class _AdapterBlockWrapper(nn.Module):
             x = residual + ff
             x = self.adapter_mlp(x)
             return x
-        # Generic fallback: just wrap the output
+        # Generic fallback: just wrap the 输出 / Generic fallback: just wrap the output
         out = self.block(x, *args, **kwargs)
         if isinstance(out, tuple):
             x_main = out[0]
@@ -311,11 +316,12 @@ class BaseFoundationEncoder(nn.Module, FreezeMixin):
             "use_adapter": use_adapter, "adapter_dim": adapter_dim,
         }
         self._has_adapters = False
-        # Subclass MUST set self.backbone and self.out_channels in __init__,
-        # then call self._apply_freeze_policy()
+        # Subclass MUST set self. 骨干网络 and self. out _ 通道 in _ _ init _ _ / Subclass MUST set self.backbone and self.out_channels in __init__,
+        # then call self. _ 应用 _ freeze _ policy ( ) / then call self._apply_freeze_policy()
 
     def _maybe_inject_adapters(self):
-        """Call AFTER self.backbone is built and BEFORE self._apply_freeze_policy()."""
+        """Call AFTER self. 骨干网络 is built and BEFORE self. _ 应用 _ freeze _ policy ( )。
+            Call AFTER self.backbone is built and BEFORE self._apply_freeze_policy()."""
         if not self._freeze_cfg.get("use_adapter", False):
             return
         if not hasattr(self, "backbone"):
@@ -358,6 +364,7 @@ class BaseFoundationEncoder(nn.Module, FreezeMixin):
 
 class HuggingFaceViTWrapper(nn.Module):
     """Wrap a HuggingFace ViT model with a unified interface.
+        Wrap a HuggingFace ViT 模型 with a 统一的 interface。
 
     Provides ``forward_features(x) -> (B, N, C)``, ``embed_dim``,
     ``num_prefix_tokens``, ``patch_embed.patch_size``, and a ``blocks``
@@ -371,11 +378,11 @@ class HuggingFaceViTWrapper(nn.Module):
         cfg = hf_model.config
         self.embed_dim = int(cfg.hidden_size)
         self.num_prefix_tokens = 1  # standard HF ViT: [CLS] at position 0
-        # SigLIP models have no CLS token
+        # SigLIP models have no CLS 标记 / SigLIP models have no CLS token
         if getattr(cfg, "model_type", "") == "siglip" or "siglip" in type(hf_model).__name__.lower():
             self.num_prefix_tokens = 0
 
-        # Expose patch_embed.patch_size for downstream code.
+        # Expose 图块 _ embed. 图块 _ 大小 for downstream code / Expose patch_embed.patch_size for downstream code.
         pe = getattr(hf_model, "embeddings", None)
         if pe is not None and hasattr(pe, "patch_size"):
             ps = pe.patch_size
@@ -389,7 +396,7 @@ class HuggingFaceViTWrapper(nn.Module):
         self.patch_embed = _PE()
         self.patch_embed.patch_size = int(ps)
 
-        # Expose blocks as a unified alias (for adapter injection
+        # Expose blocks as a 统一的 alias ( for 适配器 injection / Expose blocks as a unified alias (for adapter injection
         # and unfreeze controls).
         if hasattr(hf_model, "encoder") and hasattr(hf_model.encoder, "layer"):
             # HF ViTModel / Dinov2Model / SiglipVisionModel
@@ -398,17 +405,18 @@ class HuggingFaceViTWrapper(nn.Module):
             # open_clip VisionTransformer
             self.blocks = hf_model.transformer.resblocks
         elif hasattr(hf_model, "layers"):
-            # HF CLIPVisionModel: vision_model.encoder.layers
+            # HF CLIPVisionModel: vision _ 模型. 编码器. layers / HF CLIPVisionModel: vision_model.encoder.layers
             self.blocks = hf_model.layers
         elif hasattr(hf_model, "encoder_lay"):
             # Some custom HF models
             self.blocks = hf_model.encoder_lay
 
-        # Expose num_features for downstream compatibility.
+        # Expose num _ 特征 for downstream 兼容性 / Expose num_features for downstream compatibility.
         self.num_features = self.embed_dim
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
-        """Return token sequence ``(B, N, C)`` including prefix tokens."""
+        """返回 标记 序列 ` ` ( B, N, C ) ` ` including prefix 标记。
+            Return token sequence ``(B, N, C)`` including prefix tokens."""
         out = self.model(x)
         if hasattr(out, "last_hidden_state"):
             return out.last_hidden_state
@@ -455,6 +463,7 @@ def load_hf_vit(hf_name: str, pretrained_path: str = None,
                 vision_attr: str = None,
                 model_obj=None) -> HuggingFaceViTWrapper:
     """Load a ViT from HuggingFace transformers and return a wrapped model.
+        加载 a ViT from HuggingFace transformers and 返回 a wrapped 模型。
 
     Args:
         hf_name: HuggingFace repo id (e.g. ``"owkin/phikon"``).
@@ -505,11 +514,11 @@ def load_hf_vit(hf_name: str, pretrained_path: str = None,
 
 # =====================================================================
 # DPT-style multi-block feature projector (替代 FPN-from-tokens)
-# DPT-style multi-block feature projector (replaces FPN-from-tokens)
+# DPT-style multi-block 特征 projector ( replaces FPN-from-tokens ) / DPT-style multi-block feature projector (replaces FPN-from-tokens)
 # =====================================================================
 #
 # 参考 / Reference:
-#   Ranftl et al., "Vision Transformers for Dense Prediction", ICCV 2021
+# Ranftl et al., " Vision Transformers for 密集的 预测 ", ICCV 2021 / Ranftl et al., "Vision Transformers for Dense Prediction", ICCV 2021
 #   https://github.com/isl-org/DPT
 #
 # 核心思想 / Key idea:
@@ -517,10 +526,10 @@ def load_hf_vit(hf_name: str, pretrained_path: str = None,
 #   reshape 成 2D feature map 后用不同 stride 的卷积投影成多尺度金字塔。
 #   每一级的语义抽象层次真正不同（浅层=纹理，深层=语义）。
 #
-#   Extract tokens from different ViT blocks (e.g. block 3/6/9/12),
-#   reshape to 2D feature maps, then project with different-stride convs
-#   to form a multi-scale pyramid. Each level has genuinely different
-#   semantic abstraction (shallow=texture, deep=semantics).
+# 提取 标记 from different ViT blocks ( e. g. 块 3 / 6 / 9 / 12 ) / Extract tokens from different ViT blocks (e.g. block 3/6/9/12),
+# 重塑 to 2D 特征图, then project with different-stride convs / reshape to 2D feature maps, then project with different-stride convs
+# to form a 多尺度 金字塔. Each level has genuinely different / to form a multi-scale pyramid. Each level has genuinely different
+# 语义的 abstraction ( 浅层 = 纹理, 深度 = semantics ) / semantic abstraction (shallow=texture, deep=semantics).
 # =====================================================================
 
 import torch.nn.functional as F
@@ -575,9 +584,9 @@ class DPTHead(nn.Module):
         self.out_channels = out_channels
 
         # 4 级 Reassemble: 把每个 block 的 token 投影到目标通道数
-        # 4-level Reassemble: project each block's tokens to target channels
+        # 4-level Reassemble: project each block's 标记 to 目标 通道 / 4-level Reassemble: project each block's tokens to target channels
         # 浅层(stage0) 上采样 4x → stride /4
-        # Shallow (stage0) upsample 4x → stride /4
+        # 浅层 ( stage0 ) 上采样 4x → 步长 / 4 / Shallow (stage0) upsample 4x → stride /4
         self.project0 = nn.Sequential(
             nn.Conv2d(embed_dim, out_channels[0], 1),
             nn.ConvTranspose2d(out_channels[0], out_channels[0], kernel_size=4, stride=4),
@@ -596,7 +605,7 @@ class DPTHead(nn.Module):
         )
 
         # Fusion: 每级加一个 3x3 conv 平滑
-        # Fusion: 3x3 conv refinement at each level
+        # 融合: 3x3 conv refinement at each level / Fusion: 3x3 conv refinement at each level
         self.refine0 = nn.Sequential(nn.Conv2d(out_channels[0], out_channels[0], 3, padding=1, bias=False), nn.BatchNorm2d(out_channels[0]), nn.GELU())
         self.refine1 = nn.Sequential(nn.Conv2d(out_channels[1], out_channels[1], 3, padding=1, bias=False), nn.BatchNorm2d(out_channels[1]), nn.GELU())
         self.refine2 = nn.Sequential(nn.Conv2d(out_channels[2], out_channels[2], 3, padding=1, bias=False), nn.BatchNorm2d(out_channels[2]), nn.GELU())
@@ -626,7 +635,7 @@ class DPTHead(nn.Module):
             B, N, C = tokens.shape
             expected = h * w
             # 如果 N > expected，说明还包含 prefix token，去掉
-            # If N > expected, prefix tokens are still present — strip them
+            # If N > expected, prefix 标记 are still present — strip them / If N > expected, prefix tokens are still present — strip them
             if N > expected and self.num_prefix_tokens > 0:
                 tokens = tokens[:, self.num_prefix_tokens:, :]
                 N = tokens.shape[1]

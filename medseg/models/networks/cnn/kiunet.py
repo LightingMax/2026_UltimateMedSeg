@@ -1,4 +1,5 @@
 """KiU-Net (2D) — self-contained port of the upstream reference.
+    KiU-Net ( 2D ) — self-contained 移植 of the upstream 参考。
 
 Reference: Valanarasu et al., "KiU-Net: Overcomplete Convolutional Architectures
 for Biomedical Image and Volumetric Segmentation" (MICCAI 2020).
@@ -44,12 +45,14 @@ import torch.nn.functional as F
 
 
 def _interp(x: torch.Tensor, size) -> torch.Tensor:
-    """Bilinear interpolate to an explicit (H, W) target."""
+    """Bilinear 插值 to an explicit ( H, W ) 目标。
+        Bilinear interpolate to an explicit (H, W) target."""
     return F.interpolate(x, size=size, mode="bilinear", align_corners=False)
 
 
 class KiUNet(nn.Module):
-    """KiU-Net (2D) — overcomplete + undercomplete dual-branch segmentation net."""
+    """KiU-Net ( 2D ) — overcomplete + undercomplete dual-branch 分割 net。
+        KiU-Net (2D) — overcomplete + undercomplete dual-branch segmentation net."""
 
     def __init__(
         self,
@@ -67,11 +70,11 @@ class KiUNet(nn.Module):
 
         b = int(base)
         c1, c2, c3 = b, b * 2, b * 4  # 16, 32, 64 by default
-        # Decoder output channel for the final pre-fusion stage. Upstream uses
+        # 解码 输出 通道 for the final pre-fusion 阶段. Upstream uses / Decoder output channel for the final pre-fusion stage. Upstream uses
         # a fixed 8 regardless of base; keep that proportionality (b // 2).
         c_fuse = max(b // 2, 1)
 
-        # ---------------- U-Net branch (undercomplete) ----------------
+        # - - - - - - - - - - - - - - - - U-Net 分支 ( undercomplete ) - - - - - - - - - - - - - - - - / ---------------- U-Net branch (undercomplete) ----------------
         self.encoder1 = nn.Conv2d(self.in_channels, c1, 3, stride=1, padding=1)
         self.en1_bn = nn.BatchNorm2d(c1)
         self.encoder2 = nn.Conv2d(c1, c2, 3, stride=1, padding=1)
@@ -86,7 +89,7 @@ class KiUNet(nn.Module):
         self.decoder3 = nn.Conv2d(c1, c_fuse, 3, stride=1, padding=1)
         self.de3_bn = nn.BatchNorm2d(c_fuse)
 
-        # ---------------- Ki-Net branch (overcomplete) ----------------
+        # - - - - - - - - - - - - - - - - Ki-Net 分支 ( overcomplete ) - - - - - - - - - - - - - - - - / ---------------- Ki-Net branch (overcomplete) ----------------
         self.encoderf1 = nn.Conv2d(self.in_channels, c1, 3, stride=1, padding=1)
         self.enf1_bn = nn.BatchNorm2d(c1)
         self.encoderf2 = nn.Conv2d(c1, c2, 3, stride=1, padding=1)
@@ -101,7 +104,7 @@ class KiUNet(nn.Module):
         self.decoderf3 = nn.Conv2d(c1, c_fuse, 3, stride=1, padding=1)
         self.def3_bn = nn.BatchNorm2d(c_fuse)
 
-        # ------------- Cross-Residual Fusion Blocks (encoder) -------------
+        # - - - - - - - - - - - - - Cross-Residual 融合 Blocks ( 编码器 ) - - - - - - - - - - - - - / ------------- Cross-Residual Fusion Blocks (encoder) -------------
         # _1 = Ki-Net -> U-Net (downscaled), _2 = U-Net -> Ki-Net (upscaled).
         self.intere1_1 = nn.Conv2d(c1, c1, 3, stride=1, padding=1)
         self.inte1_1bn = nn.BatchNorm2d(c1)
@@ -117,7 +120,7 @@ class KiUNet(nn.Module):
         self.intere3_2 = nn.Conv2d(c3, c3, 3, stride=1, padding=1)
         self.inte3_2bn = nn.BatchNorm2d(c3)
 
-        # ------------- Cross-Residual Fusion Blocks (decoder) -------------
+        # - - - - - - - - - - - - - Cross-Residual 融合 Blocks ( 解码 ) - - - - - - - - - - - - - / ------------- Cross-Residual Fusion Blocks (decoder) -------------
         self.interd1_1 = nn.Conv2d(c2, c2, 3, stride=1, padding=1)
         self.intd1_1bn = nn.BatchNorm2d(c2)
         self.interd2_1 = nn.Conv2d(c1, c1, 3, stride=1, padding=1)
@@ -128,7 +131,7 @@ class KiUNet(nn.Module):
         self.interd2_2 = nn.Conv2d(c1, c1, 3, stride=1, padding=1)
         self.intd2_2bn = nn.BatchNorm2d(c1)
 
-        # Final classifier: 1x1 conv at the original input resolution.
+        # Final classifier: 1x1 conv at the original 输入 分辨率 / Final classifier: 1x1 conv at the original input resolution.
         self.final = nn.Conv2d(c_fuse, self.num_classes, 1, stride=1, padding=0)
 
     # ------------------------------------------------------------------
@@ -139,29 +142,30 @@ class KiUNet(nn.Module):
         return t.shape[-2], t.shape[-1]
 
     def _kite_size(self, h: int, w: int):
-        """Double (h, w) but cap each dim at ``max_kite_size``."""
+        """Double ( h, w ) but cap each dim at ` ` max _ kite _ 大小 ` `。
+            Double (h, w) but cap each dim at ``max_kite_size``."""
         cap = self.max_kite_size
         return min(h * 2, cap), min(w * 2, cap)
 
     # ------------------------------------------------------------------
-    # Forward
+    # 前向传播 / Forward
     # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         h0, w0 = x.shape[-2], x.shape[-1]
 
-        # Pre-compute Ki-Net branch sizes (with capping).
+        # Pre-compute Ki-Net 分支 sizes ( with capping ) / Pre-compute Ki-Net branch sizes (with capping).
         k1 = self._kite_size(h0, w0)
         k2 = self._kite_size(*k1)
         k3 = self._kite_size(*k2)
 
-        # ===== Encoder, level 1 =====
-        # U-Net branch: spatial /2 (via MaxPool2d stride 2).
+        # ===== 编码器 / ===== Encoder, level 1 =====
+        # U-Net 分支: 空间的 / 2 ( via MaxPool2d 步长 2 ) / U-Net branch: spatial /2 (via MaxPool2d stride 2).
         out = F.relu(self.en1_bn(F.max_pool2d(self.encoder1(x), 2, 2)))
-        # Ki-Net branch: spatial x2 (capped via explicit-size interpolation).
+        # Ki-Net 分支: 空间的 x2 ( capped via explicit-size interpolation ) / Ki-Net branch: spatial x2 (capped via explicit-size interpolation).
         out1 = F.relu(self.enf1_bn(_interp(self.encoderf1(x), k1)))
 
         tmp = out
-        # CRFB: bring Ki-Net feature down to U-Net resolution, and vice-versa.
+        # CRFB: bring Ki-Net 特征 down to U-Net 分辨率, and vice-versa / CRFB: bring Ki-Net feature down to U-Net resolution, and vice-versa.
         out = out + _interp(
             F.relu(self.inte1_1bn(self.intere1_1(out1))), self._hw(out)
         )
@@ -172,7 +176,7 @@ class KiUNet(nn.Module):
         u1 = out  # U-Net skip
         o1 = out1  # Ki-Net skip
 
-        # ===== Encoder, level 2 =====
+        # ===== 编码器 / ===== Encoder, level 2 =====
         out = F.relu(self.en2_bn(F.max_pool2d(self.encoder2(out), 2, 2)))
         out1 = F.relu(self.enf2_bn(_interp(self.encoderf2(out1), k2)))
 
@@ -187,7 +191,7 @@ class KiUNet(nn.Module):
         u2 = out
         o2 = out1
 
-        # ===== Encoder, level 3 =====
+        # ===== 编码器 / ===== Encoder, level 3 =====
         out = F.relu(self.en3_bn(F.max_pool2d(self.encoder3(out), 2, 2)))
         out1 = F.relu(self.enf3_bn(_interp(self.encoderf3(out1), k3)))
 
@@ -199,9 +203,9 @@ class KiUNet(nn.Module):
             F.relu(self.inte3_2bn(self.intere3_2(tmp))), self._hw(out1)
         )
 
-        # ===== Decoder, level 1 =====
-        # U-Net upsamples to the partner-skip resolution; Ki-Net downsamples
-        # to mirror back toward the original input size.
+        # ===== 解码器 / ===== Decoder, level 1 =====
+        # U-Net upsamples to the partner-skip 分辨率; Ki-Net downsamples / U-Net upsamples to the partner-skip resolution; Ki-Net downsamples
+        # to mirror back toward the original 输入 大小 / to mirror back toward the original input size.
         out = F.relu(self.de1_bn(_interp(self.decoder1(out), self._hw(u2))))
         out1 = F.relu(self.def1_bn(_interp(self.decoderf1(out1), k2)))
 
@@ -216,7 +220,7 @@ class KiUNet(nn.Module):
         out = out + u2  # within-branch skip
         out1 = out1 + o2
 
-        # ===== Decoder, level 2 =====
+        # ===== 解码器 / ===== Decoder, level 2 =====
         out = F.relu(self.de2_bn(_interp(self.decoder2(out), self._hw(u1))))
         out1 = F.relu(self.def2_bn(_interp(self.decoderf2(out1), k1)))
 
@@ -231,11 +235,11 @@ class KiUNet(nn.Module):
         out = out + u1
         out1 = out1 + o1
 
-        # ===== Decoder, level 3 (back to input resolution) =====
+        # ===== 解码器 / ===== Decoder, level 3 (back to input resolution) =====
         out = F.relu(self.de3_bn(_interp(self.decoder3(out), (h0, w0))))
         out1 = F.relu(self.def3_bn(_interp(self.decoderf3(out1), (h0, w0))))
 
-        # Branch fusion + final 1x1 classifier.
+        # 分支 融合 + final 1x1 classifier / Branch fusion + final 1x1 classifier.
         out = out + out1
         out = self.final(out)
 

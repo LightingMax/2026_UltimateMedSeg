@@ -1,4 +1,5 @@
-"""Mamba/SSM-based complete segmentation architectures."""
+"""Mamba / SSM-based complete 分割 architectures。
+    Mamba/SSM-based complete segmentation architectures."""
 
 from .mamba_unet import MambaUNet
 from .h_vmunet import HVMUNet

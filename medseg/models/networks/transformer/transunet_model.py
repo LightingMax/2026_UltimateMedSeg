@@ -1,4 +1,5 @@
 """TransUNet – self-contained port from github.com/Beckschen/TransUNet.
+    TransUNet – self-contained 移植 from github. com / Beckschen / TransUNet。
 
 Combines vit_seg_configs.py, vit_seg_modeling_resnet_skip.py, and
 vit_seg_modeling.py into a single file with no external medseg imports.
@@ -24,7 +25,7 @@ from torch.nn import Conv2d, CrossEntropyLoss, Dropout, LayerNorm, Linear, Softm
 from torch.nn.modules.utils import _pair
 
 
-# ── lightweight config (replaces ml_collections.ConfigDict) ──────────────────
+# ─ ─ 轻量级 配置 ( replaces ml _ collections. ConfigDict ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── lightweight config (replaces ml_collections.ConfigDict) ──────────────────
 class _Cfg(dict):
     """Dict that also supports attribute access."""
     def __getattr__(self, k):
@@ -60,7 +61,7 @@ def _get_r50_b16_config():
     return c
 
 
-# ── ResNetV2 with skip connections (from vit_seg_modeling_resnet_skip.py) ───
+# ── ResNetV2 with 跳跃连接 / ── ResNetV2 with skip connections (from vit_seg_modeling_resnet_skip.py) ───
 def _np2th(weights, conv=False):
     if conv:
         weights = weights.transpose([3, 2, 0, 1])
@@ -409,6 +410,7 @@ class _VisionTransformer(nn.Module):
 
 class TransUNet(nn.Module):
     """TransUNet wrapper with standard interface.
+        TransUNet 封装器 with 标准 interface。
 
     Args:
         in_channels (int): Number of input channels (default: 3).
@@ -419,10 +421,10 @@ class TransUNet(nn.Module):
         super().__init__()
         config = _get_r50_b16_config()
         config.n_classes = num_classes
-        # Compute grid dynamically based on img_size
+        # 计算 grid dynamically based on img _ 大小 / Compute grid dynamically based on img_size
         grid = img_size // 16  # 14 for 224, 16 for 256
         config.patches["grid"] = (grid, grid)
-        # Allow kwargs to override config
+        # Allow kwargs to 覆盖 配置 / Allow kwargs to override config
         if "hidden_size" in kwargs:
             config.hidden_size = kwargs["hidden_size"]
         if "num_layers" in kwargs:

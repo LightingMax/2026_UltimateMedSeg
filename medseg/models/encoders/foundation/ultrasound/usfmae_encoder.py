@@ -1,4 +1,5 @@
 """USF-MAE ultrasound foundation-model encoder.
+    USF-MAE ultrasound foundation-model 编码器。
 
 Reference:
     Megahed et al., "USF-MAE: Ultrasound Self-Supervised Foundation Model
@@ -47,12 +48,13 @@ _NUM_LAYERS = 12
 _NUM_HEADS = 12
 _INTERMEDIATE_SIZE = 3072  # 4 * embed_dim
 
-# MAE checkpoint key prefixes to strip.
+# MAE 检查点 key prefixes to strip / MAE checkpoint key prefixes to strip.
 _PREFIX_STRIP = ("module.", "encoder.", "model.", "mae.")
 
 
 def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
     """Build a HF ViTModel skeleton (ViT-B/16) and load USF-MAE weights.
+        Build a HF ViTModel skeleton ( ViT-B / 16 ) and 加载 USF-MAE 权重。
 
     Returns a ``HuggingFaceViTWrapper``-compatible module with
     ``forward_features``, ``embed_dim``, ``patch_embed.patch_size``, etc.
@@ -73,7 +75,7 @@ def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
     )
     vit = ViTModel(cfg)
 
-    # Try to load pretrained weights.
+    # Try to 加载 预训练 权重 / Try to load pretrained weights.
     state = None
     if pretrained_path:
         ckpt = torch.load(pretrained_path, map_location="cpu", weights_only=False)
@@ -120,7 +122,7 @@ def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
             cleaned[nk] = v
         state = cleaned
 
-        # Remove decoder keys (MAE has encoder + decoder).
+        # Remove decoder keys (MAE has 编码器 / Remove decoder keys (MAE has encoder + decoder).
         state = {k: v for k, v in state.items()
                  if not any(skip in k for skip in ("decoder", "mask_token"))}
 
@@ -141,6 +143,7 @@ def _load_mae_vit_b16(pretrained_path: Optional[str] = None) -> nn.Module:
 @ENCODER_REGISTRY.register("usfmae")
 class USFMAEEncoder(BaseFoundationEncoder):
     """USF-MAE ultrasound encoder (MAE ViT-B/16, ``embed_dim=768``).
+        USF-MAE ultrasound 编码器。
 
     Parameters
     ----------
@@ -170,7 +173,7 @@ class USFMAEEncoder(BaseFoundationEncoder):
                          freeze=freeze, unfreeze_last_n=unfreeze_last_n,
                          inference_only=inference_only, **kwargs)
 
-        # Channel adapter for non-RGB inputs.
+        # 通道 适配器 for non-RGB inputs / Channel adapter for non-RGB inputs.
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
@@ -192,7 +195,7 @@ class USFMAEEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -215,7 +218,7 @@ class USFMAEEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

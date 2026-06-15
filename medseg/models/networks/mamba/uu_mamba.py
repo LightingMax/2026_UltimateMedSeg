@@ -1,4 +1,5 @@
 """UU-Mamba: Uncertainty-aware U-Mamba for Cardiac/Ultrasound Segmentation.
+    UU-Mamba: Uncertainty-aware U-Mamba for Cardiac / Ultrasound 分割。
 
 Reference:
     Tsai et al., "Uncertainty-aware U-Mamba for Cardiac Image Segmentation",
@@ -48,25 +49,26 @@ class _MambaBlock2D(nn.Module):
 
 
 class UUMamba(nn.Module):
-    """UU-Mamba for cardiac/ultrasound segmentation."""
+    """UU-Mamba for cardiac / ultrasound 分割。
+        UU-Mamba for cardiac/ultrasound segmentation."""
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  base_channels=32, **kwargs):
         super().__init__()
         C = base_channels
         self.num_classes = num_classes
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _DoubleConv(in_channels, C)
         self.enc2 = _DoubleConv(C, C * 2)
         self.enc3 = _DoubleConv(C * 2, C * 4)
         self.enc4 = _DoubleConv(C * 4, C * 8)
         self.pool = nn.MaxPool2d(2)
 
-        # Mamba bottleneck
+        # Mamba 瓶颈层 / Mamba bottleneck
         self.mamba1 = _MambaBlock2D(C * 8)
         self.mamba2 = _MambaBlock2D(C * 8)
 
-        # Decoder
+        # 解码 / Decoder
         self.up4 = nn.ConvTranspose2d(C * 8, C * 4, 2, stride=2)
         self.dec4 = _DoubleConv(C * 8, C * 4)
         self.up3 = nn.ConvTranspose2d(C * 4, C * 2, 2, stride=2)
@@ -74,7 +76,7 @@ class UUMamba(nn.Module):
         self.up2 = nn.ConvTranspose2d(C * 2, C, 2, stride=2)
         self.dec2 = _DoubleConv(C * 2, C)
 
-        # Output: mean + variance (uncertainty-aware)
+        # 输出: mean + variance ( uncertainty-aware ) / Output: mean + variance (uncertainty-aware)
         self.head_mean = nn.Conv2d(C, num_classes, 1)
         self.head_var = nn.Sequential(
             nn.Conv2d(C, C, 1), nn.Softplus(),

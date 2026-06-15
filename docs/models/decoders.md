@@ -2,7 +2,7 @@
 
 [中文文档](decoders_CN.md)
 
-This project provides 40 decoder modules, grouped by category as follows.
+This project provides 45 decoder modules, grouped by category as follows.
 
 ## Basic (4)
 
@@ -58,7 +58,7 @@ MLP-based decoders.
 | `mlp` | Generic MLP decoder | [mlp_resnet34.yaml](../../configs/architectures/combinations/general/mlp_resnet34.yaml) |
 | `segformer` | SegFormer-style MLP decoder | [swinunet_segformer.yaml](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 
-## Specific (12)
+## Specific (15)
 
 Architecture-specific decoders.
 
@@ -76,6 +76,9 @@ Architecture-specific decoders.
 | `scaleformer` | ScaleFormer | [scaleformer_cascade_full.yaml](../../configs/architectures/combinations/general/scaleformer_cascade_full.yaml) |
 | `malunet` | MALUNet | [basic_malunet.yaml](../../configs/architectures/decoder_study/general/basic_malunet.yaml) |
 | `ege_unet` | EGE-UNet | [basic_ege_unet.yaml](../../configs/architectures/decoder_study/general/basic_ege_unet.yaml) |
+| `deeplabv3` | DeepLabV3 (ASPP decoder) | [resnet50_deeplabv3.yaml](../../configs/architectures/combinations/general/resnet50_deeplabv3.yaml) |
+| `banet` | BANet Boundary-Aware Network | [basic_banet.yaml](../../configs/architectures/decoder_study/general/basic_banet.yaml) |
+| `ffparser` | FF-Parser Frequency Filter | [basic_ffparser.yaml](../../configs/architectures/decoder_study/general/basic_ffparser.yaml) |
 
 ## Transformer (5)
 
@@ -89,7 +92,7 @@ Transformer-based decoders.
 | `swinunet` | Swin-UNet decoder | [swinunet_segformer.yaml](../../configs/architectures/combinations/general/swinunet_segformer.yaml) |
 | `uctransnet` | UCTransNet decoder | [uctransnet.yaml](../../configs/architectures/combinations/general/uctransnet.yaml) |
 
-## Attention (3)
+## Attention (5)
 
 Attention-based decoders.
 
@@ -98,6 +101,8 @@ Attention-based decoders.
 | `attention` | Attention gate decoder | [attention_unet_basic.yaml](../../configs/architectures/combinations/general/attention_unet_basic.yaml) |
 | `ham` | Hybrid Attention Module | [ham_resnet34.yaml](../../configs/architectures/combinations/general/ham_resnet34.yaml) |
 | `lawin` | Large Window Attention decoder | [lawin_resnet50.yaml](../../configs/architectures/combinations/general/lawin_resnet50.yaml) |
+| `ocrnet` | OCRNet Spatial OCR (ECCV 2020) | [basic_ocrnet.yaml](../../configs/architectures/decoder_study/general/basic_ocrnet.yaml) |
+| `ccnet` | CCNet Criss-Cross Attention (ICCV 2019) | [basic_ccnet.yaml](../../configs/architectures/decoder_study/general/basic_ccnet.yaml) |
 
 ## Mamba (1)
 

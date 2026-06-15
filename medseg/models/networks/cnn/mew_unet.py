@@ -1,4 +1,5 @@
 """MEW-UNet: Multi-axis External Weight UNet for Medical Image Segmentation.
+    MEW-UNet: Multi-axis External 权重 UNet for 医学的 图像 分割。
 
 Faithful PyTorch port of:
   J. Ruan et al., "MEW-UNet: Multi-axis representation learning in frequency
@@ -45,12 +46,13 @@ from medseg.models.networks.cnn.malunet import SCABridge
 
 
 # ---------------------------------------------------------------------------
-# MEW block
+# MEW 块 / MEW block
 # ---------------------------------------------------------------------------
 
 
 class _MEW(nn.Module):
     """Multi-axis External Weight block.
+        Multi-axis External 权重 块。
 
     The three branches each transform the input into the frequency domain along
     a different "axis" interpretation, multiply by a learnable complex
@@ -67,18 +69,19 @@ class _MEW(nn.Module):
         b_h, b_w = dim, h // 2 + 1  # W-axis branch spectrum (C, H//2+1)
         c_h, c_w = h, w // 2 + 1    # C-axis branch spectrum (H, W//2+1)
 
-        # Storage layout: (2, 1, H, W) with dim 0 = real/imag so F.interpolate
-        # can treat dim 0 as batch and dim 1 as channel.
+        # Storage layout: ( 2, 1, H, W ) with dim 0 = real / imag so F. 插值 / Storage layout: (2, 1, H, W) with dim 0 = real/imag so F.interpolate
+        # can treat dim 0 as 批次 and dim 1 as 通道 / can treat dim 0 as batch and dim 1 as channel.
         self.a_weight = nn.Parameter(torch.ones(2, 1, a_h, a_w))
         self.b_weight = nn.Parameter(torch.ones(2, 1, b_h, b_w))
         self.c_weight = nn.Parameter(torch.ones(2, 1, c_h, c_w))
 
-        # Group-norm the residual output for stability.
+        # Group-norm the 残差 输出 for stability / Group-norm the residual output for stability.
         self.norm = nn.GroupNorm(4, dim)
 
     @staticmethod
     def _to_complex(weight_4d: torch.Tensor, target_hw: Tuple[int, int]) -> torch.Tensor:
         """Interpolate the stored (2, 1, H, W) weight to target spectrum shape
+            插值 the stored ( 2, 1, H, W ) 权重 to 目标 spectrum 形状。
         and return a complex tensor of shape ``target_hw``.
         """
         if weight_4d.shape[-2:] != tuple(target_hw):
@@ -108,7 +111,7 @@ class _MEW(nn.Module):
         xb = torch.fft.irfft2(xb_spec, s=(C, H), dim=(2, 3), norm="ortho")
         xb = xb.permute(0, 2, 3, 1).contiguous()           # (B, C, H, W)
 
-        # ----- c-branch: classic spatial 2D FFT, channel is free axis -----
+        # - - - - - c-branch: classic 空间的 2D FFT, 通道 is free axis - - - - - / ----- c-branch: classic spatial 2D FFT, channel is free axis -----
         xc_spec = torch.fft.rfft2(x, dim=(2, 3), norm="ortho")
         c_w = self._to_complex(self.c_weight, (H, W // 2 + 1))
         xc_spec = xc_spec * c_w
@@ -124,7 +127,8 @@ class _MEW(nn.Module):
 
 
 class MEWUNet(nn.Module):
-    """MEW-UNet, MALUNet-style 6-stage backbone with MEW blocks at deep stages."""
+    """MEW-UNet, MALUNet-style 6-stage 骨干网络 with MEW blocks at 深度 阶段。
+        MEW-UNet, MALUNet-style 6-stage backbone with MEW blocks at deep stages."""
 
     def __init__(
         self,
@@ -142,7 +146,7 @@ class MEWUNet(nn.Module):
         self.bridge = bridge
         self.deep_supervision = deep_supervision
 
-        # Construction-time spectrum sizes for the two MEW-bearing stages.
+        # Construction-time spectrum sizes for the two MEW-bearing 阶段 / Construction-time spectrum sizes for the two MEW-bearing stages.
         s4 = max(img_size // 16, 4)   # 14 for img_size=224
         s5 = max(img_size // 32, 2)   #  7 for img_size=224
 
@@ -161,11 +165,11 @@ class MEWUNet(nn.Module):
         self.ebn5 = nn.GroupNorm(4, c_list[4])
         self.ebn6 = nn.GroupNorm(4, c_list[5])
 
-        # MEW blocks at the deeper encoder stages (post-pool features).
+        # MEW blocks at the deeper 编码器 / MEW blocks at the deeper encoder stages (post-pool features).
         self.mew_e4 = _MEW(c_list[3], s4, s4)
         self.mew_e5 = _MEW(c_list[4], s5, s5)
 
-        # Optional spatial-channel attention bridge over 5 encoder skips.
+        # Optional spatial-channel attention bridge over 5 编码器 / Optional spatial-channel attention bridge over 5 encoder skips.
         if bridge:
             self.scab = SCABridge(c_list, split_att="fc")
 
@@ -182,7 +186,7 @@ class MEWUNet(nn.Module):
         self.dbn4 = nn.GroupNorm(4, c_list[1])
         self.dbn5 = nn.GroupNorm(4, c_list[0])
 
-        # MEW blocks mirrored into the two deepest decoder stages.
+        # MEW blocks mirrored into the two deepest 解码器 / MEW blocks mirrored into the two deepest decoder stages.
         self.mew_d1 = _MEW(c_list[4], s5, s5)
         self.mew_d2 = _MEW(c_list[3], s4, s4)
 
@@ -221,7 +225,7 @@ class MEWUNet(nn.Module):
     def forward(self, x: torch.Tensor):
         H_in, W_in = x.shape[-2:]
 
-        # ---- Encoder ----
+        # ---- 编码器 / ---- Encoder ----
         e1 = F.gelu(F.max_pool2d(self.ebn1(self.encoder1(x)), 2, 2))   # H/2,  c0
         t1 = e1
         e2 = F.gelu(F.max_pool2d(self.ebn2(self.encoder2(e1)), 2, 2))  # H/4,  c1
@@ -238,10 +242,10 @@ class MEWUNet(nn.Module):
         if self.bridge:
             t1, t2, t3, t4, t5 = self.scab([t1, t2, t3, t4, t5])
 
-        # ---- Bottleneck (stage 6, no pool, GELU only on the activation) ----
+        # ---- 瓶颈层 / ---- Bottleneck (stage 6, no pool, GELU only on the activation) ----
         bn = F.gelu(self.ebn6(self.encoder6(e5)))                      # H/32, c5
 
-        # ---- Decoder ----
+        # ---- 解码器 / ---- Decoder ----
         d1 = F.gelu(self.dbn1(self.decoder1(bn)))                      # H/32, c4
         d1 = self.mew_d1(d1)
         d1 = d1 + t5

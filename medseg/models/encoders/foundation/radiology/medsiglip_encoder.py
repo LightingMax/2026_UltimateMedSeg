@@ -1,4 +1,5 @@
 """MedSigLIP medical vision encoder (radiology / general medical imaging).
+    MedSigLIP medical vision 编码器。
 
 Reference:
     Google Health, "MedSigLIP: Medical Image-Text Encoder for Zero-Shot
@@ -42,6 +43,7 @@ _PATCH_SIZE = 14
 @ENCODER_REGISTRY.register("medsiglip")
 class MedSigLIPEncoder(BaseFoundationEncoder):
     """MedSigLIP (SigLIP-So400m/14) medical vision encoder.
+        MedSigLIP (SigLIP-So400m/14) medical vision 编码器。
 
     The backbone is a SigLIP ViT (``embed_dim=1152``, ``patch_size=14``,
     native 448×448).  Its final-layer patch tokens are reshaped to
@@ -77,13 +79,13 @@ class MedSigLIPEncoder(BaseFoundationEncoder):
                          freeze=freeze, unfreeze_last_n=unfreeze_last_n,
                          inference_only=inference_only, **kwargs)
 
-        # Channel adapter for non-RGB inputs.
+        # 通道 适配器 for non-RGB inputs / Channel adapter for non-RGB inputs.
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — SiglipVisionModel via transformers.
+        # 骨干网络 — SiglipVisionModel via transformers / Backbone — SiglipVisionModel via transformers.
         if pretrained:
             self.backbone = load_hf_vit(
                 hf_name=_PRIMARY_HF_NAME,
@@ -105,7 +107,7 @@ class MedSigLIPEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -128,7 +130,7 @@ class MedSigLIPEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

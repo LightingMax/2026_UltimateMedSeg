@@ -1,4 +1,5 @@
 """Unified weight downloader for medseg.
+    统一的 权重 downloader for medseg。
 
 Each method in the project that needs a non-trivial pretrained checkpoint
 (MedSAM, GroundingDINO, GloVe, etc.) registers a :class:`WeightSource`
@@ -35,13 +36,14 @@ logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
-# Data classes
+# 数据 classes / Data classes
 # ----------------------------------------------------------------------
 
 
 @dataclass
 class WeightSource:
     """A single registered checkpoint, with auto-download + manual fallback URL.
+        A single registered 检查点, with auto-download + manual fallback URL。
 
     Attributes
     ----------
@@ -78,6 +80,7 @@ class WeightSource:
 
 class WeightDownloadError(RuntimeError):
     """Raised when a required checkpoint cannot be auto-downloaded.
+        Raised when a required 检查点 cannot be auto-downloaded。
 
     The message always contains the canonical manual download URL and the
     exact target path so the user can drop the file in by hand.
@@ -90,7 +93,8 @@ class WeightDownloadError(RuntimeError):
 
 
 def default_cache_root() -> Path:
-    """Return ``$MEDSEG_WEIGHT_CACHE`` or ``~/.cache/medseg/weights``."""
+    """返回 ` ` $ MEDSEG _ 权重 _ CACHE ` ` or ` ` ~ /. cache / medseg / 权重 ` `。
+        Return ``$MEDSEG_WEIGHT_CACHE`` or ``~/.cache/medseg/weights``."""
     env = os.environ.get("MEDSEG_WEIGHT_CACHE")
     if env:
         return Path(env).expanduser().resolve()
@@ -98,7 +102,7 @@ def default_cache_root() -> Path:
 
 
 # ----------------------------------------------------------------------
-# Source helpers — each returns a callable that performs one fetch
+# 来源 helpers — each 返回 a callable that performs one fetch / Source helpers — each returns a callable that performs one fetch
 # ----------------------------------------------------------------------
 
 
@@ -132,7 +136,8 @@ def _hf_file(repo_id: str, filename: str, repo_type: str = "model") -> Callable[
 
 
 def _http(url: str) -> Callable[[Path], None]:
-    """Build a fetcher that downloads ``url`` to the target path."""
+    """Build a fetcher that downloads ` ` url ` ` to the 目标 path。
+        Build a fetcher that downloads ``url`` to the target path."""
 
     def _fetch(target: Path) -> None:
         import urllib.request
@@ -161,15 +166,81 @@ def _http(url: str) -> Callable[[Path], None]:
     return _fetch
 
 
+def _http_zip_extract(url: str, inner_file: str) -> Callable:
+    """Download a zip archive from * url * and 提取 * inner _ file *。
+        Download a zip archive from *url* and extract *inner_file*."""
+    def _fetch(target: Path) -> None:
+        import tempfile, zipfile, urllib.request, shutil
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            urllib.request.urlretrieve(url, tmp_path)
+            with zipfile.ZipFile(tmp_path) as zf:
+                candidates = [n for n in zf.namelist() if n.endswith(inner_file)]
+                if not candidates:
+                    raise RuntimeError(
+                        f"File '{inner_file}' not found in zip {url}. "
+                        f"Available: {[n for n in zf.namelist() if n.endswith(('.pth','.txt'))]}"
+                    )
+                with zf.open(candidates[0]) as src, open(target, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+    _fetch.__name__ = f"http_zip:{url}/{inner_file}"
+    return _fetch
+
+
+def _gdrive_folder_file(folder_id: str, filename: str) -> Callable:
+    """Download a single file from a public Google Drive folder.
+
+    Uses ``gdown`` for reliable large-file downloads with confirmation
+    token handling.
+    """
+    def _fetch(target: Path) -> None:
+        try:
+            import gdown
+        except ImportError:
+            raise RuntimeError(
+                "gdown is required for Google Drive downloads. "
+                "Install with: pip install gdown"
+            )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        url = f"https://drive.google.com/uc?id=&export=download"
+        # Search the folder for the file ID
+        folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
+        # Use gdown with folder download
+        gdown.download_folder(folder_url, output=str(target.parent),
+                              quiet=False, remaining_ok=True)
+        # Find the downloaded file
+        candidates = list(target.parent.rglob(filename))
+        if not candidates:
+            # Try with the same name
+            candidates = list(target.parent.rglob("*.pth"))
+        if not candidates:
+            raise RuntimeError(
+                f"File '{filename}' not found in downloaded folder {target.parent}. "
+                f"Available: {[p.name for p in target.parent.rglob('*.pth')]}"
+            )
+
+        import shutil
+        shutil.copy2(str(candidates[0]), str(target))
+
+    _fetch.__name__ = f"gdrive_folder:{folder_id}/{filename}"
+    return _fetch
+
+
 # ----------------------------------------------------------------------
-# Registry
+# 注册表 / Registry
 # ----------------------------------------------------------------------
 
 WEIGHT_REGISTRY: dict[str, WeightSource] = {}
 
 
 def register(src: WeightSource) -> WeightSource:
-    """Register a weight source (idempotent on repeated import)."""
+    """注册 a 权重 来源 ( idempotent on repeated import )。
+        Register a weight source (idempotent on repeated import)."""
     WEIGHT_REGISTRY[src.name] = src
     return src
 
@@ -265,13 +336,14 @@ register(WeightSource(
 
 
 # --- SAM-Med2D ViT-B (Cheng et al., 2024) --------------------------------
-# Official OpenGVLab fine-tune on 4.6M medical image-mask pairs. The released
-# checkpoint adds per-block bottleneck adapters and a custom prompt encoder
-# tuned for medical clicks/boxes; it is NOT bit-equivalent to vanilla SAM.
+# Official OpenGVLab fine-tune on 4. 6M 医学的 image-mask pairs. The released / Official OpenGVLab fine-tune on 4.6M medical image-mask pairs. The released
+# checkpoint adds per-block bottleneck adapters and a custom prompt 编码器 / checkpoint adds per-block bottleneck adapters and a custom prompt encoder
+# tuned for 医学的 clicks / boxes; it is NOT bit-equivalent to 基础版 SAM / tuned for medical clicks/boxes; it is NOT bit-equivalent to vanilla SAM.
 register(WeightSource(
     name="sam_med2d_vit_b",
     filename="sam-med2d_b.pth",
     sources=[
+        _hf_file("schengal1/SAM-Med2D_model", "sam-med2d_b.pth"),
         _hf_file("OpenGVLab/SAM-Med2D", "sam-med2d_b.pth"),
     ],
     manual_url=(
@@ -294,6 +366,10 @@ register(WeightSource(
     filename="glove.6B.300d.txt",
     sources=[
         _hf_file("stanfordnlp/glove", "glove.6B.300d.txt", repo_type="dataset"),
+        _http_zip_extract(
+            "https://nlp.stanford.edu/data/glove.6B.zip",
+            "glove.6B.300d.txt",
+        ),
     ],
     manual_url="https://nlp.stanford.edu/data/glove.6B.zip",
     manual_instructions=(
@@ -307,9 +383,9 @@ register(WeightSource(
 
 
 # --- MediSee composite (LLaVA-Med + CLIP + MediSee fine-tune) ------------
-# The 4 components are handled separately by medseg/inference/mllm/medisee/
-# weights_loader.py (snapshot_download for HF dirs). Registered here only
-# so `python -m medseg.utils.weight_downloader --list` enumerates them.
+# The 4 components are handled separately by medseg / 推理 / mllm / medisee / / The 4 components are handled separately by medseg/inference/mllm/medisee/
+# 权重 _ loader. py ( snapshot _ download for HF dirs ). Registered here only / weights_loader.py (snapshot_download for HF dirs). Registered here only
+# so ` python - m medseg. utils. 权重 _ downloader - - list ` enumerates them / so `python -m medseg.utils.weight_downloader --list` enumerates them.
 register(WeightSource(
     name="medisee_llava_med",
     filename="(snapshot)",
@@ -336,9 +412,324 @@ register(WeightSource(
 ))
 
 
+# --- Swin-Tiny ImageNet (SwinUNet / TransNuSeg) ---------------------------
+register(WeightSource(
+    name="swin_tiny_patch4_window7_224",
+    filename="swin_tiny_patch4_window7_224.pth",
+    sources=[
+        _http("https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth"),
+    ],
+    manual_url="https://github.com/SwinTransformer/storage/releases/tag/v1.0.0",
+    manual_instructions=(
+        "Swin-Tiny ImageNet pretrained weights (used by SwinUNet, TransNuSeg). "
+        "Download swin_tiny_patch4_window7_224.pth from the SwinTransformer "
+        "storage releases page and place at the printed cache path."
+    ),
+    size_mb=110,
+))
+
+
+# --- TransUNet R50+ViT-B/16 (JAX .npz) ------------------------------------
+register(WeightSource(
+    name="transunet_r50_vit_b16",
+    filename="R50+ViT-B_16.npz",
+    sources=[
+        _http("https://storage.googleapis.com/vit_models/imagenet21k/R50%2BViT-B_16.npz"),
+    ],
+    manual_url="https://console.cloud.google.com/storage/browser/vit_models/imagenet21k/",
+    manual_instructions=(
+        "TransUNet R50+ViT-B/16 JAX checkpoint (~346 MB). "
+        "Download R50+ViT-B_16.npz and place at the printed cache path."
+    ),
+    size_mb=346,
+))
+
+
+# --- VMamba Tiny (VMUNet) -------------------------------------------------
+register(WeightSource(
+    name="vmunet_vmamba_tiny",
+    filename="vmunet_vmamba_tiny.pth",
+    sources=[
+        _http("https://github.com/MzeroMiko/VMamba/releases/download/%23v0cls/vssmtiny_dp01_ckpt_epoch_292.pth"),
+    ],
+    manual_url="https://github.com/MzeroMiko/VMamba/releases",
+    manual_instructions=(
+        "VMamba-Tiny ImageNet pretrained weights for VMUNet. "
+        "Download vssmtiny_dp01_ckpt_epoch_292.pth from "
+        "https://github.com/MzeroMiko/VMamba/releases/tag/%23v0cls "
+        "and place at the printed cache path."
+    ),
+    size_mb=120,
+))
+
+
+# --- RWKV-UNet 编码器 / --- RWKV-UNet encoder pretrained (T / S / B variants) -------------------
+_RWKV_GDRIVE_FOLDER = "1odF_NK5wYRkE0C3w9eoLUQEVbxefj66e"
+
+register(WeightSource(
+    name="rwkv_unet_encoder_b",
+    filename="rwkv_unet_encoder_b.pth",
+    sources=[
+        _gdrive_folder_file(_RWKV_GDRIVE_FOLDER, "netB.pth"),
+    ],
+    manual_url="https://drive.google.com/drive/folders/1odF_NK5wYRkE0C3w9eoLUQEVbxefj66e",
+    manual_instructions=(
+        "RWKV-UNet Base encoder pretrained weights (ImageNet). "
+        "Download netB.pth from the Google Drive folder and "
+        "rename to rwkv_unet_encoder_b.pth, then place at the printed cache path."
+    ),
+    size_mb=120,
+))
+
+register(WeightSource(
+    name="rwkv_unet_encoder_s",
+    filename="rwkv_unet_encoder_s.pth",
+    sources=[
+        _gdrive_folder_file(_RWKV_GDRIVE_FOLDER, "netS.pth"),
+    ],
+    manual_url="https://drive.google.com/drive/folders/1odF_NK5wYRkE0C3w9eoLUQEVbxefj66e",
+    manual_instructions=(
+        "RWKV-UNet Small encoder pretrained weights (ImageNet). "
+        "Download netS.pth from the Google Drive folder and "
+        "rename to rwkv_unet_encoder_s.pth, then place at the printed cache path."
+    ),
+    size_mb=80,
+))
+
+register(WeightSource(
+    name="rwkv_unet_encoder_t",
+    filename="rwkv_unet_encoder_t.pth",
+    sources=[
+        _gdrive_folder_file(_RWKV_GDRIVE_FOLDER, "netT.pth"),
+    ],
+    manual_url="https://drive.google.com/drive/folders/1odF_NK5wYRkE0C3w9eoLUQEVbxefj66e",
+    manual_instructions=(
+        "RWKV-UNet Tiny encoder pretrained weights (ImageNet). "
+        "Download netT.pth from the Google Drive folder and "
+        "rename to rwkv_unet_encoder_t.pth, then place at the printed cache path."
+    ),
+    size_mb=50,
+))
+
+# 遗留 alias / Legacy alias
+register(WeightSource(
+    name="rwkv_unet_encoder",
+    filename="rwkv_unet_encoder.pth",
+    sources=[],
+    manual_url="https://drive.google.com/drive/folders/1odF_NK5wYRkE0C3w9eoLUQEVbxefj66e",
+    manual_instructions=(
+        "RWKV-UNet encoder pretrained weights (legacy key). "
+        "Use rwkv_unet_encoder_b / _s / _t for auto-download. "
+        "Download from the Google Drive link and place at the printed cache path."
+    ),
+    size_mb=100,
+))
+
+
+# --- PVTv2-B3 ImageNet (FCBFormer) ----------------------------------------
+register(WeightSource(
+    name="pvtv2_b3",
+    filename="pvt_v2_b3.pth",
+    sources=[
+        _hf_file("timm/pvt_v2_b3.in1k", "model.safetensors"),
+    ],
+    manual_url="https://huggingface.co/timm/pvt_v2_b3.in1k",
+    manual_instructions=(
+        "PVTv2-B3 ImageNet pretrained weights (used by FCBFormer TB branch). "
+        "Download from the HuggingFace timm model hub "
+        "(https://huggingface.co/timm/pvt_v2_b3.in1k) "
+        "and place at the printed cache path."
+    ),
+    size_mb=180,
+))
+
+
+# - - - HoverNet-Lite 预训练 ( CoNIC challenge ) - - - - - - - - - - - - - - - - - - - - - - - - - - - - / --- HoverNet-Lite pretrained (CoNIC challenge) ----------------------------
+register(WeightSource(
+    name="hovernet_lite_pretrained",
+    filename="hovernet_lite_pretrained.pth",
+    sources=[],
+    manual_url="https://github.com/vqdang/hover_net",
+    manual_instructions=(
+        "HoverNet-Lite pretrained weights for nuclei segmentation. "
+        "Download from the HoVerNet repo (https://github.com/vqdang/hover_net) "
+        "or the CoNIC challenge (https://github.com/TissueImageAnalytics/CoNIC). "
+        "Available formats: .npz (pannuke/monusac). "
+        "Convert to .pth and place at the printed cache path."
+    ),
+    size_mb=50,
+))
+
+
+# --- CSWin-Tiny ImageNet (CSWin-UNet) ------------------------------------
+register(WeightSource(
+    name="cswin_tiny_224",
+    filename="cswin_tiny_224.pth",
+    sources=[
+        _http("https://github.com/microsoft/CSWin-Transformer/releases/download/v0.1.2/cswin_tiny_224.pth"),
+    ],
+    manual_url="https://github.com/microsoft/CSWin-Transformer",
+    manual_instructions=(
+        "CSWin-Tiny ImageNet pretrained weights for CSWin-UNet. "
+        "Download cswin_tiny_224.pth from the Microsoft CSWin-Transformer "
+        "releases page and place at the printed cache path."
+    ),
+    size_mb=130,
+))
+
+
+# - - - Mamba-UNet 预训练 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / --- Mamba-UNet pretrained ------------------------------------------------
+register(WeightSource(
+    name="mamba_unet_pretrained",
+    filename="mamba_unet_pretrained.pth",
+    sources=[
+        _http("https://github.com/MzeroMiko/VMamba/releases/download/%23v0cls/vssmtiny_dp01_ckpt_epoch_292.pth"),
+    ],
+    manual_url="https://github.com/MzeroMiko/VMamba/releases",
+    manual_instructions=(
+        "Mamba-UNet pretrained encoder weights (VMamba-Tiny ImageNet). "
+        "Download vssmtiny_dp01_ckpt_epoch_292.pth from "
+        "https://github.com/MzeroMiko/VMamba/releases/tag/%23v0cls "
+        "and place at the printed cache path."
+    ),
+    size_mb=120,
+))
+
+
+# - - - DA-TransUNet R50-ViT 预训练 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / --- DA-TransUNet R50-ViT pretrained --------------------------------------
+register(WeightSource(
+    name="da_transunet_r50_vit",
+    filename="da_transunet_r50_vit.npz",
+    sources=[
+        _http("https://storage.googleapis.com/vit_models/imagenet21k/R50%2BViT-B_16.npz"),
+    ],
+    manual_url="https://console.cloud.google.com/storage/browser/vit_models/imagenet21k/",
+    manual_instructions=(
+        "DA-TransUNet R50-ViT pretrained weights. "
+        "Uses the same R50+ViT-B_16 JAX checkpoint as TransUNet (~346 MB). "
+        "Download R50+ViT-B_16.npz from the GCS link above "
+        "and place at the printed cache path."
+    ),
+    size_mb=346,
+))
+
+
+# --- Res2Net-50 (CFANet) --------------------------------------------------
+register(WeightSource(
+    name="res2net50_v1b_26w_4s",
+    filename="res2net50_v1b_26w_4s-3cf99910.pth",
+    sources=[],
+    manual_url="https://github.com/Res2Net/Res2Net-PretrainedModels",
+    manual_instructions=(
+        "Res2Net-50 v1b (baseWidth=26, scale=4) ImageNet pretrained weights "
+        "for CFANet. Download res2net50_v1b_26w_4s-3cf99910.pth from the "
+        "Res2Net-PretrainedModels repo and place at the printed cache path."
+    ),
+    size_mb=97,
+))
+
+
 # ----------------------------------------------------------------------
-# Core API
+# 预训练 requirement 注册表 / Pretrained requirement registry
 # ----------------------------------------------------------------------
+
+# 架构 names whose papers REQUIRE 预训练 权重 / Architecture names whose papers REQUIRE pretrained weights.
+# SAM family excluded — SAM models handle 预训练 = False gracefully / SAM family excluded — SAM models handle pretrained=False gracefully.
+# LeViT-UNet excluded — paper 消融实验 shows small variants work / LeViT-UNet excluded — paper ablation shows small variants work
+# better WITHOUT ImageNet pretraining.
+REQUIRES_PRETRAINED: set = {
+    # ── Transformer (ViT / Swin / PVT / DeiT backbones) ────────────
+    "swinunet",               # Swin-T ImageNet
+    "transunet",              # R50+ViT-B/16 JAX
+    "h2former",               # Swin-T ImageNet
+    "hiformer",               # Swin-T ImageNet
+    "cswin_unet",             # CSWin-Tiny ImageNet
+    "da_transunet",           # R50+ViT
+    "fcbformer",              # PVTv2-B3
+    "segformer_b0", "segformer_b1", "segformer_b2",
+    "segformer_b3", "segformer_b4", "segformer_b5",  # MiT backbone
+    "esfpnet",                # PVTv2-B2 (timm)
+    "ssformer",               # PVTv2
+    "hsnet",                  # PVT backbone
+    "polyp_pvt",              # PVT (v1)
+    "pvtb2_cascade",          # PVTv2-B2 (WACV 2023)
+    "pvtb2_emcad",            # PVTv2-B2 (CVPR 2024)
+    "resnet34_deit_fatnet",   # DeiT/ResNet
+    "transfuse",              # ResNet+ViT
+    "transnuseg",             # Swin
+    "ldnet",                  # ResNet
+    "mist",                   # PVT
+    "nulite",                 # PVT
+    # ── Mamba / SSM (VMamba / Mamba backbones) ─────────────────
+    "vm_unet",                # VMamba Tiny
+    "mamba_unet",             # Mamba encoder
+    # ── RWKV ───────────────────────────────────────────────────────
+    "rwkv_unet",              # RWKV encoder (B/S/T)
+    # ─ ─ CNN ( 预训练 ResNet / Res2Net / MobileNet backbones ) ─ ─ ─ ─ / ── CNN (pretrained ResNet / Res2Net / MobileNet backbones) ────
+    "cfanet",                 # Res2Net-50
+    "dconnnet",               # ResNet
+    "lv_unet",                # MobileNetV3
+    "polyper",                # ResNet
+    # ─ ─ SAM family ( Segment Anything 预训练 权重 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── SAM family (Segment Anything pretrained weights) ───────────
+    "sam_b",                  # SAM ViT-Base
+    "sam_l",                  # SAM ViT-Large
+    "mobile_sam",             # MobileSAM (distilled)
+    "sam2",                   # SAM 2
+    "sam_med2d",              # SAM-Med2D
+    "samed",                  # SAMed (LoRA fine-tune)
+    "sammed2d_wrapper",       # SAM-Med2D wrapper variant
+    "samus",                  # SAMUS
+    "auto_sam",               # AutoSAM
+    "lite_medsam",            # LiteMedSAM (distilled)
+    "medical_sam_adapter",    # Medical SAM Adapter
+}
+
+# Human-readable reason for each entry ( for 警告 message ) / Human-readable reason for each entry (for warning message)
+_PRETRAINED_REASON = {
+    "_default": "原论文中使用了预训练权重",
+}
+
+
+def warn_pretrained_false(
+    model_name: str,
+    *,
+    delay: int = 10,
+) -> None:
+    """Emit a prominent warning when ``pretrained=False`` for a model
+        Emit a prominent 警告 when ` ` 预训练 = False ` ` for a 模型。
+    whose paper requires pretrained weights."""
+    if model_name not in REQUIRES_PRETRAINED:
+        return
+
+    reason = _PRETRAINED_REASON.get(
+        model_name, _PRETRAINED_REASON["_default"]
+    )
+
+    border = "=" * 70
+    msg = (
+        f"\n{border}\n"
+        f"  ⚠️  警告: {model_name} 的论文要求使用预训练权重!\n"
+        f"\n"
+        f"  {model_name} 原论文中使用了预训练权重进行实验。\n"
+        f"  原因: {reason}\n"
+        f"\n"
+        f"  ⚠️  不使用预训练权重可能导致:\n"
+        f"    1. 复现结果不正确 (与原论文数值不一致)\n"
+        f"    2. 与其他方法的比较不公平\n"
+        f"    3. 模型性能指标偏低\n"
+        f"\n"
+        f"  如果你确定不需要预训练权重，将在 {delay} 秒后继续...\n"
+        f"  (设置 pretrained: true 或使用 pretrained_path 指定本地权重路径)\n"
+        f"{border}\n"
+    )
+
+    print(msg, flush=True)
+    import time
+    for remaining in range(delay, 0, -1):
+        print(f"  ⏳ {remaining}...", end="", flush=True)
+        time.sleep(1)
+    print("\n  继续执行 (pretrained=False)\n", flush=True)
+
 
 
 def ensure_weight(
@@ -347,6 +738,7 @@ def ensure_weight(
     verify: bool = True,
 ) -> Path:
     """Return a local path to the registered weight, downloading if needed.
+        返回 a 局部的 path to the registered 权重, downloading if needed。
 
     Parameters
     ----------
@@ -447,11 +839,89 @@ def _sha256(path: Path) -> str:
 
 
 def cached_path(name: str, cache_dir: Optional[str | Path] = None) -> Path:
-    """Return the path a weight would live at, without triggering a download."""
+    """返回 the path a 权重 would live at, without triggering a download。
+        Return the path a weight would live at, without triggering a download."""
     if name not in WEIGHT_REGISTRY:
         raise KeyError(f"Unknown weight name '{name}'")
     root = Path(cache_dir).expanduser().resolve() if cache_dir else default_cache_root()
     return root / WEIGHT_REGISTRY[name].filename
+
+
+# ----------------------------------------------------------------------
+# Standalone 模型 预训练 loading helper / Standalone model pretrained loading helper
+# ----------------------------------------------------------------------
+
+def load_pretrained_standalone(
+    model: "torch.nn.Module",
+    pretrained_path: Optional[str] = None,
+    registry_key: Optional[str] = None,
+    model_name: str = "Model",
+    filter_prefixes: Optional[List[str]] = None,
+    strict: bool = False,
+) -> bool:
+    """Load pretrained weights into a standalone segmentation model.
+        加载 预训练 权重 into a standalone 分割 模型。
+
+    Tries ``pretrained_path`` first, then ``registry_key`` via auto-download.
+    Returns ``True`` on success, ``False`` on failure (with a warning logged).
+    """
+    import torch
+
+    weight_path = pretrained_path
+    if weight_path is None and registry_key:
+        weight_path = str(ensure_weight(registry_key))
+
+    if weight_path is None:
+        raise WeightDownloadError(
+            f"\n{model_name}: pretrained=True but no pretrained_path or "
+            f"auto-download source available.\n"
+            f"  → Set pretrained_path=<local_file> in your YAML, "
+            f"or set pretrained: false to skip.\n"
+        )
+
+    try:
+        if weight_path.endswith(".npz"):
+            # JAX / NumPy 检查点 / JAX / NumPy checkpoint
+            import numpy as np
+            arrays = np.load(weight_path)
+            state = {}
+            for key in arrays.files:
+                arr = arrays[key]
+                if arr.ndim == 4 and ("kernel" in key or "conv" in key):
+                    arr = arr.transpose(3, 2, 0, 1)  # JAX → PyTorch
+                state[key] = torch.from_numpy(arr.copy())
+        elif weight_path.endswith(".safetensors"):
+            # HuggingFace safetensors format
+            try:
+                from safetensors.torch import load_file
+            except ImportError:
+                raise WeightDownloadError(
+                    f"\n{model_name}: checkpoint is in safetensors format "
+                    f"({weight_path}) but the `safetensors` package is not "
+                    f"installed.\n  → Run: pip install safetensors"
+                )
+            state = load_file(weight_path)
+        else:
+            state = torch.load(weight_path, map_location="cpu")
+            if isinstance(state, dict):
+                for key in ("model", "state_dict"):
+                    if key in state:
+                        state = state[key]
+                        break
+        if filter_prefixes:
+            state = {k: v for k, v in state.items()
+                     if not k.startswith(tuple(filter_prefixes))}
+        msg = model.load_state_dict(state, strict=strict)
+        logger.info("%s: loaded pretrained weights from %s: %s",
+                    model_name, weight_path, msg)
+        return True
+    except Exception as e:
+        import warnings
+        warnings.warn(
+            f"{model_name}: failed to load pretrained weights from "
+            f"{weight_path}: {e}. Model initialized from scratch."
+        )
+        return False
 
 
 # ----------------------------------------------------------------------
@@ -466,6 +936,7 @@ def hf_from_pretrained(
     **kwargs,
 ):
     """Wrap ``cls.from_pretrained`` so HF download failures surface with
+        Wrap ` ` cls. from _ 预训练 ` ` so HF download failures surface with。
     an actionable manual URL.
 
     Drop-in replacement for e.g. ``AutoModel.from_pretrained(...)``::

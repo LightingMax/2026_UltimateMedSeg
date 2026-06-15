@@ -1,4 +1,5 @@
-"""Pathology foundation encoders."""
+"""病理学 foundation encoders。
+    Pathology foundation encoders."""
 import sys as _sys
 for _stem in ('phikon_encoder', 'musk_encoder', 'plip_encoder', 'phikon_v2_encoder', 'uni_encoder'):
     try:

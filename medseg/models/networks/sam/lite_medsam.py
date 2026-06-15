@@ -1,8 +1,9 @@
 # LiteMedSAM (NeurIPS 2024 / MedIA 2025)
-# Reference: https://github.com/bowang-lab/MedSAM/tree/LiteMedSAM
+# 参考: https: / / github. com / bowang-lab / MedSAM / tree / LiteMedSAM / Reference: https://github.com/bowang-lab/MedSAM/tree/LiteMedSAM
 # Paper: https://arxiv.org/abs/2403.20329
 # Implemented from paper formulas; not a copy of the official repo.
 """LiteMedSAM: A Lightweight SAM for Medical Image Segmentation.
+    LiteMedSAM: A 轻量级 SAM for 医学的 图像 分割。
 
 Ma et al., "Segment Anything in Medical Images", Nature Communications
 2024. The LiteMedSAM variant replaces the ViT-B image encoder with a
@@ -36,6 +37,7 @@ import torch.nn.functional as F
 
 class _TinyViTEncoder(nn.Module):
     """TinyViT-5M image encoder producing (B, 256, 64, 64) feature maps.
+        TinyViT-5M image 编码器。
 
     Uses timm to load the backbone; a 1x1 neck projects to 256 channels
     (matching SAM's prompt encoder expected dim).
@@ -56,7 +58,7 @@ class _TinyViTEncoder(nn.Module):
             features_only=True,
             out_indices=(3,),
         )
-        # TinyViT-5M stage-3 output: 320 channels
+        # TinyViT - 5M 阶段 - 3 输出: 320 通道 / TinyViT-5M stage-3 output: 320 channels
         self.neck = nn.Sequential(
             nn.Conv2d(320, 256, 1, bias=False),
             nn.BatchNorm2d(256),
@@ -66,7 +68,7 @@ class _TinyViTEncoder(nn.Module):
         feats = self.backbone(x)
         f = feats[-1]  # (B, 320, H/16, W/16)
         f = self.neck(f)  # (B, 256, H/16, W/16)
-        # SAM expects 64x64 feature map
+        # SAM expects 64x64 特征图 / SAM expects 64x64 feature map
         if f.shape[2:] != (64, 64):
             f = F.interpolate(f, size=(64, 64), mode='bilinear', align_corners=False)
         return f
@@ -74,6 +76,7 @@ class _TinyViTEncoder(nn.Module):
 
 class _PromptEncoder(nn.Module):
     """Simplified prompt encoder for box/point/text prompts.
+        Simplified prompt 编码器。
 
     Produces sparse embeddings (Np, 256) for points/boxes and a
     dense embedding (B, 256, 64, 64) placeholder (zeros if no mask prompt).
@@ -87,11 +90,12 @@ class _PromptEncoder(nn.Module):
         self.no_mask_embed = nn.Embedding(1, embed_dim)
         # Positional encoding for points (Fourier)
         self.pe_layer = nn.Linear(2, embed_dim)
-        # Text prompt → dense embedding projection
+        # Text prompt → 密集的 嵌入 projection / Text prompt → dense embedding projection
         self.text_proj = nn.Linear(512, embed_dim)
 
     def _embed_points(self, points: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """points: (B, N, 2), labels: (B, N) in {0=bg, 1=fg}."""
+        """points: ( B, N, 2 ), 标签: ( B, N ) in { 0 = bg, 1 = fg }。
+            points: (B, N, 2), labels: (B, N) in {0=bg, 1=fg}."""
         pe = self.pe_layer(points)  # (B, N, 256)
         label_embed = self.point_embeddings(labels.long())  # (B, N, 256)
         return pe + label_embed
@@ -141,7 +145,8 @@ class _PromptEncoder(nn.Module):
 
 
 class _MaskDecoder(nn.Module):
-    """Lightweight mask decoder (SAM-style two-way transformer + upscale)."""
+    """Lightweight mask 解码器。
+        Lightweight mask decoder (SAM-style two-way transformer + upscale)."""
 
     def __init__(self, embed_dim: int = 256, num_classes: int = 1, num_heads: int = 8):
         super().__init__()
@@ -164,14 +169,14 @@ class _MaskDecoder(nn.Module):
             nn.GELU(),
         )
 
-        # Mask prediction MLP (per token)
+        # 掩码 预测 MLP ( per 标记 ) / Mask prediction MLP (per token)
         self.mask_mlp = nn.Sequential(
             nn.Linear(embed_dim, 64),
             nn.GELU(),
             nn.Linear(64, 64),
         )
 
-        # IoU prediction head
+        # IoU 预测 头部 / IoU prediction head
         self.iou_head = nn.Sequential(
             nn.Linear(embed_dim, 256),
             nn.GELU(),
@@ -186,35 +191,36 @@ class _MaskDecoder(nn.Module):
     ) -> torch.Tensor:
         B, C, H, W = image_embed.shape
 
-        # Prepare decoder queries: [iou_token, mask_tokens, sparse_prompts]
+        # Prepare 解码器 / Prepare decoder queries: [iou_token, mask_tokens, sparse_prompts]
         tokens = torch.cat([
             self.iou_token.weight.unsqueeze(0).expand(B, -1, -1),
             self.mask_tokens.weight.unsqueeze(0).expand(B, -1, -1),
             sparse_embed,
         ], dim=1)  # (B, 1+C+Np, 256)
 
-        # Memory: image features + dense prompt
+        # Memory: 图像 特征 + 密集的 prompt / Memory: image features + dense prompt
         memory = (image_embed + dense_embed).flatten(2).permute(0, 2, 1)  # (B, HW, 256)
 
         # Transformer decode
         decoded = self.transformer(tokens, memory)  # (B, N_tokens, 256)
 
-        # Extract mask tokens
+        # 提取 掩码 标记 / Extract mask tokens
         mask_decoded = decoded[:, 1:1 + self.num_classes + 1, :]  # (B, C+1, 256)
 
-        # Upscale image features
+        # Upscale 图像 特征 / Upscale image features
         up = self.upscale(image_embed)  # (B, 64, 4H, 4W)
 
-        # Mask prediction: dot product of mask MLP output with upscaled features
+        # 掩码 预测: dot product of 掩码 MLP 输出 with upscaled 特征 / Mask prediction: dot product of mask MLP output with upscaled features
         mask_proj = self.mask_mlp(mask_decoded)  # (B, C+1, 64)
         masks = torch.einsum('bcd,bdhw->bchw', mask_proj, up)  # (B, C+1, 4H, 4W)
 
-        # Return only foreground masks (skip background token at index 0)
+        # 返回 only foreground 掩码 ( 跳跃 background 标记 at index 0 ) / Return only foreground masks (skip background token at index 0)
         return masks[:, 1:, :, :]  # (B, num_classes, 4H, 4W)
 
 
 class LiteMedSAM(nn.Module):
     """LiteMedSAM: Lightweight Segment Anything Model for Medical Images.
+        LiteMedSAM: 轻量级 Segment Anything 模型 for 医学的 图像。
 
     A distilled version of MedSAM using TinyViT-5M as the image encoder
     (5.7M params vs 89M for ViT-B), retaining SAM's prompt encoder and
@@ -264,6 +270,7 @@ class LiteMedSAM(nn.Module):
 
     def forward(self, image: torch.Tensor, text=None) -> torch.Tensor:
         """Forward pass.
+            前向传播 pass。
 
         Args:
             image: (B, 3, H, W) input image.
@@ -282,7 +289,7 @@ class LiteMedSAM(nn.Module):
         # Parse prompt
         points = boxes = text_embed = None
         if text is None:
-            # Default: center point as foreground
+            # 默认值: center point as foreground / Default: center point as foreground
             cx, cy = 0.5, 0.5
             pts = torch.tensor([[[cx, cy]]], device=image.device).expand(B, -1, -1)
             lbls = torch.ones(B, 1, device=image.device)
@@ -305,7 +312,7 @@ class LiteMedSAM(nn.Module):
         sparse, dense = self.prompt_encoder(points=points, boxes=boxes, text_embed=text_embed)
         masks = self.mask_decoder(img_embed, sparse, dense)  # (B, C, 256, 256)
 
-        # Upsample to input resolution
+        # 上采样 to 输入 分辨率 / Upsample to input resolution
         if masks.shape[2:] != (H, W):
             masks = F.interpolate(masks, size=(H, W), mode='bilinear', align_corners=False)
 

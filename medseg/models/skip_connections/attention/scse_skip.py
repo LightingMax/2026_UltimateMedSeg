@@ -1,4 +1,5 @@
-"""scSE (Concurrent Spatial and Channel SE) skip connection."""
+"""scSE (Concurrent Spatial and Channel SE) 跳跃连接。
+    scSE (Concurrent Spatial and Channel SE) skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -35,7 +36,8 @@ class SpatialSE(nn.Module):
 
 @SKIP_REGISTRY.register("scse")
 class ScSESkip(nn.Module):
-    """scSE: concurrent spatial and channel squeeze-and-excitation on skip features."""
+    """scSE: concurrent spatial and channel squeeze-and-excitation on 跳跃连接。
+        scSE: concurrent spatial and channel squeeze-and-excitation on skip features."""
     def __init__(self, reduction=16, **kwargs):
         super().__init__()
         self.reduction = reduction

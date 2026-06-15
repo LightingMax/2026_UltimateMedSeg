@@ -1,6 +1,9 @@
 # MT-UNet (Wang et al., 2022)
+# MT-UNet 分割网络
 # MT-UNet (Wang et al., 2022)
+# MT-UNet 分割网络
 # Standalone architecture: mtunet
+# 独立架构: mtunet
 
 model:
   num_classes: 2

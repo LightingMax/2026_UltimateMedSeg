@@ -1,4 +1,5 @@
 """CogVLM2 grounding wrapper.
+    CogVLM2 grounding 封装器。
 
 # Reference: https://github.com/THUDM/CogVLM2
 # Reference: https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B
@@ -30,9 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 class CogVLMGrounder(GenericVLGrounder):
-    """CogVLM2 grounding wrapper (inference-only)."""
+    """CogVLM2 grounding 封装器 ( inference-only )。
+        CogVLM2 grounding wrapper (inference-only)."""
 
-    # Default normalised; users with grounding-tuned ckpt should pass coord_scale=1000.
+    # 默认值 normalised; users with grounding-tuned ckpt should pass coord _ scale = 1000 / Default normalised; users with grounding-tuned ckpt should pass coord_scale=1000.
     COORD_SCALE = 1.0
 
     def __init__(
@@ -54,7 +56,7 @@ class CogVLMGrounder(GenericVLGrounder):
             **kwargs,
         )
         if coord_scale is not None:
-            # Allow per-instance override (e.g. 1000.0 for grounding ckpts)
+            # Allow per-instance 覆盖 ( e. g. 1000. 0 for grounding ckpts ) / Allow per-instance override (e.g. 1000.0 for grounding ckpts)
             self.COORD_SCALE = float(coord_scale)
 
     # ------------------------------------------------------------------
@@ -83,7 +85,7 @@ class CogVLMGrounder(GenericVLGrounder):
             )
             logger.info(f"CogVLM2 loaded: {self.model_id} on {self.device}")
         except Exception:
-            # Strict: no mock fallback on load failure. Re-raise the
+            # Strict: no mock fallback on 加载 failure. Re-raise the / Strict: no mock fallback on load failure. Re-raise the
             # original error so the caller sees what actually broke.
             raise
 
@@ -104,7 +106,7 @@ class CogVLMGrounder(GenericVLGrounder):
             images=[pil_img],
             template_version="chat",
         )
-        # Move tensors to device
+        # Move 张量 to device / Move tensors to device
         device = self.device
         model_inputs = {
             "input_ids": inputs["input_ids"].unsqueeze(0).to(device),

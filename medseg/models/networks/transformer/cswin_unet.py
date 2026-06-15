@@ -22,7 +22,8 @@ from typing import List, Optional
 
 
 class _CrossWindowAttention(nn.Module):
-    """Cross-shaped window self-attention: horizontal + vertical strips."""
+    """Cross-shaped 窗口 自注意力: horizontal + vertical strips。
+        Cross-shaped window self-attention: horizontal + vertical strips."""
 
     def __init__(self, dim, num_heads=4, strip_size=7):
         super().__init__()
@@ -89,6 +90,7 @@ class _CSWinStage(nn.Module):
 
 class CSWinUNet(nn.Module):
     """CSWin-UNet: Cross-shaped Window Transformer UNet.
+        CSWin-UNet: Cross-shaped 窗口 Transformer UNet。
 
     Args:
         in_channels: Input channels.
@@ -119,7 +121,7 @@ class CSWinUNet(nn.Module):
             nn.BatchNorm2d(dims[0]),
         )
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc_stages = nn.ModuleList()
         for i in range(len(depths)):
             ds = i < len(depths) - 1
@@ -127,7 +129,7 @@ class CSWinUNet(nn.Module):
                 _CSWinStage(dims[i], num_heads[i], depths[i], downsample=ds)
             )
 
-        # Decoder
+        # 解码 / Decoder
         self.up_convs = nn.ModuleList()
         self.dec_blocks = nn.ModuleList()
         for i in range(len(dims) - 1, 0, -1):

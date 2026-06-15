@@ -28,12 +28,43 @@ Thumbs.db
 output/
 test_output_text_guided/
 *.log
+*.log.done
 *.onnx
 *.npz
 *.npy
 smoke_results.txt
+smoke_log*.txt
+smoke_test_results.*
 wandb/
 tensorboard/
+
+# Temporary / one-off scripts (diagnostic, fix, patch, test)
+$null
+_run_*.py
+_run_*.bat
+count_yamls.py
+test_fixes_smoke*.py
+test_text_guided.py
+_analyze_log.py
+_check_progress.py
+_check_*.py
+_count_sections.py
+_debug_resume*.py
+_extract_urls.py
+_sleep.py
+scripts/_diag_*.py
+scripts/_test_*.py
+scripts/add_*.py
+scripts/check_syntax.py
+scripts/diagnose_*.py
+scripts/fix_*.py
+scripts/patch_*.py
+scripts/run_check.py
+scripts/run_smoke.py
+scripts/scan_*.py
+scripts/smoke_*.py
+scripts/test_*.py
+scripts/transnuseg_orig.py
 
 # Local-only smoke test tooling (fork dev; not submitted to upstream)
 scripts/smoke_test_all.py

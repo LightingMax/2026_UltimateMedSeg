@@ -1,4 +1,5 @@
 """VM-UNet-V2: Rethinking Vision Mamba UNet for Medical Image Segmentation.
+    VM-UNet-V 2: Rethinking Vision Mamba UNet for 医学的 图像 分割。
 
 Faithful port from https://github.com/nobodyplayer1/VM-UNetV2.
 
@@ -23,11 +24,12 @@ from typing import List
 
 
 # ---------------------------------------------------------------------------
-# CBAM modules (faithful to original vmunet_v2.py)
+# CBAM modules ( 忠实 to original vmunet _ v2. py ) / CBAM modules (faithful to original vmunet_v2.py)
 # ---------------------------------------------------------------------------
 
 class ChannelAttention(nn.Module):
-    """CBAM Channel Attention."""
+    """CBAM 通道 注意力。
+        CBAM Channel Attention."""
 
     def __init__(self, in_planes, ratio=16):
         super().__init__()
@@ -45,7 +47,8 @@ class ChannelAttention(nn.Module):
 
 
 class SpatialAttention(nn.Module):
-    """CBAM Spatial Attention."""
+    """CBAM 空间的 注意力。
+        CBAM Spatial Attention."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -62,7 +65,7 @@ class SpatialAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Helper modules (faithful to original vmunet_v2.py)
+# Helper modules ( 忠实 to original vmunet _ v2. py ) / Helper modules (faithful to original vmunet_v2.py)
 # ---------------------------------------------------------------------------
 
 class BasicConv2d(nn.Module):
@@ -83,6 +86,7 @@ class BasicConv2d(nn.Module):
 
 class SDI(nn.Module):
     """Spatial-Dimensional Integration module.
+        Spatial-Dimensional Integration 模块。
 
     Takes a list of 4 multi-scale features and an anchor tensor.
     Each feature is resized to the anchor's spatial size, passed through
@@ -110,7 +114,7 @@ class SDI(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VMUNetV2 – full model
+# VMUNetV2 – full 模型 / VMUNetV2 – full model
 # ---------------------------------------------------------------------------
 
 class VMUNetV2(nn.Module):
@@ -144,7 +148,7 @@ class VMUNetV2(nn.Module):
 
         dims = [embed_dim * (2 ** i) for i in range(len(depths))]
 
-        # ---- Encoder: VSSM backbone ----
+        # ---- 编码器 / ---- Encoder: VSSM backbone ----
         from medseg.models.encoders.mamba.vm_unet_v2_encoder import VMUNetV2Encoder
         self.encoder = VMUNetV2Encoder(
             in_channels=in_channels, img_size=img_size,
@@ -152,7 +156,7 @@ class VMUNetV2(nn.Module):
             drop_path_rate=drop_path_rate,
         )
 
-        # ---- CBAM attention per scale ----
+        # - - - - CBAM 注意力 per scale - - - - / ---- CBAM attention per scale ----
         self.ca_1 = ChannelAttention(dims[0])
         self.sa_1 = SpatialAttention()
         self.ca_2 = ChannelAttention(dims[1])
@@ -162,7 +166,7 @@ class VMUNetV2(nn.Module):
         self.ca_4 = ChannelAttention(dims[3])
         self.sa_4 = SpatialAttention()
 
-        # ---- TransLayer: project each scale to mid_channel ----
+        # - - - - TransLayer: project each scale to mid _ 通道 - - - - / ---- TransLayer: project each scale to mid_channel ----
         self.Translayer_1 = BasicConv2d(dims[0], mid_channel, 1)
         self.Translayer_2 = BasicConv2d(dims[1], mid_channel, 1)
         self.Translayer_3 = BasicConv2d(dims[2], mid_channel, 1)
@@ -174,13 +178,13 @@ class VMUNetV2(nn.Module):
         self.sdi_3 = SDI(mid_channel)
         self.sdi_4 = SDI(mid_channel)
 
-        # ---- Segmentation heads (one per scale) ----
+        # - - - - 分割 heads ( one per scale ) - - - - / ---- Segmentation heads (one per scale) ----
         self.seg_outs = nn.ModuleList([
             nn.Conv2d(mid_channel, num_classes, 1, 1) for _ in range(4)
         ])
 
-        # ---- Decoder deconvolution layers ----
-        # ConvTranspose2d with output_padding=1 for exact 2x upsampling
+        # ---- 解码器 / ---- Decoder deconvolution layers ----
+        # ConvTranspose2d with 输出 _ 填充 = 1 for exact 2x 上采样 / ConvTranspose2d with output_padding=1 for exact 2x upsampling
         self.deconv2 = nn.ConvTranspose2d(mid_channel, mid_channel,
                                           kernel_size=4, stride=2,
                                           padding=1, output_padding=1,
@@ -193,7 +197,7 @@ class VMUNetV2(nn.Module):
                                           kernel_size=4, stride=2,
                                           padding=1, output_padding=1,
                                           bias=False)
-        # Deep supervision merge: upsample second-finet seg_out by 2x
+        # 深度 supervision 合并: 上采样 second-finet seg _ out by 2x / Deep supervision merge: upsample second-finet seg_out by 2x
         self.deconv6 = nn.ConvTranspose2d(num_classes, num_classes, 3,
                                           stride=2, padding=1,
                                           output_padding=1)
@@ -201,11 +205,11 @@ class VMUNetV2(nn.Module):
     def forward(self, x):
         H_in, W_in = x.shape[2:]
 
-        # Handle single-channel input
+        # Handle single-channel 输入 / Handle single-channel input
         if x.size(1) == 1:
             x = x.repeat(1, 3, 1, 1)
 
-        # ---- Encoder ----
+        # ---- 编码器 / ---- Encoder ----
         feats = self.encoder(x)  # 4 tensors: f1(H/4), f2(H/8), f3(H/16), f4(H/32)
         f1, f2, f3, f4 = feats  # already in (B, C, H, W) format
 
@@ -232,7 +236,7 @@ class VMUNetV2(nn.Module):
         f21 = self.sdi_2([f1, f2, f3, f4], f2)   # at f2 resolution
         f11 = self.sdi_1([f1, f2, f3, f4], f1)   # at f1 resolution
 
-        # ---- Decoder: progressive upsampling + skip addition ----
+        # ---- 解码器 / ---- Decoder: progressive upsampling + skip addition ----
         seg_outs = []
         seg_outs.append(self.seg_outs[0](f41))
 
@@ -245,20 +249,20 @@ class VMUNetV2(nn.Module):
         y = self.deconv4(y) + f11
         seg_outs.append(self.seg_outs[3](y))
 
-        # ---- Upsample all seg outputs to patch-embed resolution (4x) ----
+        # - - - - 上采样 all seg outputs to patch-embed 分辨率 ( 4x ) - - - - / ---- Upsample all seg outputs to patch-embed resolution (4x) ----
         for i in range(len(seg_outs)):
             seg_outs[i] = F.interpolate(seg_outs[i], scale_factor=4,
                                         mode='bilinear', align_corners=False)
 
-        # ---- Final output ----
+        # - - - - Final 输出 - - - - / ---- Final output ----
         if self.deep_supervision:
-            # Merge two finest levels: best + upsampled 2nd-best
+            # 合并 two finest levels: best + upsampled 2nd-best / Merge two finest levels: best + upsampled 2nd-best
             out_best = seg_outs[-1]
             out_second = self.deconv6(seg_outs[-2])
             result = out_best + out_second
             if self.num_classes == 1:
                 result = torch.sigmoid(result)
-            # Crop/pad to original input size
+            # Crop / pad to original 输入 大小 / Crop/pad to original input size
             if result.shape[2:] != (H_in, W_in):
                 result = F.interpolate(result, size=(H_in, W_in),
                                        mode='bilinear', align_corners=False)

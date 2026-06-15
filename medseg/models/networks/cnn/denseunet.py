@@ -1,4 +1,5 @@
 """DenseUNet: DenseNet-based UNet for medical image segmentation.
+    DenseUNet: DenseNet-based UNet for 医学的 图像 分割。
 
 Reference:
     Li et al., "UNet++: A Nested U-Net Architecture for Medical Image
@@ -31,6 +32,7 @@ class _ConvBNReLU(nn.Module):
 
 class _DenseLayer(nn.Module):
     """Single dense layer: BN → ReLU → 1×1 conv → BN → ReLU → 3×3 conv.
+        Single 密集的 层: BN → ReLU → 1 × 1 conv → BN → ReLU → 3 × 3 conv。
 
     Bottleneck design with 1×1 conv reducing channels before 3×3 conv.
     """
@@ -53,7 +55,8 @@ class _DenseLayer(nn.Module):
 
 
 class _DenseBlock(nn.Module):
-    """Stack of dense layers. Output channels = in_ch + num_layers * growth_rate."""
+    """Stack of 密集的 layers. 输出 通道 = in _ ch + num _ layers * growth _ 率。
+        Stack of dense layers. Output channels = in_ch + num_layers * growth_rate."""
 
     def __init__(self, in_ch, num_layers, growth_rate=32, bottleneck=4):
         super().__init__()
@@ -68,7 +71,8 @@ class _DenseBlock(nn.Module):
 
 
 class _TransitionDown(nn.Module):
-    """Transition layer for downsampling: BN → ReLU → 1×1 conv → AvgPool2."""
+    """Transition 层 for 下采样: BN → ReLU → 1 × 1 conv → AvgPool2。
+        Transition layer for downsampling: BN → ReLU → 1×1 conv → AvgPool2."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -84,7 +88,8 @@ class _TransitionDown(nn.Module):
 
 
 class _TransitionUp(nn.Module):
-    """Upsample via transposed conv, concat skip, then 1×1 conv to reduce."""
+    """Upsample via transposed conv, concat 跳跃连接。
+        Upsample via transposed conv, concat skip, then 1×1 conv to reduce."""
 
     def __init__(self, in_ch, skip_ch, out_ch):
         super().__init__()
@@ -106,6 +111,7 @@ class _TransitionUp(nn.Module):
 
 class DenseUNet(nn.Module):
     """DenseUNet: DenseNet encoder + UNet decoder.
+        DenseUNet: DenseNet 编码器。
 
     Encoder uses 4 dense blocks with transition-down layers.
     Decoder uses transposed-conv upsampling with skip connections.
@@ -121,14 +127,14 @@ class DenseUNet(nn.Module):
         growth_rate = 32
         init_features = 64
 
-        # Initial convolution
+        # Initial 卷积 / Initial convolution
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, init_features, 3, padding=1, bias=False),
             nn.BatchNorm2d(init_features),
             nn.ReLU(inplace=True),
         )
 
-        # Dense encoder
+        # Dense 编码器 / Dense encoder
         self.dense1 = _DenseBlock(init_features, num_layers=4, growth_rate=growth_rate)
         # out: 64 + 4*32 = 192
         self.trans1 = _TransitionDown(192, 96)
@@ -145,17 +151,17 @@ class DenseUNet(nn.Module):
         # out: 120 + 4*32 = 248
         self.trans4 = _TransitionDown(248, 124)
 
-        # Bottleneck dense block
+        # 瓶颈层 密集的 块 / Bottleneck dense block
         self.dense5 = _DenseBlock(124, num_layers=4, growth_rate=growth_rate)
         # out: 124 + 4*32 = 252
 
-        # Decoder (skip from dense block outputs)
+        # 解码 ( 跳跃 from 密集的 块 outputs ) / Decoder (skip from dense block outputs)
         self.up4 = _TransitionUp(252, 248, 128)   # /16→/8, concat 248
         self.up3 = _TransitionUp(128, 240, 128)   # /8→/4,  concat 240
         self.up2 = _TransitionUp(128, 224, 64)    # /4→/2,  concat 224
         self.up1 = _TransitionUp(64, 192, 64)     # /2→/1,  concat 192
 
-        # Final upsample to stem resolution + output
+        # Final 上采样 to 主干 分辨率 + 输出 / Final upsample to stem resolution + output
         self.final_up = nn.ConvTranspose2d(64, 64, 2, stride=2)
         self.final_conv = nn.Sequential(
             _ConvBNReLU(64 + init_features, 64),
@@ -163,10 +169,10 @@ class DenseUNet(nn.Module):
         )
 
     def forward(self, x):
-        # Stem
+        # 主干 / Stem
         s0 = self.stem(x)  # /1, 64 ch
 
-        # Encoder — save dense block outputs as skips
+        # 编码器 — 保存 密集的 块 outputs as skips / Encoder — save dense block outputs as skips
         d1 = self.dense1(s0)       # /1, 192 ch
         t1 = self.trans1(d1)       # /2,  96 ch
         d2 = self.dense2(t1)       # /2, 224 ch
@@ -176,16 +182,16 @@ class DenseUNet(nn.Module):
         d4 = self.dense4(t3)       # /8, 248 ch
         t4 = self.trans4(d4)       # /16, 124 ch
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.dense5(t4)        # /16, 252 ch
 
-        # Decoder — skip from dense block outputs
+        # Decoder — 跳跃连接 / Decoder — skip from dense block outputs
         u = self.up4(b, d4)        # /8, 252+248→128
         u = self.up3(u, d3)        # /4, 128+240→128
         u = self.up2(u, d2)        # /2, 128+224→64
         u = self.up1(u, d1)        # /1,  64+192→64
 
-        # Final upsample to input resolution
+        # Final 上采样 to 输入 分辨率 / Final upsample to input resolution
         u = self.final_up(u)
         # pad to match s0
         dh = s0.size(2) - u.size(2)

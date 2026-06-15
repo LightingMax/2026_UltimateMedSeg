@@ -5,6 +5,12 @@ model:
   num_classes: 9  # Synapse dataset: 8 organs + background
   img_size: 224
 
+  # Transfer learning: path to a full-model checkpoint (encoder+decoder+bottleneck+head).
+  # When set, loads the entire network's weights AFTER encoder pretrained.
+  # Takes priority over encoder.pretrained for the whole model.
+  # Default: null (disabled).
+  transfer_learning_path: null
+
   encoder:
     name: timm_resnet50  # timm encoder: timm_resnet50, timm_swin_tiny_patch4_window7_224, etc. Basic: basic. Specialized: swinunet, transunet, etc.
     pretrained: true

@@ -1,4 +1,5 @@
 """VMKLA-UNet: Vision Mamba with KAN Linear Attention U-Net.
+    VMKLA-UNet: Vision Mamba with KAN Linear 注意力 U-Net。
 
 Combines Vision Mamba encoder with KAN (Kolmogorov-Arnold Network)
 linear attention for efficient skip connection refinement.
@@ -17,6 +18,7 @@ from typing import List, Optional
 
 class _KANLinearAttention(nn.Module):
     """KAN-inspired linear attention for skip connection refinement.
+        KAN-inspired linear attention for 跳跃连接。
 
     Uses learnable basis functions to transform skip features.
     """
@@ -41,7 +43,8 @@ class _KANLinearAttention(nn.Module):
 
 
 class _MambaKANBlock(nn.Module):
-    """Block combining Mamba SSM with KAN linear attention."""
+    """块 combining Mamba SSM with KAN linear 注意力。
+        Block combining Mamba SSM with KAN linear attention."""
 
     def __init__(self, dim, d_state=16):
         super().__init__()
@@ -56,15 +59,15 @@ class _MambaKANBlock(nn.Module):
     def forward(self, x):
         B, C, H, W = x.shape
         res = x
-        # SSM branch
+        # SSM 分支 / SSM branch
         tokens = x.flatten(2).transpose(1, 2)
         kv = self.ssm_proj(self.norm1(tokens))
         k, v = kv.chunk(2, dim=-1)
         ssm_out = self.ssm_out(self.ssm_gate(k) * v)
         ssm_feat = ssm_out.transpose(1, 2).view(B, C, H, W)
-        # KAN branch
+        # KAN 分支 / KAN branch
         kan_feat = self.kan(x)
-        # Combine
+        # 组合 / Combine
         out = ssm_feat + kan_feat + res
         tokens = out.flatten(2).transpose(1, 2)
         tokens = tokens + self.ffn(self.norm2(tokens))
@@ -72,7 +75,8 @@ class _MambaKANBlock(nn.Module):
 
 
 class VMKLAUNet(nn.Module):
-    """VMKLA-UNet: Vision Mamba + KAN Linear Attention."""
+    """VMKLA-UNet: Vision Mamba + KAN Linear 注意力。
+        VMKLA-UNet: Vision Mamba + KAN Linear Attention."""
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  embed_dim=64, depths=None, **kwargs):

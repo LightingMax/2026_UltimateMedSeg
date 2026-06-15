@@ -1,4 +1,5 @@
 """CFANet – self-contained port from github.com/taozh2017/CFANet.
+    CFANet – self-contained 移植 from github. com / taozh2017 / CFANet。
 
 Cross-level Feature Aggregation Network for Polyp Segmentation
 (Pattern Recognition 2023).
@@ -64,7 +65,8 @@ class _Bottle2neck(nn.Module):
 
 
 class _Res2Net(nn.Module):
-    """Res2Net variant that returns 5 feature maps (stem + 4 stages)."""
+    """Res2Net variant that 返回 5 特征图 ( 主干 + 4 阶段 )。
+        Res2Net variant that returns 5 feature maps (stem + 4 stages)."""
 
     def __init__(self, block, layers, baseWidth=26, scale=4, in_channels=3):
         self.inplanes = 64
@@ -126,7 +128,7 @@ def _Res2Net_model(depth, in_channels=3):
 
 
 # ---------------------------------------------------------------------------
-# Attention / Fusion modules
+# 注意力 / 融合 modules / Attention / Fusion modules
 # ---------------------------------------------------------------------------
 class _GlobalModule(nn.Module):
     def __init__(self, channels=64, r=4):
@@ -185,7 +187,8 @@ class _GateFusion(nn.Module):
 
 
 class _BAM(nn.Module):
-    """Boundary Attention Module."""
+    """边界 注意力 模块。
+        Boundary Attention Module."""
 
     def __init__(self, channel):
         super().__init__()
@@ -200,7 +203,8 @@ class _BAM(nn.Module):
 
 
 class _CFF(nn.Module):
-    """Cross-level Feature Fusion."""
+    """Cross-level 特征 融合。
+        Cross-level Feature Fusion."""
 
     def __init__(self, in_ch1, in_ch2, out_channel):
         super().__init__()
@@ -234,6 +238,7 @@ class _CFF(nn.Module):
 # ---------------------------------------------------------------------------
 class CFANet(nn.Module):
     """Cross-level Feature Aggregation Network.
+        Cross-level 特征 Aggregation 网络。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -247,7 +252,7 @@ class CFANet(nn.Module):
         act_fn = nn.ReLU(inplace=True)
         self.resnet = _Res2Net_model(50, in_channels)
         self.downSample = nn.MaxPool2d(2, stride=2)
-        # Feature adaptation
+        # 特征 adaptation / Feature adaptation
         self.layer0 = nn.Sequential(
             nn.Conv2d(64, channel, 3, stride=2, padding=1),
             nn.BatchNorm2d(channel), act_fn)
@@ -257,7 +262,7 @@ class CFANet(nn.Module):
         self.low_fusion = _GateFusion(channel)
         self.high_fusion1 = _CFF(512, 1024, channel)
         self.high_fusion2 = _CFF(1024, 2048, channel)
-        # Edge branch
+        # 边缘 分支 / Edge branch
         self.layer_edge0 = nn.Sequential(
             nn.Conv2d(channel, channel, 3, 1, 1),
             nn.BatchNorm2d(channel), act_fn)
@@ -268,7 +273,7 @@ class CFANet(nn.Module):
             nn.Conv2d(channel, 64, 3, 1, 1),
             nn.BatchNorm2d(64), act_fn)
         self.layer_edge3 = nn.Sequential(nn.Conv2d(64, 1, 1))
-        # Main decode branch 1
+        # Main decode 分支 1 / Main decode branch 1
         self.layer_cat_ori1 = nn.Sequential(
             nn.Conv2d(channel * 2, channel, 3, 1, 1),
             nn.BatchNorm2d(channel), act_fn)
@@ -291,7 +296,7 @@ class CFANet(nn.Module):
             nn.Conv2d(128, 64, 3, 1, 1),
             nn.BatchNorm2d(64), act_fn)
         self.layer_hig31 = nn.Sequential(nn.Conv2d(64, num_classes, 1))
-        # Main decode branch 2
+        # Main decode 分支 2 / Main decode branch 2
         self.layer_cat_ori2 = nn.Sequential(
             nn.Conv2d(channel * 2, channel, 3, 1, 1),
             nn.BatchNorm2d(channel), act_fn)
@@ -315,7 +320,7 @@ class CFANet(nn.Module):
             nn.BatchNorm2d(64), act_fn)
         self.layer_hig32 = nn.Sequential(nn.Conv2d(64, num_classes, 1))
         self.layer_fil = nn.Sequential(nn.Conv2d(64, num_classes, 1))
-        # Attention modules
+        # 注意力 modules / Attention modules
         self.atten_edge_0 = _ChannelAttention(channel)
         self.atten_edge_1 = _ChannelAttention(channel)
         self.atten_edge_2 = _ChannelAttention(channel)
@@ -338,58 +343,58 @@ class CFANet(nn.Module):
 
     def forward(self, xx):
         x0, x1, x2, x3, x4 = self.resnet(xx)
-        # Feature adaptation
+        # 特征 adaptation / Feature adaptation
         x0_a = self.layer0(x0)
         x1_a = self.layer1(x1)
         low_fused = self.low_fusion(x0_a, x1_a)
         high1 = self.high_fusion1(x2, F.interpolate(x3, size=x2.shape[2:], mode='bilinear', align_corners=True))
         high2 = self.high_fusion2(x3, F.interpolate(x4, size=x3.shape[2:], mode='bilinear', align_corners=True))
-        # Edge branch
+        # 边缘 分支 / Edge branch
         edge_atten = self.atten_edge_ori(low_fused)
         edge = self.cat_01(low_fused, low_fused * edge_atten)
         edge = self.layer_cat_ori1(torch.cat((edge, low_fused), dim=1))
         edge = self.layer_hig01(edge)
         edge_atten1 = self.atten_edge_0(high1)
-        # Upsample high1 to match edge's spatial size
+        # 上采样 high1 to match edge's 空间的 大小 / Upsample high1 to match edge's spatial size
         high1_up = F.interpolate(high1, size=edge.shape[2:], mode='bilinear', align_corners=True)
         high1_atten_up = F.interpolate(edge_atten1, size=edge.shape[2:], mode='bilinear', align_corners=True)
         edge = self.cat_11(edge, high1_up * high1_atten_up)
         edge = self.layer_cat11(torch.cat((edge, high1_up), dim=1))
         edge = self.layer_hig11(self.up_2(edge))
         edge_atten2 = self.atten_edge_1(high2)
-        # Upsample high2 to match edge's spatial size
+        # 上采样 high2 to match edge's 空间的 大小 / Upsample high2 to match edge's spatial size
         high2_up = F.interpolate(high2, size=edge.shape[2:], mode='bilinear', align_corners=True)
         high2_atten_up = F.interpolate(edge_atten2, size=edge.shape[2:], mode='bilinear', align_corners=True)
         edge = self.cat_21(edge, high2_up * high2_atten_up)
         edge = self.layer_cat21(torch.cat((edge, high2_up), dim=1))
         edge = self.layer_hig21(self.up_2(edge))
-        # Upsample x0_a to match edge's spatial size
+        # 上采样 x0 _ a to match edge's 空间的 大小 / Upsample x0_a to match edge's spatial size
         x0_a_up_edge = F.interpolate(x0_a, size=edge.shape[2:], mode='bilinear', align_corners=True)
         edge = self.layer_cat31(torch.cat((edge, x0_a_up_edge), dim=1))
         edge_out = self.layer_hig31(self.up_2(edge))
-        # Main branch
+        # Main 分支 / Main branch
         main_atten = self.atten_edge_2(high2)
         main = self.cat_02(high2, high2 * main_atten)
         main = self.layer_cat_ori2(torch.cat((main, high2), dim=1))
         main = self.layer_hig02(main)
-        # Upsample main to match high1's spatial size
+        # 上采样 main to match high1's 空间的 大小 / Upsample main to match high1's spatial size
         main_up = F.interpolate(main, size=high1.shape[2:], mode='bilinear', align_corners=True)
         main = self.cat_12(main_up, high1)
         main = self.layer_cat12(torch.cat((main, high1), dim=1))
         main = self.layer_hig12(self.up_2(main))
-        # Upsample low_fused to match main's spatial size
+        # 上采样 low _ fused to match main's 空间的 大小 / Upsample low_fused to match main's spatial size
         low_fused_up = F.interpolate(low_fused, size=main.shape[2:], mode='bilinear', align_corners=True)
         main = self.cat_22(main, low_fused_up)
         main = self.layer_cat22(torch.cat((main, low_fused_up), dim=1))
         main = self.layer_hig22(self.up_2(main))
-        # Upsample x0_a to match main's spatial size
+        # 上采样 x0 _ a to match main's 空间的 大小 / Upsample x0_a to match main's spatial size
         x0_a_up_main = F.interpolate(x0_a, size=main.shape[2:], mode='bilinear', align_corners=True)
         main = self.layer_cat32(torch.cat((main, x0_a_up_main), dim=1))
         main_out = self.layer_hig32(self.up_2(main))
-        # Final fusion
+        # Final 融合 / Final fusion
         final = self.layer_fil(
             self.up_2(self.cat_31(main, edge)))
-        # Ensure output matches input spatial size
+        # Ensure 输出 matches 输入 空间的 大小 / Ensure output matches input spatial size
         if final.shape[-2:] != xx.shape[-2:]:
             final = F.interpolate(final, size=xx.shape[-2:],
                                   mode='bilinear', align_corners=True)

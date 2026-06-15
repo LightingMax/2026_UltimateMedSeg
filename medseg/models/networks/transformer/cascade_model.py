@@ -1,4 +1,5 @@
 """CASCADE: Cascaded Attention Decoder for Medical Image Segmentation.
+    CASCADE: Cascaded Attention 解码器。
 
 Reference:
     Md Mostafijur Rahman, Radu Marculescu.
@@ -53,7 +54,8 @@ class _ConvBNReLU(nn.Module):
 
 
 class _ChannelAttention(nn.Module):
-    """SE-style channel attention (avg-pool + max-pool branches)."""
+    """SE-style 通道 注意力 ( avg-pool + max-pool branches )。
+        SE-style channel attention (avg-pool + max-pool branches)."""
 
     def __init__(self, channels, reduction=16):
         super().__init__()
@@ -73,7 +75,8 @@ class _ChannelAttention(nn.Module):
 
 
 class _SpatialAttention(nn.Module):
-    """Spatial attention from concat([avg, max]) -> 7x7 conv -> sigmoid."""
+    """空间的 注意力 from concat ( [ avg, max ] ) - > 7x7 conv - > sigmoid。
+        Spatial attention from concat([avg, max]) -> 7x7 conv -> sigmoid."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -90,6 +93,7 @@ class _SpatialAttention(nn.Module):
 
 class _CAM(nn.Module):
     """Convolutional Attention Module: channel attention then spatial attention.
+        卷积的 注意力 模块: 通道 注意力 then 空间的 注意力。
 
     Applied to a skip feature to suppress noise before fusion with the deeper
     (upsampled) decoder stream. Followed by a 3x3 refinement conv.
@@ -109,6 +113,7 @@ class _CAM(nn.Module):
 
 class _AAM(nn.Module):
     """Aggregation Attention Module.
+        Aggregation 注意力 模块。
 
     Aggregates an upsampled deeper feature ``x_up`` (in_up channels) with the
     attended skip ``x_skip`` (in_skip channels). Following CASCADE, the deeper
@@ -119,10 +124,10 @@ class _AAM(nn.Module):
 
     def __init__(self, in_up, in_skip, out_channels):
         super().__init__()
-        # Project both branches to a common channel dim for gating.
+        # Project both branches to a common 通道 dim for gating / Project both branches to a common channel dim for gating.
         self.proj_up = _ConvBNReLU(in_up, out_channels, kernel_size=1)
         self.proj_skip = _ConvBNReLU(in_skip, out_channels, kernel_size=1)
-        # Gate produced from the skip stream modulates the upsampled branch.
+        # Gate produced from the 跳跃连接 / Gate produced from the skip stream modulates the upsampled branch.
         self.gate = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, kernel_size=1, bias=False),
             nn.Sigmoid(),
@@ -130,7 +135,7 @@ class _AAM(nn.Module):
         self.fuse = _ConvBNReLU(2 * out_channels, out_channels, kernel_size=3)
 
     def forward(self, x_up, x_skip):
-        # Align spatial size: x_up should already be at x_skip's resolution,
+        # Align 空间的 大小: x _ up should already be at x _ skip's 分辨率 / Align spatial size: x_up should already be at x_skip's resolution,
         # but be defensive in case of off-by-one rounding.
         if x_up.shape[-2:] != x_skip.shape[-2:]:
             x_up = F.interpolate(
@@ -146,6 +151,7 @@ class _AAM(nn.Module):
 
 class _DecoderStage(nn.Module):
     """One stage of CASCADE's Cascaded Attention Decoder.
+        One stage of CASCADE's Cascaded Attention 解码器。
 
     Steps:
       1. Bilinear-upsample the deeper feature to the skip's resolution.
@@ -168,10 +174,11 @@ class _DecoderStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class CASCADE(nn.Module):
     """CASCADE end-to-end segmentation network (WACV 2023).
+        CASCADE end-to-end 分割 网络 ( WACV 2023 )。
 
     Args:
         in_channels: number of input image channels.
@@ -209,18 +216,18 @@ class CASCADE(nn.Module):
 
         d3, d2, d1 = decoder_channels  # channels at strides 16, 8, 4
 
-        # --- Cascaded Attention Decoder -------------------------------------
-        # Stage 1: /32 (c4) -> /16 (c3) using skip c3
+        # --- Cascaded Attention 解码器 / --- Cascaded Attention Decoder -------------------------------------
+        # Stage 1: /32 (c4) -> /16 (c3) using 跳跃连接 / Stage 1: /32 (c4) -> /16 (c3) using skip c3
         self.stage1 = _DecoderStage(in_deep=c4, in_skip=c3, out_channels=d3)
-        # Stage 2: /16 (d3) -> /8 (c2) using skip c2
+        # Stage 2: /16 (d3) -> /8 (c2) using 跳跃连接 / Stage 2: /16 (d3) -> /8 (c2) using skip c2
         self.stage2 = _DecoderStage(in_deep=d3, in_skip=c2, out_channels=d2)
-        # Stage 3: /8 (d2) -> /4 (c1) using skip c1
+        # Stage 3: /8 (d2) -> /4 (c1) using 跳跃连接 / Stage 3: /8 (d2) -> /4 (c1) using skip c1
         self.stage3 = _DecoderStage(in_deep=d2, in_skip=c1, out_channels=d1)
 
         # --- Heads ----------------------------------------------------------
         self.head = nn.Conv2d(d1, num_classes, kernel_size=1)
         # Auxiliary heads at deeper scales (kept for completeness; CASCADE
-        # supports deep supervision during training).
+        # supports 深度 supervision during 训练 ) / supports deep supervision during training).
         self.aux_head3 = nn.Conv2d(d3, num_classes, kernel_size=1)
         self.aux_head2 = nn.Conv2d(d2, num_classes, kernel_size=1)
 

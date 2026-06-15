@@ -1,6 +1,9 @@
 # DAEFormer (Azad et al., 2023)
+# DAEFormer 分割网络
 # DAEFormer (Azad et al., 2023)
+# DAEFormer 分割网络
 # Standalone architecture: daeformer
+# 独立架构: daeformer
 
 model:
   num_classes: 2

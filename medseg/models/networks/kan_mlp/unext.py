@@ -1,4 +1,5 @@
-"""UNeXt - lightweight UNet with tokenized MLP bottleneck."""
+"""UNeXt - lightweight UNet with tokenized MLP 瓶颈层。
+    UNeXt - lightweight UNet with tokenized MLP bottleneck."""
 # Source: https://github.com/jeya-maria-jose/UNeXt-pytorch
 
 import torch
@@ -20,7 +21,8 @@ class ConvBlock(nn.Module):
 
 
 class TokenizedMLP(nn.Module):
-    """Tokenized MLP block from UNeXt: shift MLP for spatial mixing."""
+    """Tokenized MLP 块 from UNeXt: shift MLP for 空间的 mixing。
+        Tokenized MLP block from UNeXt: shift MLP for spatial mixing."""
     def __init__(self, dim, shift_size=5):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
@@ -46,6 +48,7 @@ class TokenizedMLP(nn.Module):
 
 class UNeXt(nn.Module):
     """UNeXt: lightweight UNet with shifted MLP bottleneck.
+        UNeXt: lightweight UNet with shifted MLP 瓶颈层。
 
     Architecture: Conv encoder -> Tokenized MLP bottleneck -> Conv decoder
     """
@@ -55,18 +58,18 @@ class UNeXt(nn.Module):
         self.deep_supervision = deep_supervision
         chs = [base_ch, base_ch * 2, base_ch * 4, base_ch * 8]
 
-        # Encoder (lightweight convolutions)
+        # 编码器 ( 轻量级 convolutions ) / Encoder (lightweight convolutions)
         self.enc1 = nn.Sequential(ConvBlock(in_channels, chs[0]), ConvBlock(chs[0], chs[0]))
         self.enc2 = nn.Sequential(ConvBlock(chs[0], chs[1]), ConvBlock(chs[1], chs[1]))
         self.enc3 = nn.Sequential(ConvBlock(chs[1], chs[2]), ConvBlock(chs[2], chs[2]))
         self.pool = nn.MaxPool2d(2)
 
-        # Tokenized MLP bottleneck
+        # Tokenized MLP 瓶颈层 / Tokenized MLP bottleneck
         self.bottleneck_proj = ConvBlock(chs[2], chs[3])
         self.mlp_blocks = nn.ModuleList([TokenizedMLP(chs[3]) for _ in range(num_mlp_blocks)])
         self.bottleneck_pool = nn.MaxPool2d(2)
 
-        # Decoder
+        # 解码 / Decoder
         self.up3 = nn.ConvTranspose2d(chs[3], chs[2], 2, stride=2)
         self.dec3 = nn.Sequential(ConvBlock(chs[2] * 2, chs[2]), ConvBlock(chs[2], chs[2]))
         self.up2 = nn.ConvTranspose2d(chs[2], chs[1], 2, stride=2)
@@ -83,17 +86,17 @@ class UNeXt(nn.Module):
             ])
 
     def forward(self, x):
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.enc1(x)
         e2 = self.enc2(self.pool(e1))
         e3 = self.enc3(self.pool(e2))
 
-        # Bottleneck with tokenized MLP
+        # 瓶颈层 with tokenized MLP / Bottleneck with tokenized MLP
         b = self.bottleneck_proj(self.bottleneck_pool(e3))
         for mlp in self.mlp_blocks:
             b = mlp(b)
 
-        # Decoder
+        # 解码 / Decoder
         d3 = self.dec3(torch.cat([self.up3(b), e3], dim=1))
         d2 = self.dec2(torch.cat([self.up2(d3), e2], dim=1))
         d1 = self.dec1(torch.cat([self.up1(d2), e1], dim=1))

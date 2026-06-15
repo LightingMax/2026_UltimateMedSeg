@@ -33,7 +33,7 @@ CLIP_REPO = "openai/clip-vit-large-patch14-336"
 #   1) ``SansuiHan/medical_models``  — 直接托管原生 SAM 格式 ``medsam_vit_b.pth``
 #      (375MB, 与 bowang-lab GDrive 一致, 可被 ``build_sam_vit_b`` 直接 ``torch.load`` 使用)
 # Per project policy this loader does NOT fall back to a different MedSAM
-# checkpoint when the canonical native one is unreachable — it raises.
+# 检查点 when the canonical native one is unreachable — it raises / checkpoint when the canonical native one is unreachable — it raises.
 MEDSAM_NATIVE_REPO = "SansuiHan/medical_models"
 MEDSAM_NATIVE_FILENAME = "medsam_vit_b.pth"
 MEDISEE_REPO = "Carryyy/MediSee"

@@ -1,4 +1,5 @@
 """MedNeXt: Transformer-driven Scaling of ConvNets for Medical Segmentation.
+    MedNeXt: Transformer-driven Scaling of ConvNets for 医学的 分割。
 
 Reference:
     Roy et al., "MedNeXt: Transformer-driven Scaling of ConvNets for
@@ -16,9 +17,10 @@ import torch.nn.functional as F
 
 
 def _get_norm(norm_type, num_channels, n_groups=None):
-    """Get normalization layer."""
+    """Get 归一化 层。
+        Get normalization layer."""
     if norm_type == 'group':
-        # Official MedNeXt uses num_groups = num_channels (per-channel GroupNorm)
+        # Official MedNeXt uses num _ groups = num _ 通道 ( per-channel GroupNorm ) / Official MedNeXt uses num_groups = num_channels (per-channel GroupNorm)
         n_groups = n_groups if n_groups else num_channels
         return nn.GroupNorm(n_groups, num_channels)
     return nn.LayerNorm(num_channels)
@@ -26,6 +28,7 @@ def _get_norm(norm_type, num_channels, n_groups=None):
 
 class _MedNeXtBlock(nn.Module):
     """ConvNeXt-style block for MedNeXt.
+        ConvNeXt-style 块 for MedNeXt。
 
     Depthwise conv → LayerNorm/GroupNorm → Linear expansion → GELU →
     Linear contraction → residual connection.
@@ -36,12 +39,12 @@ class _MedNeXtBlock(nn.Module):
         super().__init__()
         self.do_res = do_res
 
-        # Depthwise convolution
+        # 深度可分离卷积 / Depthwise convolution
         self.dw_conv = nn.Conv2d(in_ch, in_ch, kernel_size,
                                   padding=kernel_size // 2,
                                   groups=in_ch)
 
-        # Normalization
+        # 归一化 / Normalization
         self.norm = _get_norm(norm_type, in_ch, n_groups)
 
         # Expansion + contraction
@@ -50,7 +53,7 @@ class _MedNeXtBlock(nn.Module):
         self.act = nn.GELU()
         self.fc2 = nn.Conv2d(exp_ch, out_ch, 1)
 
-        # Residual projection if needed
+        # 残差 projection if needed / Residual projection if needed
         if do_res and in_ch != out_ch:
             self.res_conv = nn.Conv2d(in_ch, out_ch, 1)
 
@@ -58,7 +61,7 @@ class _MedNeXtBlock(nn.Module):
         res = x if self.do_res else None
 
         out = self.dw_conv(x)
-        # Normalize: need to handle both GroupNorm and LayerNorm
+        # 归一化: need to handle both GroupNorm and LayerNorm / Normalize: need to handle both GroupNorm and LayerNorm
         if isinstance(self.norm, nn.LayerNorm):
             out = out.permute(0, 2, 3, 1)
             out = self.norm(out)
@@ -79,7 +82,8 @@ class _MedNeXtBlock(nn.Module):
 
 
 class _MedNeXtDownBlock(nn.Module):
-    """2x downsampling with MedNeXt block."""
+    """2x 下采样 with MedNeXt 块。
+        2x downsampling with MedNeXt block."""
 
     def __init__(self, in_ch, out_ch, exp_r=4, kernel_size=7,
                  do_res=True, norm_type='group'):
@@ -94,7 +98,8 @@ class _MedNeXtDownBlock(nn.Module):
 
 
 class _MedNeXtUpBlock(nn.Module):
-    """2x upsampling with MedNeXt block."""
+    """2x 上采样 with MedNeXt 块。
+        2x upsampling with MedNeXt block."""
 
     def __init__(self, in_ch, out_ch, exp_r=4, kernel_size=7,
                  do_res=True, norm_type='group'):
@@ -105,13 +110,14 @@ class _MedNeXtUpBlock(nn.Module):
 
     def forward(self, x):
         x = self.up(x)
-        # Official MedNeXt pads after upsample for spatial alignment (2d: pad(1,0,1,0))
+        # Official MedNeXt pads after 上采样 for 空间的 对齐 ( 2d: pad ( 1, 0, 1, 0 ) ) / Official MedNeXt pads after upsample for spatial alignment (2d: pad(1,0,1,0))
         x = F.pad(x, (1, 0, 1, 0))
         return self.block(x)
 
 
 class MedNeXt(nn.Module):
     """MedNeXt 2D: ConvNeXt-based UNet for medical image segmentation.
+        MedNeXt 2D: ConvNeXt-based UNet for 医学的 图像 分割。
 
     Architecture follows the MedNeXt v1 design with configurable depth,
     expansion ratio, and kernel size.
@@ -140,10 +146,10 @@ class MedNeXt(nn.Module):
         bc = cfg['block_counts']
         ks = kernel_size
 
-        # Stem (official uses kernel_size=1)
+        # 主干 ( official uses 卷积核 _ 大小 = 1 ) / Stem (official uses kernel_size=1)
         self.stem = nn.Conv2d(in_channels, n_ch, 1)
 
-        # Encoder: each stage keeps spatial, next down block halves
+        # 编码器: each 阶段 keeps 空间的, next down 块 halves / Encoder: each stage keeps spatial, next down block halves
         self.enc1 = self._make_stage(n_ch, n_ch, bc[0], exp_r, ks, down=False)  # /1
         self.down1 = _MedNeXtDownBlock(n_ch, 2 * n_ch, exp_r, ks)               # /2
         self.enc2 = self._make_stage(2 * n_ch, 2 * n_ch, bc[1], exp_r, ks, down=False)
@@ -152,11 +158,11 @@ class MedNeXt(nn.Module):
         self.down3 = _MedNeXtDownBlock(4 * n_ch, 8 * n_ch, exp_r, ks)           # /8
         self.enc4 = self._make_stage(8 * n_ch, 8 * n_ch, bc[3], exp_r, ks, down=False)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = self._make_stage(8 * n_ch, 8 * n_ch, bc[4], exp_r, ks,
                                             down=False)                          # /8
 
-        # Decoder: upsample + additive skip + conv (official: x_res + x_up)
+        # Decoder: upsample + additive 跳跃连接 / Decoder: upsample + additive skip + conv (official: x_res + x_up)
         self.up3 = _MedNeXtUpBlock(8 * n_ch, 4 * n_ch, exp_r, ks)               # /4
         self.dec3 = self._make_stage(4 * n_ch, 4 * n_ch, bc[5], exp_r, ks, down=False)
 
@@ -166,7 +172,7 @@ class MedNeXt(nn.Module):
         self.up1 = _MedNeXtUpBlock(2 * n_ch, n_ch, exp_r, ks)                   # /1
         self.dec1 = self._make_stage(n_ch, n_ch, bc[7], exp_r, ks, down=False)
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(n_ch, num_classes, 1)
 
     @staticmethod
@@ -195,10 +201,10 @@ class MedNeXt(nn.Module):
     def forward(self, x):
         inp_size = x.shape[2:]
 
-        # Stem
+        # 主干 / Stem
         s = self.stem(x)
 
-        # Encoder (save features BEFORE downsampling)
+        # 编码器 ( 保存 特征 BEFORE 下采样 ) / Encoder (save features BEFORE downsampling)
         e1 = self.enc1(s)          # /1, n_ch
         d1 = self.down1(e1)        # /2
         e2 = self.enc2(d1)         # /2, 2*n_ch
@@ -207,11 +213,11 @@ class MedNeXt(nn.Module):
         d3 = self.down3(e3)        # /8
         e4 = self.enc4(d3)         # /8, 8*n_ch
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         b = self.bottleneck(e4)    # /8
 
-        # Decoder with additive skip connections (official: x_res + x_up).
-        # Upsample+pad can be off-by-one vs encoder skips; align before add.
+        # Decoder with additive 跳跃连接 / Decoder with additive skip connections (official: x_res + x_up).
+        # Upsample+pad can be off-by-one vs 编码器 / Upsample+pad can be off-by-one vs encoder skips; align before add.
         d = self.up3(b)                              # /4
         d = self._align_skip(d, e3)
         d = self.dec3(d + e3)                        # /4, add skip

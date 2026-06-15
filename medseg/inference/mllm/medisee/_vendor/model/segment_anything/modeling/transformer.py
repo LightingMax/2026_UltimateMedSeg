@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 import math
 from typing import Tuple, Type
@@ -78,7 +78,7 @@ class TwoWayTransformer(nn.Module):
           torch.Tensor: the processed point_embedding
           torch.Tensor: the processed image_embedding
         """
-        # BxCxHxW -> BxHWxC == B x N_image_tokens x C
+        # BxCxHxW - > BxHWxC = = B x N _ 图像 _ 标记 x C / BxCxHxW -> BxHWxC == B x N_image_tokens x C
         bs, c, h, w = image_embedding.shape
         image_embedding = image_embedding.flatten(2).permute(0, 2, 1)
         image_pe = image_pe.flatten(2).permute(0, 2, 1)
@@ -87,7 +87,7 @@ class TwoWayTransformer(nn.Module):
         queries = point_embedding
         keys = image_embedding
 
-        # Apply transformer blocks and final layernorm
+        # 应用 Transformer blocks and final layernorm / Apply transformer blocks and final layernorm
         for layer in self.layers:
             queries, keys = layer(
                 queries=queries,
@@ -96,7 +96,7 @@ class TwoWayTransformer(nn.Module):
                 key_pe=image_pe,
             )
 
-        # Apply the final attention layer from the points to the image
+        # 应用 the final 注意力 层 from the points to the 图像 / Apply the final attention layer from the points to the image
         q = queries + point_embedding
         k = keys + image_pe
         attn_out = self.final_attn_token_to_image(q=q, k=k, v=keys)
@@ -151,7 +151,7 @@ class TwoWayAttentionBlock(nn.Module):
     def forward(
         self, queries: Tensor, keys: Tensor, query_pe: Tensor, key_pe: Tensor
     ) -> Tuple[Tensor, Tensor]:
-        # Self attention block
+        # Self 注意力 块 / Self attention block
         if self.skip_first_layer_pe:
             queries = self.self_attn(q=queries, k=queries, v=queries)
         else:
@@ -160,19 +160,19 @@ class TwoWayAttentionBlock(nn.Module):
             queries = queries + attn_out
         queries = self.norm1(queries)
 
-        # Cross attention block, tokens attending to image embedding
+        # Cross 注意力 块, 标记 attending to 图像 嵌入 / Cross attention block, tokens attending to image embedding
         q = queries + query_pe
         k = keys + key_pe
         attn_out = self.cross_attn_token_to_image(q=q, k=k, v=keys)
         queries = queries + attn_out
         queries = self.norm2(queries)
 
-        # MLP block
+        # MLP 块 / MLP block
         mlp_out = self.mlp(queries)
         queries = queries + mlp_out
         queries = self.norm3(queries)
 
-        # Cross attention block, image embedding attending to tokens
+        # Cross 注意力 块, 图像 嵌入 attending to 标记 / Cross attention block, image embedding attending to tokens
         q = queries + query_pe
         k = keys + key_pe
         attn_out = self.cross_attn_image_to_token(q=k, k=q, v=queries)
@@ -218,7 +218,7 @@ class Attention(nn.Module):
         return x.reshape(b, n_tokens, n_heads * c_per_head)  # B x N_tokens x C
 
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
-        # Input projections
+        # 输入 projections / Input projections
         q = self.q_proj(q)
         k = self.k_proj(k)
         v = self.v_proj(v)
@@ -228,13 +228,13 @@ class Attention(nn.Module):
         k = self._separate_heads(k, self.num_heads)
         v = self._separate_heads(v, self.num_heads)
 
-        # Attention
+        # 注意力 / Attention
         _, _, _, c_per_head = q.shape
         attn = q @ k.permute(0, 1, 3, 2)  # B x N_heads x N_tokens x N_tokens
         attn = attn / math.sqrt(c_per_head)
         attn = torch.softmax(attn, dim=-1)
 
-        # Get output
+        # Get 输出 / Get output
         out = attn @ v
         out = self._recombine_heads(out)
         out = self.out_proj(out)

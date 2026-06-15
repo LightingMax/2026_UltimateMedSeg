@@ -1,4 +1,5 @@
 """nnFormer (2D adaptation) - self-contained port.
+    nnFormer ( 2D adaptation ) - self-contained 移植。
 
 Reference: github.com/282857341/nnFormer (NeurIPS 2022).
 A pure-transformer U-shaped network with hierarchical Swin-style local
@@ -216,6 +217,7 @@ class _PatchMerging(nn.Module):
 
 class _PatchExpand(nn.Module):
     """2x patch expansion (mirrors _PatchMerging).
+        2x 图块 expansion ( mirrors _ PatchMerging )。
 
     Doubles spatial resolution and halves channel dimension.
     """
@@ -231,7 +233,7 @@ class _PatchExpand(nn.Module):
         B, L, C = x.shape
         x = self.expand(x)  # (B, L, 2C)
         x = x.view(B, H, W, 2 * C)
-        # pixel-shuffle style: split 2C -> 2x2 spatial blocks of C/2
+        # pixel-shuffle style: split 2C - > 2x2 空间的 blocks of C / 2 / pixel-shuffle style: split 2C -> 2x2 spatial blocks of C/2
         x = x.view(B, H, W, 2, 2, C // 2)
         x = x.permute(0, 1, 3, 2, 4, 5).contiguous()
         x = x.view(B, 2 * H, 2 * W, C // 2)
@@ -265,7 +267,7 @@ class _PatchEmbed(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder / decoder stages
+# Encoder / 解码器 / Encoder / decoder stages
 # ---------------------------------------------------------------------------
 class _EncoderStage(nn.Module):
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
@@ -301,7 +303,8 @@ class _EncoderStage(nn.Module):
 
 
 class _DecoderStage(nn.Module):
-    """Decoder stage: _PatchExpand -> concat skip -> 1x1 conv -> SwinBlocks."""
+    """Decoder stage: _PatchExpand -> concat 跳跃连接。
+        Decoder stage: _PatchExpand -> concat skip -> 1x1 conv -> SwinBlocks."""
     def __init__(self, dim_in, input_resolution_in, depth, num_heads,
                  window_size, mlp_ratio=4., qkv_bias=True, qk_scale=None,
                  drop=0., attn_drop=0., drop_path=0.,
@@ -314,7 +317,7 @@ class _DecoderStage(nn.Module):
         out_dim = dim_in // 2
         out_resolution = (input_resolution_in[0] * 2,
                           input_resolution_in[1] * 2)
-        # 1x1 conv fusion of [upsampled, skip] -> out_dim. We implement the
+        # 1x1 conv fusion of [upsampled, 跳跃连接 / 1x1 conv fusion of [upsampled, skip] -> out_dim. We implement the
         # 1x1 conv as a per-token Linear in BLC space (equivalent op).
         self.fuse = nn.Linear(2 * out_dim, out_dim, bias=False)
         self.fuse_norm = norm_layer(out_dim)
@@ -341,7 +344,7 @@ class _DecoderStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Top-level network
+# Top-level 网络 / Top-level network
 # ---------------------------------------------------------------------------
 class NNFormer2D(nn.Module):
     """2D adaptation of nnFormer (NeurIPS 2022).
@@ -372,7 +375,7 @@ class NNFormer2D(nn.Module):
         self.window_size = window_size
         self.patch_size = patch_size
 
-        # input must be a multiple of patch_size * 2^(num_stages-1) * window
+        # 输入 must be a multiple of 图块 _ 大小 * 2 ^ ( num _ 阶段 - 1 ) * 窗口 / input must be a multiple of patch_size * 2^(num_stages-1) * window
         divisor = patch_size * (2 ** (self.num_stages - 1)) * window_size
         if img_size % divisor == 0:
             padded_img_size = img_size
@@ -382,7 +385,7 @@ class NNFormer2D(nn.Module):
         self.padded_img_size = padded_img_size
         self.divisor = divisor
 
-        # ------------- patch embedding -------------
+        # - - - - - - - - - - - - - 图块 嵌入 - - - - - - - - - - - - - / ------------- patch embedding -------------
         self.patch_embed = _PatchEmbed(
             img_size=padded_img_size, patch_size=patch_size,
             in_chans=in_channels, embed_dim=embed_dim,
@@ -391,11 +394,11 @@ class NNFormer2D(nn.Module):
         self.patches_resolution = patches_resolution
         self.pos_drop = nn.Dropout(p=drop_rate)
 
-        # stochastic depth schedule
+        # stochastic 深度 schedule / stochastic depth schedule
         dpr = [x.item()
                for x in torch.linspace(0, drop_path_rate, sum(depths))]
 
-        # ------------- encoder -------------
+        # ------------- 编码器 / ------------- encoder -------------
         self.encoder_stages = nn.ModuleList()
         for i in range(self.num_stages):
             stage = _EncoderStage(
@@ -415,12 +418,12 @@ class NNFormer2D(nn.Module):
         self.encoder_norm = norm_layer(
             int(embed_dim * 2 ** (self.num_stages - 1)))
 
-        # ------------- decoder -------------
-        # Decoder mirrors encoder: we have (num_stages - 1) upsample steps,
-        # each fusing with the skip from the matching encoder stage.
+        # ------------- 解码器 / ------------- decoder -------------
+        # Decoder mirrors 编码器 / Decoder mirrors encoder: we have (num_stages - 1) upsample steps,
+        # each fusing with the skip from the matching 编码器 / each fusing with the skip from the matching encoder stage.
         self.decoder_stages = nn.ModuleList()
         for j in range(self.num_stages - 1):
-            # encoder stage index that produced the skip we'll fuse with
+            # encoder stage index that produced the 跳跃连接 / encoder stage index that produced the skip we'll fuse with
             enc_idx = self.num_stages - 2 - j
             dim_in = int(embed_dim * 2 ** (enc_idx + 1))
             input_res_in = (patches_resolution[0] // (2 ** (enc_idx + 1)),
@@ -438,7 +441,7 @@ class NNFormer2D(nn.Module):
             self.decoder_stages.append(stage)
 
         self.decoder_norm = norm_layer(embed_dim)
-        # final 1x1 conv to logits at H/4 x W/4 (after the last decoder stage)
+        # final 1x1 conv to logits at H/4 x W/4 (after the last 解码器 / final 1x1 conv to logits at H/4 x W/4 (after the last decoder stage)
         self.head = nn.Conv2d(embed_dim, num_classes, kernel_size=1, bias=True)
 
         self.apply(self._init_weights)
@@ -463,15 +466,15 @@ class NNFormer2D(nn.Module):
         for stage in self.encoder_stages:
             x, skip = stage(x)
             skips.append(skip)
-        # x is currently the downsampled tensor of the deepest stage's
-        # downsample (None for last stage), which equals skip for last stage.
+        # x is currently the downsampled 张量 of the deepest stage's / x is currently the downsampled tensor of the deepest stage's
+        # downsample (None for last stage), which equals 跳跃连接 / downsample (None for last stage), which equals skip for last stage.
         x = self.encoder_norm(x)
         return x, skips
 
     def forward_decoder(self, x, skips):
-        # decoder consumes the deepest feature and fuses with skips
-        # skips[num_stages-1] is the deepest stage output (= x after norm).
-        # We walk upward fusing skips[num_stages-2], skips[num_stages-3], ...
+        # 解码 consumes the deepest 特征 and 融合 with skips / decoder consumes the deepest feature and fuses with skips
+        # skips [ num _ 阶段 - 1 ] is the deepest 阶段 输出 ( = x after norm ) / skips[num_stages-1] is the deepest stage output (= x after norm).
+        # We walk upward fusing skips [ num _ 阶段 - 2 ], skips [ num _ 阶段 - 3 ], / We walk upward fusing skips[num_stages-2], skips[num_stages-3], ...
         for j, stage in enumerate(self.decoder_stages):
             skip_idx = self.num_stages - 2 - j
             x = stage(x, skips[skip_idx])
@@ -480,11 +483,11 @@ class NNFormer2D(nn.Module):
 
     def forward(self, x):
         B, C, H, W = x.shape
-        # pad input to match padded_img_size (constructor-time-fixed)
+        # pad 输入 to match padded _ img _ 大小 ( constructor-time-fixed ) / pad input to match padded_img_size (constructor-time-fixed)
         target = self.padded_img_size
         pad_h = max(0, target - H)
         pad_w = max(0, target - W)
-        # additionally, ensure we are a multiple of divisor if input is larger
+        # additionally, ensure we are a multiple of divisor if 输入 is larger / additionally, ensure we are a multiple of divisor if input is larger
         if target - H < 0 and (H % self.divisor != 0):
             pad_h = ((H + self.divisor - 1) // self.divisor
                      ) * self.divisor - H
@@ -498,15 +501,15 @@ class NNFormer2D(nn.Module):
             x = F.pad(x, (0, pad_w, 0, pad_h), mode=mode)
         Hp, Wp = x.shape[-2], x.shape[-1]
 
-        # If the (possibly padded) input does not match the resolution the
-        # encoder was constructed for, rebuild the resolution-dependent
+        # If the ( possibly padded ) 输入 does not match the 分辨率 the / If the (possibly padded) input does not match the resolution the
+        # 编码器 was constructed for, rebuild the resolution-dependent / encoder was constructed for, rebuild the resolution-dependent
         # buffers on the fly by tracking per-stage resolutions.
-        # The current Swin blocks have fixed input_resolution buffers
-        # baked-in for the constructor-time padded_img_size. To handle
+        # The current Swin blocks have fixed 输入 _ 分辨率 buffers / The current Swin blocks have fixed input_resolution buffers
+        # baked-in for the constructor-time padded _ img _ 大小. To handle / baked-in for the constructor-time padded_img_size. To handle
         # padded inputs larger than that, we instead pad to a multiple of
-        # divisor and then interpolate the patch tokens back to the
-        # padded_img_size grid before running the encoder. This keeps the
-        # model constant-shape and dependency-free.
+        # divisor and then 插值 the 图块 标记 back to the / divisor and then interpolate the patch tokens back to the
+        # padded_img_size grid before running the 编码器 / padded_img_size grid before running the encoder. This keeps the
+        # 模型 constant-shape and dependency-free / model constant-shape and dependency-free.
         if (Hp, Wp) != (self.padded_img_size, self.padded_img_size):
             x = F.interpolate(
                 x, size=(self.padded_img_size, self.padded_img_size),
@@ -514,12 +517,12 @@ class NNFormer2D(nn.Module):
 
         feats, skips = self.forward_features(x)
         x = self.forward_decoder(feats, skips)
-        # x is (B, (H/4)*(W/4), embed_dim) at the patches_resolution grid
+        # x is ( B, ( H / 4 ) * ( W / 4 ), embed _ dim ) at the 图块 _ 分辨率 grid / x is (B, (H/4)*(W/4), embed_dim) at the patches_resolution grid
         H0, W0 = self.patches_resolution
         B2, L, C2 = x.shape
         x = x.transpose(1, 2).contiguous().view(B2, C2, H0, W0)
         x = self.head(x)
-        # upsample back to the original (un-padded) input size
+        # 上采样 back to the original ( un-padded ) 输入 大小 / upsample back to the original (un-padded) input size
         out = F.interpolate(x, size=(H, W), mode='bilinear',
                             align_corners=False)
         return out

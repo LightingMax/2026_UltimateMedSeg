@@ -1,4 +1,5 @@
 """FLAIR foundation-model encoder (ophthalmology).
+    FLAIR foundation-model 编码器。
 
 Reference:
     Silva-Rodriguez et al., "FLAIR: A Foundation LAnguage-Image model of the
@@ -42,6 +43,7 @@ _FLAIR_STRIDE = 32
 @ENCODER_REGISTRY.register("flair")
 class FLAIREncoder(BaseFoundationEncoder):
     """FLAIR (retinal vision-language ResNet-50) encoder.
+        FLAIR (retinal vision-language ResNet-50) 编码器。
 
     Wraps a torchvision ResNet-50 backbone and exposes 5 native feature maps
     at strides 2/4/8/16/32 with channels ``[64, 256, 512, 1024, 2048]``
@@ -75,7 +77,7 @@ class FLAIREncoder(BaseFoundationEncoder):
                     f"{type(e).__name__}: {e}. Provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Replace the first conv if in_channels != 3.
+            # Replace the first conv if in _ 通道! = 3 / Replace the first conv if in_channels != 3.
             if in_channels != 3:
                 self.backbone.conv1 = nn.Conv2d(
                     in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False,
@@ -89,11 +91,11 @@ class FLAIREncoder(BaseFoundationEncoder):
             )
         self._backbone_name = PRIMARY_BACKBONE_NAME
 
-        # Remove FC head — we only need feature extraction.
+        # Remove FC 头部 — we only need 特征 extraction / Remove FC head — we only need feature extraction.
         self.backbone.fc = nn.Identity()
         self.backbone.avgpool = nn.Identity()
 
-        # Load optional local FLAIR checkpoint.
+        # 加载 可选 局部的 FLAIR 检查点 / Load optional local FLAIR checkpoint.
         if pretrained_path is not None:
             self._load_local_checkpoint(pretrained_path)
 
@@ -180,9 +182,9 @@ class FLAIREncoder(BaseFoundationEncoder):
         x_pad, _, _ = self._pad_input(x)
 
         bb = self.backbone
-        # Stem: stride 2
+        # 主干: 步长 2 / Stem: stride 2
         stem = bb.relu(bb.bn1(bb.conv1(x_pad)))  # (B, 64, H/2, W/2)
-        # Stride 4: maxpool + layer1
+        # 步长 4: maxpool + layer1 / Stride 4: maxpool + layer1
         pool = bb.maxpool(stem)  # (B, 64, H/4, W/4)
         s1 = bb.layer1(pool)     # (B, 256, H/4, W/4)
         s2 = bb.layer2(s1)      # (B, 512, H/8, W/8)

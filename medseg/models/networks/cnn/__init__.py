@@ -1,4 +1,5 @@
-"""CNN-based complete segmentation architectures."""
+"""CNN-based complete 分割 architectures。
+    CNN-based complete segmentation architectures."""
 
 from .unet3plus import UNet3Plus
 from .lv_unet import LVUNet
@@ -10,7 +11,7 @@ from .u_lite import ULite
 from .acc_unet import ACCUNet
 from .cmunext import CMUNeXt
 from .mew_unet import MEWUNet
-# Note: ultralbm_unet was moved to ../mamba/ (its architecture is Mamba-based);
+# 注意: ultralbm _ unet was moved to.. / mamba / ( its 架构 is Mamba-based ) / Note: ultralbm_unet was moved to ../mamba/ (its architecture is Mamba-based);
 # it is no longer re-exported from this CNN subpackage.
 
 # Re-export: DoubleUNet's canonical home is CNN (file lives under transformer/

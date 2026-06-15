@@ -1,4 +1,5 @@
 """LV-UNet Encoder: MobileNetV3-Large + VanillaNet-style Block mid-stages.
+    LV-UNet 编码器。
 LV-UNet 编码器：MobileNetV3-Large 预训练主干 + VanillaNet 风格 Block 中间层。
 
 Extracts 6 multi-scale feature maps:
@@ -10,7 +11,7 @@ Extracts 6 multi-scale feature maps:
 
 out_channels: [16, 24, 80, 160, 240, 480] (default dims)
 """
-# Reference: https://github.com/juntaoJianggavin/LV-UNet
+# 参考: https: / / github. com / juntaoJianggavin / LV-UNet / Reference: https://github.com/juntaoJianggavin/LV-UNet
 
 import torch
 import torch.nn as nn
@@ -27,6 +28,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 class SeriesActivation(nn.ReLU):
     """Series-informed activation: ReLU followed by depthwise conv + BN.
+        Series-informed 激活: ReLU followed by depthwise conv + BN。
     序列激活：ReLU 后接深度卷积 + BN。
 
     In deploy mode, BN is fused into the conv weights for faster inference.
@@ -72,6 +74,7 @@ class SeriesActivation(nn.ReLU):
 
 class Block(nn.Module):
     """VanillaNet-style downsampling block: Conv1x1 -> BN -> LeakyReLU -> Conv1x1 -> BN -> MaxPool -> activation.
+        VanillaNet-style 下采样 块: Conv1x1 - > BN - > LeakyReLU - > Conv1x1 - > BN - > MaxPool - > 激活。
     VanillaNet 风格下采样块：Conv1x1 -> BN -> LeakyReLU -> Conv1x1 -> BN -> MaxPool -> 激活。
     """
     def __init__(self, dim, dim_out, act_num=3, stride=2, deploy=False):
@@ -136,6 +139,7 @@ class Block(nn.Module):
 @ENCODER_REGISTRY.register("lv_unet")
 class LVUNetEncoder(nn.Module):
     """LV-UNet encoder: MobileNetV3-Large backbone + VanillaNet Block mid-stages.
+        LV-UNet 编码器。
     LV-UNet 编码器：MobileNetV3-Large 主干 + VanillaNet Block 中间下采样层。
 
     Architecture / 架构:
@@ -196,7 +200,7 @@ class LVUNetEncoder(nn.Module):
                 mobile.features[6], mobile.features[7],
                 mobile.features[8], mobile.features[9])
         except Exception:
-            # Fallback: lightweight conv encoder if torchvision unavailable
+            # Fallback: lightweight conv 编码器 / Fallback: lightweight conv encoder if torchvision unavailable
             # 回退：torchvision 不可用时使用轻量卷积编码器
             self.firstconv = nn.Sequential(
                 nn.Conv2d(in_channels, 16, 3, 2, 1, bias=False),
@@ -218,13 +222,14 @@ class LVUNetEncoder(nn.Module):
                 dims[i], dims[i + 1], act_num=act_num,
                 stride=strides[i], deploy=deploy))
 
-        # Encoder output channels (shallow -> deep):
+        # 编码器 输出 通道 ( 浅层 - > 深度 ) / Encoder output channels (shallow -> deep):
         # 编码器输出通道（由浅到深）：
-        #   e1=24, e2=40, e3=80, then Block outputs dims[1:]
+        # e1 = 24, e2 = 40, e3 = 80, then 块 outputs dims [ 1: ] / e1=24, e2=40, e3=80, then Block outputs dims[1:]
         self.out_channels: List[int] = [24, 40, 80] + list(dims[1:])
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Encode input to multi-scale feature maps (shallow to deep).
+            编码 输入 to 多尺度特征 映射 ( 浅层 to 深度 )。
         将输入编码为多尺度特征图（由浅到深）。
 
         Returns: [e1(24ch,H/2), e2(40ch,H/4), e3(80ch,H/8),
@@ -251,12 +256,14 @@ class LVUNetEncoder(nn.Module):
 
     def change_act(self, m):
         """Set leaky ReLU slope for deep training technique.
+            Set leaky ReLU slope for 深度 训练 technique。
         设置 leaky ReLU 斜率用于深度训练技巧。"""
         for stage in self.stages:
             stage.act_learn = m
 
     def switch_to_deploy(self):
         """Fuse BN into conv weights for faster inference.
+            融合 BN into conv 权重 for faster 推理。
         融合 BN 到卷积权重以加速推理。"""
         for stage in self.stages:
             stage.switch_to_deploy()

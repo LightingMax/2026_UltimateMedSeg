@@ -481,7 +481,7 @@ class MediSeeForCausalLM(LlavaMistralForCausalLM):
             output_ids = outputs.sequences
 
             seg_token_mask = output_ids[:, 1:] == self.seg_token_idx
-            # hack for IMAGE_TOKEN_INDEX (we suppose that there is only one image, and it is in the front)
+            # hack for 图像 _ 标记 _ INDEX ( we suppose that there is only one 图像, and it is in the front ) / hack for IMAGE_TOKEN_INDEX (we suppose that there is only one image, and it is in the front)
             seg_token_mask = torch.cat(
                 [
                     torch.zeros((seg_token_mask.shape[0], 575)).bool().cuda(),

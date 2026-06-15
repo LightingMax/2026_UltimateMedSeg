@@ -1,4 +1,5 @@
 """UNI pathology foundation-model encoder.
+    UNI pathology foundation-model 编码器。
 
 Reference:
     Chen et al., "Towards a General-Purpose Foundation Model for Computational
@@ -43,6 +44,7 @@ _PATCH_SIZE = 16
 @ENCODER_REGISTRY.register("uni")
 class UNIEncoder(BaseFoundationEncoder):
     """UNI (pathology ViT-L/16) encoder with DPT-style multi-block pyramid.
+        UNI (pathology ViT-L/16) 编码器。
 
     The backbone is a DINOv2-pretrained ViT-Large/16 (``embed_dim=1024``,
     ``patch_size=16``).  Weights are **gated** on HuggingFace Hub at
@@ -70,7 +72,7 @@ class UNIEncoder(BaseFoundationEncoder):
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — UNI uses timm ViT-L/16 with custom weights.
+        # 骨干网络 — UNI uses timm ViT-L / 16 with custom 权重 / Backbone — UNI uses timm ViT-L/16 with custom weights.
         if pretrained:
             try:
                 import timm
@@ -81,7 +83,7 @@ class UNIEncoder(BaseFoundationEncoder):
                 )
                 self.backbone = HuggingFaceViTWrapper(backbone_timm)
             except Exception as e:
-                # Fallback: build skeleton and download weights manually.
+                # Fallback: build skeleton and download 权重 manually / Fallback: build skeleton and download weights manually.
                 warnings.warn(
                     f"[uni] timm hf-hub loading failed ({e}), "
                     "attempting manual weight download..."
@@ -116,7 +118,7 @@ class UNIEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -139,7 +141,7 @@ class UNIEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

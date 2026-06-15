@@ -1,4 +1,5 @@
 """UCTransNet – self-contained port from github.com/McGregorWwww/UCTransNet.
+    UCTransNet – self-contained 移植 from github. com / McGregorWwww / UCTransNet。
 
 UCTransNet: Rethinking the Skip Connections in U-Net from a Channel-wise
 Perspective with Transformer (AAAI 2022).
@@ -18,10 +19,11 @@ from torch.nn.modules.utils import _pair
 
 
 # ---------------------------------------------------------------------------
-# Config helper – replaces the external Config object
+# 配置 helper – replaces the external 配置 object / Config helper – replaces the external Config object
 # ---------------------------------------------------------------------------
 class _UCTConfig:
-    """Minimal config for UCTransNet's CTrans module."""
+    """Minimal 配置 for UCTransNet's CTrans 模块。
+        Minimal config for UCTransNet's CTrans module."""
 
     def __init__(self, img_size=224, base_channel=64, patch_sizes=None):
         self.base_channel = base_channel
@@ -39,7 +41,7 @@ class _UCTConfig:
 
 
 # ---------------------------------------------------------------------------
-# CTrans: Channel Transformer module
+# CTrans: 通道 Transformer 模块 / CTrans: Channel Transformer module
 # ---------------------------------------------------------------------------
 class _ChannelEmbeddings(nn.Module):
     def __init__(self, patchsize, img_size, in_channels, dropout_rate):
@@ -221,7 +223,7 @@ class _Block(nn.Module):
         self.ffn = _Mlp(config, channel_num)
 
     def forward(self, emb1, emb2, emb3, emb4):
-        # Build emb_all by concatenating non-None embeddings
+        # Build emb _ all by concatenating non-None 嵌入 / Build emb_all by concatenating non-None embeddings
         embcat = []
         for emb in [emb1, emb2, emb3, emb4]:
             if emb is not None:
@@ -284,12 +286,12 @@ class _ChannelTransformer(nn.Module):
         emb4 = self.embeddings[3](en4) if en4 is not None else None
         for layer in self.encoder_layers:
             emb1, emb2, emb3, emb4, attn_weights = layer(emb1, emb2, emb3, emb4)
-        # Apply encoder norms
+        # Apply 编码器 / Apply encoder norms
         emb1 = self.encoder_norm1(emb1) if emb1 is not None else None
         emb2 = self.encoder_norm2(emb2) if emb2 is not None else None
         emb3 = self.encoder_norm3(emb3) if emb3 is not None else None
         emb4 = self.encoder_norm4(emb4) if emb4 is not None else None
-        # Reconstruct with target spatial sizes
+        # Reconstruct with 目标 空间的 sizes / Reconstruct with target spatial sizes
         enc1 = self.reconstruct[0](emb1) if emb1 is not None else en1
         enc2 = self.reconstruct[1](emb2) if emb2 is not None else en2
         enc3 = self.reconstruct[2](emb3) if emb3 is not None else en3
@@ -306,7 +308,7 @@ class _ChannelTransformer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# UNet encoder / decoder building blocks
+# UNet 编码器 / UNet encoder / decoder building blocks
 # ---------------------------------------------------------------------------
 def _get_activation(activation_type):
     activation_type = activation_type.lower()
@@ -384,6 +386,7 @@ class _UpBlockAttention(nn.Module):
 # ---------------------------------------------------------------------------
 class UCTransNetEnc(nn.Module):
     """UCTransNet: UNet with Channel Transformer skip connections.
+        UCTransNet: UNet with Channel Transformer 跳跃连接。
 
     Args:
         in_channels: Number of input image channels (default 3).
@@ -396,14 +399,14 @@ class UCTransNetEnc(nn.Module):
         base_channel = 64
         self.n_channels = in_channels
         self.n_classes = num_classes
-        # Config for CTrans
-        # Feature sizes: x1=img_size, x2=img_size/2, x3=img_size/4, x4=img_size/8
-        # Patch sizes must divide feature sizes evenly and produce square number of patches
-        # Using patch sizes: img/16, img/32, img/64, img/128 (rounded to int)
+        # 配置 for CTrans / Config for CTrans
+        # 特征 sizes: x1 = img _ 大小, x2 = img _ 大小 / 2, x3 = img _ 大小 / 4, x4 = img _ 大小 / 8 / Feature sizes: x1=img_size, x2=img_size/2, x3=img_size/4, x4=img_size/8
+        # 图块 sizes must divide 特征 sizes evenly and produce square 数量 图块 / Patch sizes must divide feature sizes evenly and produce square number of patches
+        # Using 图块 sizes: img / 16, img / 32, img / 64, img / 128 ( rounded to int ) / Using patch sizes: img/16, img/32, img/64, img/128 (rounded to int)
         patch_sizes = [max(1, img_size // 16), max(1, img_size // 32),
                        max(1, img_size // 64), max(1, img_size // 128)]
         config = _UCTConfig(img_size, base_channel, patch_sizes)
-        # Encoder
+        # 编码器 / Encoder
         self.inc = _ConvBatchNorm(in_channels, base_channel)
         self.down1 = _DownBlock(base_channel, base_channel * 2, 2)
         self.down2 = _DownBlock(base_channel * 2, base_channel * 4, 2)
@@ -415,7 +418,7 @@ class UCTransNetEnc(nn.Module):
             channel_num=[base_channel, base_channel * 2,
                          base_channel * 4, base_channel * 8],
             patchSize=patch_sizes)
-        # Decoder
+        # 解码 / Decoder
         self.up4 = _UpBlockAttention(base_channel * 16, base_channel * 4, 2)
         self.up3 = _UpBlockAttention(base_channel * 8, base_channel * 2, 2)
         self.up2 = _UpBlockAttention(base_channel * 4, base_channel, 2)

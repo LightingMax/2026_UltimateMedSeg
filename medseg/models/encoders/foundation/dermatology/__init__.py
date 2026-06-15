@@ -1,4 +1,4 @@
-"""Dermatology foundation encoders."""
+"""皮肤病学基础编码器 / Dermatology foundation encoders."""
 
 import sys as _sys
 import warnings as _warnings

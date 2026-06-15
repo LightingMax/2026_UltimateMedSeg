@@ -1,4 +1,5 @@
 """OmniRad radiology foundation-model encoder.
+    OmniRad radiology foundation-model 编码器。
 
 Reference:
     OmniRad: A Radiological Foundation Model for Multi-Task Medical Image
@@ -44,6 +45,7 @@ _PATCH_SIZE = 14
 @ENCODER_REGISTRY.register("omnirad")
 class OmniRadEncoder(BaseFoundationEncoder):
     """OmniRad (radiology DINOv2 ViT-B/14) encoder with DPT-style multi-block pyramid.
+        OmniRad (radiology DINOv2 ViT-B/14) 编码器。
 
     The backbone is a DINOv2-pretrained ViT-Base/14 (``embed_dim=768``,
     ``patch_size=14``).  Its final-layer patch tokens are reshaped to
@@ -72,13 +74,13 @@ class OmniRadEncoder(BaseFoundationEncoder):
                          freeze=freeze, unfreeze_last_n=unfreeze_last_n,
                          inference_only=inference_only, **kwargs)
 
-        # Channel adapter for non-RGB inputs.
+        # 通道 适配器 for non-RGB inputs / Channel adapter for non-RGB inputs.
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — Dinov2Model via transformers.
+        # 骨干网络 — Dinov2Model via transformers / Backbone — Dinov2Model via transformers.
         if pretrained:
             self.backbone = load_hf_vit(
                 hf_name=_PRIMARY_HF_NAME,
@@ -100,7 +102,7 @@ class OmniRadEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -123,7 +125,7 @@ class OmniRadEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

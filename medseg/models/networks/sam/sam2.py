@@ -1,4 +1,5 @@
 """SAM2 (Segment Anything Model 2, Meta 2024) - 2D medical-segmentation variant.
+    SAM2 ( Segment Anything 模型 2, Meta 2024 ) - 2D medical-segmentation variant。
 
 Reference:
     Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, et al.,
@@ -45,7 +46,7 @@ from .sam_base import SAMBase, load_with_ssl_fallback
 
 
 # ---------------------------------------------------------------------------
-# Backbone wrappers
+# 骨干网络 wrappers / Backbone wrappers
 # ---------------------------------------------------------------------------
 _HIERA_MODEL = "hiera_tiny_224"
 _TOTAL_STRIDE = 32
@@ -53,6 +54,7 @@ _TOTAL_STRIDE = 32
 
 class _HieraEncoder(nn.Module):
     """Thin wrapper around a timm Hiera features extractor.
+        Thin 封装器 around a timm Hiera 特征 extractor。
 
     Exposes ``.blocks`` (a flat ``nn.ModuleList`` of transformer blocks) so
     ``SAMBase.apply_freeze`` can implement the ``unfreeze_last_n_blocks``
@@ -79,7 +81,7 @@ class _HieraEncoder(nn.Module):
         self.channels = list(feat.feature_info.channels())
         self.strides = list(feat.feature_info.reduction())
         # Expose the transformer blocks of the underlying Hiera so
-        # SAMBase.apply_freeze can selectively unfreeze the tail.
+        # SAMBase. 应用 _ freeze can selectively unfreeze the tail / SAMBase.apply_freeze can selectively unfreeze the tail.
         inner = getattr(feat, "model", feat)
         blocks = getattr(inner, "blocks", None)
         if blocks is None:
@@ -93,10 +95,11 @@ class _HieraEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Mask decoder
+# Mask 解码器 / Mask decoder
 # ---------------------------------------------------------------------------
 class _LateralProj(nn.Module):
-    """1x1 conv that projects a feature map to ``out_ch`` channels."""
+    """1x1 conv that projects a 特征图 to ` ` out _ ch ` ` 通道。
+        1x1 conv that projects a feature map to ``out_ch`` channels."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -108,7 +111,8 @@ class _LateralProj(nn.Module):
 
 
 class _UpFuseBlock(nn.Module):
-    """2x ConvTranspose upsample, fuse a skip feature, refine with a 3x3 conv."""
+    """2x ConvTranspose upsample, fuse a 跳跃连接。
+        2x ConvTranspose upsample, fuse a skip feature, refine with a 3x3 conv."""
 
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__()
@@ -130,6 +134,7 @@ class _UpFuseBlock(nn.Module):
 
 class _SAM2MaskDecoder(nn.Module):
     """4-stage CNN mask decoder that fuses multi-scale features.
+        4-stage CNN mask 解码器。
 
     Stage layout (assuming Hiera with strides 4/8/16/32):
         stage1: 1/32 -> 1/16, add lateral(f3)
@@ -153,7 +158,7 @@ class _SAM2MaskDecoder(nn.Module):
         self.up2 = _UpFuseBlock(proj_dim, proj_dim)  # 1/16 -> 1/8
         self.up3 = _UpFuseBlock(proj_dim, proj_dim)  # 1/8  -> 1/4
 
-        # Final 4x upsample to full resolution, producing class logits.
+        # Final 4x 上采样 to full 分辨率, producing class logits / Final 4x upsample to full resolution, producing class logits.
         self.up4 = nn.Sequential(
             nn.ConvTranspose2d(proj_dim, proj_dim // 2,
                                kernel_size=2, stride=2),
@@ -183,10 +188,11 @@ class _SAM2MaskDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main model
+# Main 模型 / Main model
 # ---------------------------------------------------------------------------
 class SAM2(SAMBase):
     """SAM2 2D segmentation network with a Hiera-ViT encoder.
+        SAM2 2D segmentation network with a Hiera-ViT 编码器。
 
     Args:
         in_channels: number of input channels.
@@ -238,7 +244,7 @@ class SAM2(SAMBase):
         )
 
         # Hiera positional structures are baked at construction; pick the
-        # backbone img_size as the smallest multiple of 32 that is >= img_size.
+        # 骨干网络 img _ 大小 as the smallest multiple of 32 that is > = img _ 大小 / backbone img_size as the smallest multiple of 32 that is >= img_size.
         self._backbone_size = max(_TOTAL_STRIDE,
                                   _round_up(img_size, _TOTAL_STRIDE))
 
@@ -247,7 +253,7 @@ class SAM2(SAMBase):
             img_size=self._backbone_size,
             pretrained=self._pretrained,
         )
-        # SAM2 here is prompt-free; expose None so apply_freeze is uniform.
+        # SAM2 here is prompt-free; expose None so 应用 _ freeze is uniform / SAM2 here is prompt-free; expose None so apply_freeze is uniform.
         self.prompt_encoder = None
 
         self.mask_decoder = _SAM2MaskDecoder(
@@ -271,12 +277,12 @@ class SAM2(SAMBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H, W = x.shape[-2:]
 
-        # 1. Pad input to a multiple of 32.
+        # 1. Pad 输入 to a multiple of 32 / 1. Pad input to a multiple of 32.
         x_pad, (pad_h, pad_w) = self._pad_to_multiple(x, _TOTAL_STRIDE)
         Hp, Wp = x_pad.shape[-2:]
 
-        # 2. If the padded input does not match the backbone's strict size,
-        #    bilinear-resize into the backbone, then resize logits back.
+        # 2. If the padded 输入 does not match the backbone's strict 大小 / 2. If the padded input does not match the backbone's strict size,
+        # bilinear-resize into the 骨干网络, then resize logits back / bilinear-resize into the backbone, then resize logits back.
         if (Hp, Wp) != (self._backbone_size, self._backbone_size):
             x_bb = F.interpolate(
                 x_pad,
@@ -287,7 +293,7 @@ class SAM2(SAMBase):
         else:
             x_bb = x_pad
 
-        # 3. Multi-scale features (strides 4, 8, 16, 32).
+        # 3. Multi-scale 特征 ( strides 4, 8, 16, 32 ) / 3. Multi-scale features (strides 4, 8, 16, 32).
         feats = self.image_encoder(x_bb)
         if len(feats) < 4:
             raise RuntimeError(
@@ -298,7 +304,7 @@ class SAM2(SAMBase):
         # 4. Decode.
         logits = self.mask_decoder(feats)
 
-        # 5. Snap back to the padded input size, then crop to (H, W).
+        # 5. Snap back to the padded 输入 大小, then crop to ( H, W ) / 5. Snap back to the padded input size, then crop to (H, W).
         if logits.shape[-2:] != (Hp, Wp):
             logits = F.interpolate(
                 logits, size=(Hp, Wp), mode="bilinear", align_corners=False,

@@ -1,4 +1,5 @@
 """OphMAE ophthalmology foundation-model encoder.
+    OphMAE ophthalmology foundation-model 编码器。
 
 Reference:
     OphMAE: Bridging Volumetric and Planar Imaging with a Foundation Model
@@ -39,6 +40,7 @@ _PATCH_SIZE = 16
 @ENCODER_REGISTRY.register("ophmae")
 class OphMAEEncoder(BaseFoundationEncoder):
     """OphMAE (ophthalmology MAE ViT-B/16) encoder with DPT-style multi-block pyramid.
+        OphMAE (ophthalmology MAE ViT-B/16) 编码器。
 
     The backbone is a MAE-pretrained ViT-Base/16 (``embed_dim=768``,
     ``patch_size=16``).  ``out_channels = [dim/8, dim/4, dim/2, dim]``
@@ -64,7 +66,7 @@ class OphMAEEncoder(BaseFoundationEncoder):
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — try standard ViTModel first, then fallback.
+        # 骨干网络 — try 标准 ViTModel first, then fallback / Backbone — try standard ViTModel first, then fallback.
         if pretrained:
             try:
                 self.backbone = load_hf_vit(
@@ -73,7 +75,7 @@ class OphMAEEncoder(BaseFoundationEncoder):
                     model_cls_name="ViTModel",
                 )
             except Exception:
-                # Fallback: build ViT-B/16 skeleton and download weights.
+                # Fallback: build ViT-B / 16 skeleton and download 权重 / Fallback: build ViT-B/16 skeleton and download weights.
                 import transformers
                 _skel = transformers.ViTModel(transformers.ViTConfig(
                     hidden_size=768, num_hidden_layers=12,
@@ -106,7 +108,7 @@ class OphMAEEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -129,7 +131,7 @@ class OphMAEEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

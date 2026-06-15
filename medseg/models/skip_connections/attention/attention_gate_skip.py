@@ -1,4 +1,5 @@
-"""Attention Gate skip connection (Oktay 2018 — Attention U-Net)."""
+"""Attention Gate 跳跃连接。
+    Attention Gate skip connection (Oktay 2018 — Attention U-Net)."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("attention_gate")
 class AttentionGateSkip(nn.Module):
     """Attention Gate skip (Oktay 2018).
+        Attention Gate 跳跃连接。
 
     g = decoder (gating signal), x = skip features.
     theta_x = Conv1x1(x), phi_g = Conv1x1(g), align spatial via bilinear,
@@ -19,9 +21,9 @@ class AttentionGateSkip(nn.Module):
 
     def __init__(self, inter_channels=None, **kwargs):
         super().__init__()
-        # If None, defaults to skip_ch // 2 (min 1) at build time.
+        # If None, defaults to 跳跃 _ ch / / 2 ( min 1 ) at build time / If None, defaults to skip_ch // 2 (min 1) at build time.
         self.inter_channels = inter_channels
-        # Lazily-built submodules keyed by (decoder_ch, skip_ch).
+        # Lazily-built submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazily-built submodules keyed by (decoder_ch, skip_ch).
         self._theta_xs = nn.ModuleDict()
         self._phi_gs = nn.ModuleDict()
         self._psis = nn.ModuleDict()
@@ -50,7 +52,7 @@ class AttentionGateSkip(nn.Module):
         self._psis[key] = psi.to(device)
 
     def forward(self, decoder_feat, skip_feat):
-        # Spatial align skip to decoder if needed.
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed.
         if skip_feat.shape[-2:] != decoder_feat.shape[-2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[-2:],

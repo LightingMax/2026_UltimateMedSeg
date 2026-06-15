@@ -1,4 +1,5 @@
 """HiFormer – self-contained port from github.com/amirhossein-kz/HiFormer.
+    HiFormer – self-contained 移植 from github. com / amirhossein-kz / HiFormer。
 
 HiFormer: Hierarchical Multi-scale Representations Using Transformers for
 Medical Image Segmentation (ISBI 2022).
@@ -196,7 +197,7 @@ class _PatchMerging(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Swin Transformer backbone (from scratch, no pretrained)
+# Swin Transformer 骨干网络 ( from scratch, no 预训练 ) / Swin Transformer backbone (from scratch, no pretrained)
 # ---------------------------------------------------------------------------
 class _SwinTransformer(nn.Module):
     def __init__(self, img_size=224, patch_size=4, in_chans=3, embed_dim=96,
@@ -232,7 +233,7 @@ class _SwinTransformer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# ResNet backbone (mimics torchvision ResNet34 layer structure)
+# ResNet 骨干网络 ( mimics torchvision ResNet34 层 structure ) / ResNet backbone (mimics torchvision ResNet34 layer structure)
 # ---------------------------------------------------------------------------
 class _ResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, stride=1):
@@ -268,7 +269,7 @@ class _ResNet34Backbone(nn.Module):
     """Mimics torchvision resnet34 children()[:7] structure."""
     def __init__(self, in_channels=3):
         super().__init__()
-        # layers[0:5] = stem + layer1+layer2 + layer3 + layer4 equivalent
+        # layers [ 0: 5 ] = 主干 + layer1 + layer2 + layer3 + layer4 equivalent / layers[0:5] = stem + layer1+layer2 + layer3 + layer4 equivalent
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, 64, 7, 2, 3, bias=False),
             nn.BatchNorm2d(64), nn.ReLU(inplace=True),
@@ -278,7 +279,8 @@ class _ResNet34Backbone(nn.Module):
         self.layer3 = _make_res_layer(128, 256, 6, stride=2)  # 14x14
 
     def forward_stem(self, x):
-        """Run first 5 ResNet children (stem + layer1) → 64ch at 56x56."""
+        """Run first 5 ResNet children ( 主干 + layer1 ) → 64ch at 56x56。
+            Run first 5 ResNet children (stem + layer1) → 64ch at 56x56."""
         x = self.stem(x)
         x = self.layer1(x)
         return x
@@ -293,10 +295,11 @@ class _ResNet34Backbone(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# PyramidFeatures – interleaved CNN + Swin encoder (faithful to original)
+# PyramidFeatures – interleaved CNN + Swin 编码器 / PyramidFeatures – interleaved CNN + Swin encoder (faithful to original)
 # ---------------------------------------------------------------------------
 class _PyramidFeatures(nn.Module):
     """Faithful to original PyramidFeatures: interleaves CNN (ResNet) and
+        忠实 to original PyramidFeatures: interleaves CNN ( ResNet ) and。
     Swin Transformer with skip connections at 3 pyramid levels."""
     def __init__(self, img_size=224, in_channels=3,
                  swin_pyramid_fm=(96, 192, 384),
@@ -325,7 +328,7 @@ class _PyramidFeatures(nn.Module):
         self.avgpool_2 = nn.AdaptiveAvgPool1d(1)
 
     def forward(self, x):
-        # Shared stem: resnet_layers[0:5] → 56x56 feature map
+        # Shared 主干: resnet _ layers [ 0: 5 ] → 56x56 特征图 / Shared stem: resnet_layers[0:5] → 56x56 feature map
         fm1 = self.cnn.forward_stem(x)
 
         # Level 1: 56x56 (96 dim)
@@ -359,10 +362,11 @@ class _PyramidFeatures(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Attention (from original HiFormer utils.py)
+# 注意力 ( from original HiFormer utils. py ) / Attention (from original HiFormer utils.py)
 # ---------------------------------------------------------------------------
 class _Attention(nn.Module):
-    """Multi-head attention with configurable dim_head (original uses 64)."""
+    """Multi-head 注意力 with configurable dim _ 头部 ( original uses 64 )。
+        Multi-head attention with configurable dim_head (original uses 64)."""
     def __init__(self, dim, factor, heads=8, dim_head=64, dropout=0.):
         super().__init__()
         inner_dim = dim_head * heads
@@ -386,10 +390,11 @@ class _Attention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MultiScaleBlock (faithful to original)
+# MultiScaleBlock ( 忠实 to original ) / MultiScaleBlock (faithful to original)
 # ---------------------------------------------------------------------------
 class _MultiScaleBlock(nn.Module):
-    """Independent per-branch self-attention + MLP (faithful to original)."""
+    """Independent per-branch 自注意力 + MLP ( 忠实 to original )。
+        Independent per-branch self-attention + MLP (faithful to original)."""
     def __init__(self, embed_dim, num_patches, depth, num_heads=(6, 12),
                  mlp_ratio=(2., 2., 1.), qkv_bias=True, drop_path=None):
         super().__init__()
@@ -425,10 +430,11 @@ class _MultiScaleBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# All2Cross (DLF Module – faithful to original)
+# All2Cross ( DLF 模块 – 忠实 to original ) / All2Cross (DLF Module – faithful to original)
 # ---------------------------------------------------------------------------
 class _All2Cross(nn.Module):
-    """DLF module: PyramidFeatures + positional embeddings + MultiScaleBlocks."""
+    """DLF 模块: PyramidFeatures + positional 嵌入 + MultiScaleBlocks。
+        DLF module: PyramidFeatures + positional embeddings + MultiScaleBlocks."""
     def __init__(self, img_size=224, in_channels=3,
                  embed_dim=(96, 384),
                  swin_pyramid_fm=(96, 192, 384),
@@ -461,10 +467,10 @@ class _All2Cross(nn.Module):
 
     def forward(self, x):
         xs = self.pyramid(x)
-        # xs already contain CLS + spatial tokens from PyramidFeatures
+        # xs already contain CLS + 空间的 标记 from PyramidFeatures / xs already contain CLS + spatial tokens from PyramidFeatures
         out_xs = []
         for i, x in enumerate(xs):
-            # Add full positional embeddings (CLS + spatial positions)
+            # Add full positional 嵌入 ( CLS + 空间的 positions ) / Add full positional embeddings (CLS + spatial positions)
             x = x + self.pos_embed[i]
             out_xs.append(x)
         for blk in self.blocks:
@@ -473,7 +479,7 @@ class _All2Cross(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Decoder (faithful to original ConvUpsample + SegmentationHead)
+# 解码 ( 忠实 to original ConvUpsample + SegmentationHead ) / Decoder (faithful to original ConvUpsample + SegmentationHead)
 # ---------------------------------------------------------------------------
 class _ConvUpsample(nn.Module):
     def __init__(self, in_chans=384, out_chans=(128,), upsample=True):
@@ -498,10 +504,11 @@ class _ConvUpsample(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# HiFormer (faithful to original)
+# HiFormer ( 忠实 to original ) / HiFormer (faithful to original)
 # ---------------------------------------------------------------------------
 class HiFormer(nn.Module):
     """HiFormer: CNN + Swin Transformer with DLF cross-attention fusion.
+        HiFormer: CNN + Swin Transformer with DLF 交叉注意力 融合。
 
     Faithful to github.com/amirhossein-kz/HiFormer (HiFormer-B config).
 
@@ -524,11 +531,11 @@ class HiFormer(nn.Module):
         num_heads = (6, 12)
         mlp_ratio = (2., 2., 1.)
 
-        # Swin window=7 with patch=4 and 2 patch-merges (3 stages) requires
-        # img_size to be a multiple of patch * 2^(stages-1) * window = 4*4*7 = 112
-        # so that every pyramid level is divisible into 7x7 windows.
-        # Round img_size up to the next multiple of 112 and pad/crop in forward
-        # to preserve pretrained-weight compatible architecture.
+        # Swin 窗口 = 7 with 图块 = 4 and 2 patch-merges ( 3 阶段 ) requires / Swin window=7 with patch=4 and 2 patch-merges (3 stages) requires
+        # img _ 大小 to be a multiple of 图块 * 2 ^ ( 阶段 - 1 ) * 窗口 = 4 * 4 * 7 = 112 / img_size to be a multiple of patch * 2^(stages-1) * window = 4*4*7 = 112
+        # so that every 金字塔 level is divisible into 7x7 windows / so that every pyramid level is divisible into 7x7 windows.
+        # Round img _ 大小 up to the next multiple of 112 and pad / crop in 前向传播 / Round img_size up to the next multiple of 112 and pad/crop in forward
+        # to preserve pretrained-weight 兼容的 架构 / to preserve pretrained-weight compatible architecture.
         self._swin_window = 7
         self._swin_patch = 4
         self._swin_stages = 3  # 1 patch_embed + 2 patch_merges
@@ -547,7 +554,7 @@ class HiFormer(nn.Module):
             depth=depth, num_heads=num_heads,
             mlp_ratio=mlp_ratio, qkv_bias=True)
 
-        # Decoder – faithful: ConvUp_s upsample=True, ConvUp_l upsample=False
+        # 解码 – 忠实: ConvUp _ s 上采样 = True, ConvUp _ l 上采样 = False / Decoder – faithful: ConvUp_s upsample=True, ConvUp_l upsample=False
         self.conv_up_s = _ConvUpsample(384, [128, 128], upsample=True)
         self.conv_up_l = _ConvUpsample(96, [128], upsample=False)
 
@@ -563,13 +570,13 @@ class HiFormer(nn.Module):
         pad_h = target - orig_h
         pad_w = target - orig_w
         if pad_h > 0 or pad_w > 0:
-            # Reflect padding requires pad < dim; fall back to replicate then
+            # Reflect 填充 requires pad < dim; fall back to replicate then / Reflect padding requires pad < dim; fall back to replicate then
             # reflect for tiny inputs to stay safe.
             mode = 'reflect' if pad_h < orig_h and pad_w < orig_w else 'replicate'
             x = F.pad(x, (0, max(pad_w, 0), 0, max(pad_h, 0)), mode=mode)
 
         xs = self.all2cross(x)
-        # Strip CLS tokens
+        # Strip CLS 标记 / Strip CLS tokens
         embeddings = [t[:, 1:] for t in xs]
         reshaped = []
         for i, embed in enumerate(embeddings):

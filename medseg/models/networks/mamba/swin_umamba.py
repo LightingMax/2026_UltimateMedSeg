@@ -1,4 +1,5 @@
 """Swin-UMamba: VMamba Encoder + UNETR-style Conv Decoder for Medical Image Segmentation.
+    Swin-UMamba: VMamba 编码器。
 
 Faithful reimplementation from:
   https://github.com/JiarunLiu/Swin-UMamba  (2024, 384+ stars)
@@ -24,11 +25,12 @@ from medseg.models.encoders.vmunet_encoder import (
 
 
 # ---------------------------------------------------------------------------
-# UNETR-style decoder blocks (self-contained, no MONAI dependency)
+# UNETR-style 解码器 / UNETR-style decoder blocks (self-contained, no MONAI dependency)
 # ---------------------------------------------------------------------------
 
 class UnetrBasicBlock(nn.Module):
-    """Basic residual conv block for UNETR decoder."""
+    """Basic residual conv block for UNETR 解码器。
+        Basic residual conv block for UNETR decoder."""
     def __init__(self, in_channels, out_channels, kernel_size=3):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size,
@@ -51,7 +53,8 @@ class UnetrBasicBlock(nn.Module):
 
 
 class UnetrUpBlock(nn.Module):
-    """UNETR-style upsample + concat skip + conv block."""
+    """UNETR-style upsample + concat 跳跃连接。
+        UNETR-style upsample + concat skip + conv block."""
     def __init__(self, in_channels, out_channels, kernel_size=3):
         super().__init__()
         self.upsample = nn.ConvTranspose2d(in_channels, out_channels,
@@ -69,11 +72,12 @@ class UnetrUpBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# VMamba Encoder (from Swin-UMamba)
+# VMamba 编码器 / VMamba Encoder (from Swin-UMamba)
 # ---------------------------------------------------------------------------
 
 class VSSMEncoder(nn.Module):
-    """VMamba encoder with 4 hierarchical stages."""
+    """VMamba 编码器。
+        VMamba encoder with 4 hierarchical stages."""
     def __init__(self, in_channels=3, embed_dim=96, depths=(2, 2, 9, 2),
                  d_state=16, d_conv=3, expand=2, drop_path_rate=0.2):
         super().__init__()
@@ -107,11 +111,12 @@ class VSSMEncoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# SwinUMamba: main model
+# SwinUMamba: main 模型 / SwinUMamba: main model
 # ---------------------------------------------------------------------------
 
 class SwinUMamba(nn.Module):
     """Swin-UMamba: VMamba encoder + UNETR-style decoder.
+        Swin-UMamba: VMamba 编码器。
 
     Architecture:
       - VMamba encoder: 4 stages producing multi-scale features
@@ -139,27 +144,27 @@ class SwinUMamba(nn.Module):
         dims = [embed_dim * (2 ** i) for i in range(len(depths))]
         self.dims = dims
 
-        # VMamba encoder
+        # VMamba 编码器 / VMamba encoder
         self.encoder = VSSMEncoder(
             in_channels=in_channels, embed_dim=embed_dim,
             depths=depths, d_state=d_state,
             drop_path_rate=drop_path_rate)
 
-        # Encoder0: process input to get stem features at stride 4
+        # Encoder0: 处理 输入 to get 主干 特征 at 步长 4 / Encoder0: process input to get stem features at stride 4
         self.encoder0 = UnetrBasicBlock(in_channels, embed_dim, kernel_size=3)
         self.down0 = nn.Conv2d(embed_dim, embed_dim, kernel_size=4, stride=4)
 
-        # Decoder
-        # Stage 4: bottleneck → up + skip3
+        # 解码 / Decoder
+        # Stage 4: 瓶颈层 / Stage 4: bottleneck → up + skip3
         self.decoder4 = UnetrUpBlock(dims[3], dims[2])
-        # Stage 3: → up + skip2
+        # 阶段 3: → up + skip2 / Stage 3: → up + skip2
         self.decoder3 = UnetrUpBlock(dims[2], dims[1])
-        # Stage 2: → up + skip1
+        # 阶段 2: → up + skip1 / Stage 2: → up + skip1
         self.decoder2 = UnetrUpBlock(dims[1], dims[0])
-        # Stage 1: → up + encoder0 features
+        # 阶段 1: → up + encoder0 特征 / Stage 1: → up + encoder0 features
         self.decoder1 = UnetrUpBlock(dims[0], embed_dim)
 
-        # Final head
+        # Final 头部 / Final head
         self.out = nn.Sequential(
             nn.ConvTranspose2d(embed_dim, embed_dim // 2, kernel_size=4, stride=4),
             UnetrBasicBlock(embed_dim // 2, embed_dim // 2),
@@ -187,14 +192,14 @@ class SwinUMamba(nn.Module):
     def forward(self, x):
         input_size = x.shape[2:]
 
-        # Encoder0: stem features
+        # Encoder0: 主干 特征 / Encoder0: stem features
         enc0 = self.encoder0(x)  # (B, embed_dim, H, W)
         enc0_down = self.down0(enc0)  # (B, embed_dim, H/4, W/4)
 
-        # VMamba encoder
+        # VMamba 编码器 / VMamba encoder
         features = self.encoder(x)  # [f0, f1, f2, f3]
 
-        # Decoder
+        # 解码 / Decoder
         d4 = self.decoder4(features[3], features[2])
         d3 = self.decoder3(d4, features[1])
         d2 = self.decoder2(d3, features[0])

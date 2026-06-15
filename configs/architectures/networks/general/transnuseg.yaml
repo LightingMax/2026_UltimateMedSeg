@@ -1,5 +1,9 @@
-# TransNuSeg
+# TransNuSeg - Pure Swin-Transformer nuclei segmentation
+# TransNuSeg - 纯Swin-Transformer细胞核分割网络
 # Domain: pathology
+# 领域: 病理学
+# Standalone architecture: transnuseg
+# 独立架构: transnuseg
 
 model:
   num_classes: 2

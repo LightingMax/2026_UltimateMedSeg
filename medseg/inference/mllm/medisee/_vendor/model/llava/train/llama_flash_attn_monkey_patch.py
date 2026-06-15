@@ -28,6 +28,7 @@ def forward(
     use_cache: bool = False,
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
     """Input shape: Batch x Time x Channel
+        输入 形状: 批次 x Time x 通道。
 
     attention_mask: [bsz, q_len]
     """
@@ -62,16 +63,16 @@ def forward(
     assert not output_attentions, "output_attentions is not supported"
     assert not use_cache, "use_cache is not supported"
 
-    # Flash attention codes from
+    # Flash 注意力 codes from / Flash attention codes from
     # https://github.com/HazyResearch/flash-attention/blob/main/flash_attn/flash_attention.py
 
-    # transform the data into the format required by flash attention
+    # transform the 数据 into the format required by flash 注意力 / transform the data into the format required by flash attention
     qkv = torch.stack(
         [query_states, key_states, value_states], dim=2
     )  # [bsz, nh, 3, q_len, hd]
     qkv = qkv.transpose(1, 3)  # [bsz, q_len, 3, nh, hd]
-    # We have disabled _prepare_decoder_attention_mask in LlamaModel
-    # the attention_mask should be the same as the key_padding_mask
+    # We have disabled _ prepare _ 解码 _ 注意力 _ 掩码 in LlamaModel / We have disabled _prepare_decoder_attention_mask in LlamaModel
+    # the 注意力 _ 掩码 should be the same as the key _ 填充 _ 掩码 / the attention_mask should be the same as the key_padding_mask
     key_padding_mask = attention_mask
 
     if key_padding_mask is None:
@@ -104,8 +105,8 @@ def forward(
     return self.o_proj(rearrange(output, "b s h d -> b s (h d)")), None, None
 
 
-# Disable the transformation of the attention mask in LlamaModel as the flash attention
-# requires the attention mask to be the same as the key_padding_mask
+# Disable the transformation of the 注意力 掩码 in LlamaModel as the flash 注意力 / Disable the transformation of the attention mask in LlamaModel as the flash attention
+# requires the 注意力 掩码 to be the same as the key _ 填充 _ 掩码 / requires the attention mask to be the same as the key_padding_mask
 def _prepare_decoder_attention_mask(
     self, attention_mask, input_shape, inputs_embeds, past_key_values_length
 ):

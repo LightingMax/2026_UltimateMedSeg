@@ -1,4 +1,5 @@
 """Focal Loss.
+    Focal 损失。
 
 Faithful multi-class reimplementation of:
     Lin et al., "Focal Loss for Dense Object Detection", ICCV 2017.
@@ -20,6 +21,7 @@ from medseg.registry import LOSS_REGISTRY
 @LOSS_REGISTRY.register("focal")
 class FocalLoss(nn.Module):
     """Focal loss for multi-class segmentation.
+        Focal 损失。
 
     Args:
         alpha: scalar or per-class list/tensor of class weights.  When a
@@ -53,7 +55,8 @@ class FocalLoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """pred: (B, C, H, W) logits.  target: (B, H, W) long."""
+        """pred: ( B, C, H, W ) logits. 目标: ( B, H, W ) long。
+            pred: (B, C, H, W) logits.  target: (B, H, W) long."""
         C = pred.shape[1]
         target = target.long()
 

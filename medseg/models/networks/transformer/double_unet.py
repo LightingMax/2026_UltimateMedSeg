@@ -1,4 +1,5 @@
 """DoubleU-Net: A Deep Convolutional Neural Network for Medical Image Segmentation.
+    DoubleU-Net: A 深度 卷积的 Neural 网络 for 医学的 图像 分割。
 
 Faithful port from github.com/DebeshJha/Doubleunet_pytorch.
 
@@ -25,7 +26,8 @@ from medseg.models.networks.sam.sam_base import load_with_ssl_fallback
 
 
 class Conv2D(nn.Module):
-    """Official Conv2D block with optional SE-style activation."""
+    """Official Conv2D 块 with 可选 SE-style 激活。
+        Official Conv2D block with optional SE-style activation."""
     def __init__(self, in_c, out_c, kernel_size=3, padding=1, dilation=1,
                  bias=False, act=True):
         super().__init__()
@@ -45,7 +47,8 @@ class Conv2D(nn.Module):
 
 
 class squeeze_excitation_block(nn.Module):
-    """Squeeze-and-Excitation block (official implementation)."""
+    """Squeeze-and-Excitation 块 ( official implementation )。
+        Squeeze-and-Excitation block (official implementation)."""
     def __init__(self, in_channels, ratio=8):
         super().__init__()
         self.avgpool = nn.AdaptiveAvgPool2d(1)
@@ -65,6 +68,7 @@ class squeeze_excitation_block(nn.Module):
 
 class ASPP(nn.Module):
     """Atrous Spatial Pyramid Pooling - faithful to official source.
+        Atrous 空间的 金字塔 池化 - 忠实 to official 来源。
 
     Uses AdaptiveAvgPool2d((2,2)) and dilations (6, 12, 18).
     """
@@ -94,7 +98,8 @@ class ASPP(nn.Module):
 
 
 class conv_block(nn.Module):
-    """Conv block with squeeze-excitation (official implementation)."""
+    """Conv 块 with squeeze-excitation ( official implementation )。
+        Conv block with squeeze-excitation (official implementation)."""
     def __init__(self, in_c, out_c):
         super().__init__()
         self.c1 = Conv2D(in_c, out_c)
@@ -109,7 +114,8 @@ class conv_block(nn.Module):
 
 
 class encoder1(nn.Module):
-    """VGG19 pretrained encoder (official implementation)."""
+    """VGG19 pretrained 编码器。
+        VGG19 pretrained encoder (official implementation)."""
     def __init__(self):
         super().__init__()
         network = load_with_ssl_fallback(vgg19, pretrained=True)
@@ -130,7 +136,8 @@ class encoder1(nn.Module):
 
 
 class decoder1(nn.Module):
-    """Decoder with bilinear upsampling + conv_block + SE (official)."""
+    """解码 with bilinear 上采样 + conv _ 块 + SE ( official )。
+        Decoder with bilinear upsampling + conv_block + SE (official)."""
     def __init__(self):
         super().__init__()
         self.up = nn.Upsample(scale_factor=2, mode="bilinear",
@@ -164,6 +171,7 @@ class decoder1(nn.Module):
 
 class encoder2(nn.Module):
     """Custom CNN encoder for second UNet (official implementation).
+        Custom CNN 编码器。
 
     Takes image * sigmoid(pred1) as input (NOT VGG).
     """
@@ -193,7 +201,8 @@ class encoder2(nn.Module):
 
 
 class decoder2(nn.Module):
-    """Decoder that fuses skip connections from BOTH encoders (official)."""
+    """Decoder that fuses 跳跃连接。
+        Decoder that fuses skip connections from BOTH encoders (official)."""
     def __init__(self):
         super().__init__()
         self.up = nn.Upsample(scale_factor=2, mode="bilinear",
@@ -225,6 +234,7 @@ class decoder2(nn.Module):
 
 class build_doubleunet(nn.Module):
     """Official DoubleU-Net architecture.
+        Official DoubleU-Net 架构。
 
     Returns (y1, y2) tuple from both UNet outputs.
     """
@@ -259,6 +269,7 @@ class build_doubleunet(nn.Module):
 
 class DoubleUNet(nn.Module):
     """DoubleU-Net wrapper with standard interface.
+        DoubleU-Net 封装器 with 标准 interface。
 
     Faithful to official source: VGG19 encoder, SE blocks, ASPP(avgpool(2,2)),
     dual-skip decoder2, image*sigmoid(pred1) for second UNet.
@@ -280,7 +291,7 @@ class DoubleUNet(nn.Module):
         self.in_channels = in_channels
         self.num_classes = num_classes
 
-        # Input projection if in_channels != 3
+        # 输入 projection if in _ 通道! = 3 / Input projection if in_channels != 3
         self.input_proj = (
             nn.Conv2d(in_channels, 3, 1, bias=False)
             if in_channels != 3 else nn.Identity()
@@ -288,15 +299,15 @@ class DoubleUNet(nn.Module):
 
         self.model = build_doubleunet()
 
-        # y1 MUST stay at 1 channel (used for sigmoid gating with input image).
-        # Only replace y2 for final num_classes output.
+        # y1 MUST stay at 1 通道 ( used for sigmoid gating with 输入 图像 ) / y1 MUST stay at 1 channel (used for sigmoid gating with input image).
+        # Only replace y2 for final num _ classes 输出 / Only replace y2 for final num_classes output.
         if num_classes != 1:
             self.model.y2 = nn.Conv2d(32, num_classes, kernel_size=1, padding=0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_proj = self.input_proj(x)
         _, y2 = self.model(x_proj)
-        # Interpolate to input size if needed
+        # 插值 to 输入 大小 if needed / Interpolate to input size if needed
         if y2.shape[2:] != x.shape[2:]:
             y2 = F.interpolate(y2, size=x.shape[2:], mode="bilinear",
                                align_corners=True)

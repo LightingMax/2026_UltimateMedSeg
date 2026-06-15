@@ -1,4 +1,5 @@
 """EDLDNet Decoder – Efficient Dual-Line Decoder with Multi-Scale Convolutional Attention.
+    EDLDNet Decoder – Efficient Dual-Line 解码器。
 
 Faithfully ported from: https://github.com/riadhassan/EDLDNet
 Paper: An Efficient Dual-Line Decoder Network with Multi-Scale Convolutional
@@ -36,7 +37,8 @@ def _gcd(a, b):
 
 
 def channel_shuffle(x, groups):
-    """Channel shuffle (from ShuffleNet)."""
+    """通道 shuffle ( from ShuffleNet )。
+        Channel shuffle (from ShuffleNet)."""
     batchsize, num_channels, height, width = x.data.size()
     channels_per_group = num_channels // groups
     x = x.view(batchsize, groups, channels_per_group, height, width)
@@ -45,10 +47,11 @@ def channel_shuffle(x, groups):
     return x
 
 
-# ── MSDC (Multi-Scale Depth-wise Convolution) ────────────────────────────────
+# ─ ─ MSDC ( Multi-Scale Depth-wise 卷积 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── MSDC (Multi-Scale Depth-wise Convolution) ────────────────────────────────
 
 class MSDC(nn.Module):
-    """Multi-scale depth-wise convolution."""
+    """Multi-scale depth-wise 卷积。
+        Multi-scale depth-wise convolution."""
 
     def __init__(self, in_channels, kernel_sizes, stride, dw_parallel=True,
                  activation='relu6'):
@@ -75,10 +78,11 @@ class MSDC(nn.Module):
         return outputs
 
 
-# ── MSCB (Multi-Scale Convolution Block) ─────────────────────────────────────
+# ─ ─ MSCB ( Multi-Scale 卷积 块 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── MSCB (Multi-Scale Convolution Block) ─────────────────────────────────────
 
 class MSCB(nn.Module):
-    """Multi-scale convolution block."""
+    """Multi-scale 卷积 块。
+        Multi-scale convolution block."""
 
     def __init__(self, in_channels, out_channels, stride=1,
                  kernel_sizes=(1, 3, 5), expansion_factor=2,
@@ -139,10 +143,11 @@ def _mscb_layer(in_ch, out_ch, n=1, stride=1, kernel_sizes=(1, 3, 5),
     return nn.Sequential(*layers)
 
 
-# ── UCB (Up-Convolution Block) ───────────────────────────────────────────────
+# ─ ─ UCB ( Up-Convolution 块 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── UCB (Up-Convolution Block) ───────────────────────────────────────────────
 
 class UCB(nn.Module):
-    """Up-convolution block: upsample + DW conv + BN + ReLU + 1x1 conv."""
+    """Up-convolution 块: 上采样 + DW conv + BN + ReLU + 1x1 conv。
+        Up-convolution block: upsample + DW conv + BN + ReLU + 1x1 conv."""
 
     def __init__(self, in_channels, out_channels, kernel_size=3,
                  activation='relu'):
@@ -170,6 +175,7 @@ class UCB(nn.Module):
 
 class AG(nn.Module):
     """Attention gate: refines skip features using gating signal.
+        Attention gate: refines 跳跃连接。
 
     AG(x_s, x_u) = sigmoid(BN(Conv1x1(relu(BN(Conv3x3(x_u)) + BN(Conv3x3(x_s)))))) * x_s
     """
@@ -206,10 +212,11 @@ class AG(nn.Module):
         return x * psi
 
 
-# ── CAB (Channel Attention Block) ────────────────────────────────────────────
+# ─ ─ CAB ( 通道 注意力 块 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── CAB (Channel Attention Block) ────────────────────────────────────────────
 
 class CAB(nn.Module):
-    """CBAM-style channel attention: avg+max pool -> shared MLP -> sigmoid."""
+    """CBAM-style 通道 注意力: avg + max pool - > shared MLP - > sigmoid。
+        CBAM-style channel attention: avg+max pool -> shared MLP -> sigmoid."""
 
     def __init__(self, in_channels, ratio=16):
         super().__init__()
@@ -229,10 +236,11 @@ class CAB(nn.Module):
         return self.sigmoid(avg_out + max_out)
 
 
-# ── SAB (Spatial Attention Block) ────────────────────────────────────────────
+# ─ ─ SAB ( 空间的 注意力 块 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── SAB (Spatial Attention Block) ────────────────────────────────────────────
 
 class SAB(nn.Module):
-    """CBAM-style spatial attention: avg+max along channel -> conv -> sigmoid."""
+    """CBAM-style 空间的 注意力: avg + max along 通道 - > conv - > sigmoid。
+        CBAM-style spatial attention: avg+max along channel -> conv -> sigmoid."""
 
     def __init__(self, kernel_size=7):
         super().__init__()
@@ -252,6 +260,7 @@ class SAB(nn.Module):
 @DECODER_REGISTRY.register("edldnet")
 class EDLDNetDecoder(nn.Module):
     """EDLDNet decoder with MSCAM + AG + UCB.
+        EDLDNet 解码器。
 
     Pipeline:
         bottleneck -> MSCAM4 -> UCB3 -> AG3(skip[0]) -> add -> MSCAM3
@@ -285,13 +294,13 @@ class EDLDNetDecoder(nn.Module):
         if kernel_sizes is None:
             kernel_sizes = [1, 3, 5]
 
-        # channels: [bottleneck, skip_deep, ..., skip_shallow]
+        # 通道: [ 瓶颈层, 跳跃 _ 深度,..., 跳跃 _ 浅层 ] / channels: [bottleneck, skip_deep, ..., skip_shallow]
         skip_chs = list(reversed(encoder_channels))
         channels = [bottleneck_channels] + skip_chs  # e.g. [512, 320, 128, 64]
 
         ucb_ks = 3
 
-        # Stage 4 (deepest): MSCAM on bottleneck
+        # Stage 4 (deepest): MSCAM on 瓶颈层 / Stage 4 (deepest): MSCAM on bottleneck
         self.mscb4 = _mscb_layer(channels[0], channels[0], n=1, stride=1,
                                   kernel_sizes=kernel_sizes,
                                   expansion_factor=expansion_factor,
@@ -299,7 +308,7 @@ class EDLDNetDecoder(nn.Module):
                                   activation=activation)
         self.cab4 = CAB(channels[0])
 
-        # Build decoder stages
+        # Build 解码器 / Build decoder stages
         self.ucbs = nn.ModuleList()
         self.ags = nn.ModuleList()
         self.mscbs = nn.ModuleList()
@@ -331,21 +340,21 @@ class EDLDNetDecoder(nn.Module):
                 skip_features: List[torch.Tensor]) -> torch.Tensor:
         skips = list(reversed(skip_features))  # deep to shallow
 
-        # Stage 4: MSCAM on bottleneck
+        # Stage 4: MSCAM on 瓶颈层 / Stage 4: MSCAM on bottleneck
         d = self.cab4(bottleneck_feat) * bottleneck_feat
         d = self.sab(d) * d
         d = self.mscb4(d)
 
         # Progressive decoding with AG gating
         for i in range(len(self.ucbs)):
-            # UCB (upsample)
+            # UCB ( 上采样 ) / UCB (upsample)
             d = self.ucbs[i](d)
-            # Match spatial size to skip feature
+            # Match spatial size to 跳跃连接 / Match spatial size to skip feature
             skip_i = skips[i]
             if d.shape[2:] != skip_i.shape[2:]:
                 d = F.interpolate(d, size=skip_i.shape[2:],
                                   mode='bilinear', align_corners=False)
-            # AG (attention gate on skip feature)
+            # AG (attention gate on 跳跃连接 / AG (attention gate on skip feature)
             x_skip = self.ags[i](g=d, x=skip_i)
             # Additive aggregation
             d = d + x_skip

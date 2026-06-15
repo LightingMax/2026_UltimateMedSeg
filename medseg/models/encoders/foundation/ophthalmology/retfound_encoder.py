@@ -1,4 +1,5 @@
 """RETFound retinal foundation-model encoder (ophthalmology).
+    RETFound retinal foundation-model 编码器。
 
 Reference:
     Zhou et al., "RETFound: A Foundation Model for Retinal Images",
@@ -43,6 +44,7 @@ _PATCH_SIZE = 16
 @ENCODER_REGISTRY.register("retfound")
 class RETFoundEncoder(BaseFoundationEncoder):
     """RETFound (retinal MAE ViT-L/16) encoder with DPT-style multi-block pyramid.
+        RETFound (retinal MAE ViT-L/16) 编码器。
 
     The backbone is a MAE-pretrained ViT-Large/16 (``embed_dim=1024``,
     ``patch_size=16``).  Its final-layer patch tokens are reshaped to
@@ -78,13 +80,13 @@ class RETFoundEncoder(BaseFoundationEncoder):
                          freeze=freeze, unfreeze_last_n=unfreeze_last_n,
                          inference_only=inference_only, **kwargs)
 
-        # Channel adapter for non-RGB inputs.
+        # 通道 适配器 for non-RGB inputs / Channel adapter for non-RGB inputs.
         if in_channels != 3:
             self.input_adapter: nn.Module = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — ViTModel via transformers.
+        # 骨干网络 — ViTModel via transformers / Backbone — ViTModel via transformers.
         if pretrained:
             self.backbone = load_hf_vit(
                 hf_name=_PRIMARY_HF_NAME,
@@ -107,7 +109,7 @@ class RETFoundEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -130,7 +132,7 @@ class RETFoundEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

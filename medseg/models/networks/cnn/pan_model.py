@@ -1,4 +1,5 @@
 """PAN: Pyramid Attention Network for semantic segmentation.
+    PAN: 金字塔 注意力 网络 for 语义的 分割。
 
 Reference:
     Li et al., "Pyramid Attention Network for Semantic Segmentation", 2018.
@@ -28,7 +29,8 @@ class _ConvBNReLU(nn.Module):
 
 
 class _ResBlock(nn.Module):
-    """Basic residual block with optional stride for downsampling."""
+    """基本 残差 块 with 可选 步长 for 下采样。
+        Basic residual block with optional stride for downsampling."""
 
     def __init__(self, in_ch, out_ch, stride=1):
         super().__init__()
@@ -54,6 +56,7 @@ class _ResBlock(nn.Module):
 
 class _PyramidAttention(nn.Module):
     """Pyramid attention module.
+        金字塔 注意力 模块。
 
     Multi-scale pooling (1×1, 2×2, 3×3, 6×6) → 1×1 conv reduce → upsample
     → concat → 1×1 conv → sigmoid attention map applied to input.
@@ -91,7 +94,8 @@ class _PyramidAttention(nn.Module):
 
 
 class _PANEncoder(nn.Module):
-    """Encoder stage: stack of ResBlocks."""
+    """编码器 阶段: stack of ResBlocks。
+        Encoder stage: stack of ResBlocks."""
 
     def __init__(self, in_ch, out_ch, num_blocks=2, stride=2):
         super().__init__()
@@ -105,7 +109,8 @@ class _PANEncoder(nn.Module):
 
 
 class _PANDecoder(nn.Module):
-    """Decoder stage: upsample + skip concat + conv."""
+    """Decoder stage: upsample + 跳跃连接。
+        Decoder stage: upsample + skip concat + conv."""
 
     def __init__(self, in_ch, skip_ch, out_ch):
         super().__init__()
@@ -125,6 +130,7 @@ class _PANDecoder(nn.Module):
 
 class PAN(nn.Module):
     """Pyramid Attention Network.
+        金字塔 注意力 网络。
 
     Args:
         in_channels: number of input channels.
@@ -134,55 +140,55 @@ class PAN(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224):
         super().__init__()
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             _ConvBNReLU(in_channels, 32, 3, 1, 1),
             _ConvBNReLU(32, 64, 3, 1, 1),
         )
 
-        # Encoder stages
+        # 编码器 阶段 / Encoder stages
         self.enc1 = _PANEncoder(64, 64, num_blocks=2, stride=2)    # /2
         self.enc2 = _PANEncoder(64, 128, num_blocks=2, stride=2)   # /4
         self.enc3 = _PANEncoder(128, 256, num_blocks=2, stride=2)  # /8
         self.enc4 = _PANEncoder(256, 512, num_blocks=2, stride=2)  # /16
 
-        # Pyramid attention at bottleneck
+        # Pyramid attention at 瓶颈层 / Pyramid attention at bottleneck
         self.pa = _PyramidAttention(512)
 
-        # Decoder
+        # 解码 / Decoder
         self.dec3 = _PANDecoder(512, 256, 256)
         self.dec2 = _PANDecoder(256, 128, 128)
         self.dec1 = _PANDecoder(128, 64, 64)
 
-        # Final upsampling decoder (no skip, goes back to stem resolution)
+        # Final upsampling 解码器 / Final upsampling decoder (no skip, goes back to stem resolution)
         self.dec0 = nn.Sequential(
             _ConvBNReLU(64, 64),
             _ConvBNReLU(64, 64),
         )
 
-        # Output
+        # 输出 / Output
         self.out_conv = nn.Conv2d(64, num_classes, 1)
 
     def forward(self, x):
         inp = x
-        # Stem
+        # 主干 / Stem
         s = self.stem(x)
 
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.enc1(s)    # /2
         e2 = self.enc2(e1)   # /4
         e3 = self.enc3(e2)   # /8
         e4 = self.enc4(e3)   # /16
 
-        # Pyramid attention
+        # 金字塔 注意力 / Pyramid attention
         e4 = self.pa(e4)
 
-        # Decoder
+        # 解码 / Decoder
         d = self.dec3(e4, e3)  # /8
         d = self.dec2(d, e2)   # /4
         d = self.dec1(d, e1)   # /2
 
-        # Upsample to original size
+        # 上采样 to original 大小 / Upsample to original size
         d = F.interpolate(d, size=inp.shape[2:], mode='bilinear', align_corners=True)
         d = self.dec0(d)
 

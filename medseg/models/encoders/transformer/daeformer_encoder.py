@@ -1,4 +1,5 @@
 """DAEFormer Encoder: faithful port from https://github.com/xmindflow/DAEFormer
+    DAEFormer 编码器。
 
 Reference: Azad et al., "DAE-Former: Dual Attention-guided Efficient Transformer
            for Medical Image Segmentation" (MICCAI 2023 PRIME)
@@ -77,7 +78,8 @@ class MLP_FFN(nn.Module):
 
 # ============= EfficientAttention =============
 class EfficientAttention(nn.Module):
-    """Efficient spatial attention from DAEFormer."""
+    """高效的 空间的 注意力 from DAEFormer。
+        Efficient spatial attention from DAEFormer."""
     def __init__(self, in_channels, key_channels, value_channels, head_count=1):
         super().__init__()
         self.in_channels = in_channels
@@ -151,7 +153,8 @@ class ChannelAttention(nn.Module):
 
 # ============= DualTransformerBlock =============
 class DualTransformerBlock(nn.Module):
-    """Dual attention: EfficientAttention + ChannelAttention."""
+    """Dual 注意力: EfficientAttention + ChannelAttention。
+        Dual attention: EfficientAttention + ChannelAttention."""
     def __init__(self, in_dim, key_dim, value_dim, head_count=1, token_mlp="mix"):
         super().__init__()
         self.norm1 = nn.LayerNorm(in_dim)
@@ -174,7 +177,7 @@ class DualTransformerBlock(nn.Module):
             self.mlp2 = MLP_FFN(in_dim, int(in_dim * 4))
 
     def forward(self, x, H, W):
-        # Spatial attention
+        # 空间的 注意力 / Spatial attention
         norm1 = self.norm1(x)
         norm1 = rearrange(norm1, "b (h w) d -> b d h w", h=H, w=W)
         attn = self.attn(norm1)
@@ -185,7 +188,7 @@ class DualTransformerBlock(nn.Module):
         mlp1 = self.mlp1(norm2, H, W)
         add2 = add1 + mlp1
 
-        # Channel attention
+        # 通道 注意力 / Channel attention
         norm3 = self.norm3(add2)
         channel_attn = self.channel_attn(norm3)
         add3 = add2 + channel_attn
@@ -213,9 +216,10 @@ class OverlapPatchEmbeddings(nn.Module):
         return nfx, H, W
 
 
-# ============= MiT Encoder (DAEFormer version) =============
+# ============= MiT 编码器 / ============= MiT Encoder (DAEFormer version) =============
 class MiT(nn.Module):
-    """DAEFormer MiT encoder with DualTransformerBlock."""
+    """DAEFormer MiT 编码器。
+        DAEFormer MiT encoder with DualTransformerBlock."""
     def __init__(self, image_size, in_dim, key_dim, value_dim, layers, head_count=1, token_mlp="mix_skip"):
         super().__init__()
         patch_sizes = [7, 3, 3, 3]
@@ -269,6 +273,7 @@ class MiT(nn.Module):
 @ENCODER_REGISTRY.register("daeformer")
 class DAEFormerEncoder(nn.Module):
     """DAEFormer Encoder wrapper.
+        DAEFormer 编码器。
     Faithful to https://github.com/xmindflow/DAEFormer
     """
 

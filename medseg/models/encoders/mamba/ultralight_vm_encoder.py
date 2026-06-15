@@ -1,4 +1,5 @@
 """UltraLight VM-UNet Encoder.
+    UltraLight VM-UNet 编码器。
 
 Extracted from ``medseg/networks/mamba/ultralight_vmunet.py`` (Wu et al.,
 "UltraLight-VM-UNet", 2024, https://github.com/wurenkai/UltraLight-VM-UNet).
@@ -27,11 +28,12 @@ from medseg.models.networks.mamba.umamba import MambaSSM
 
 
 # ---------------------------------------------------------------------------
-# PVMLayer (Parallel Vision Mamba) - copied from the source network.
+# PVMLayer ( 并行的 Vision Mamba ) - copied from the 来源 网络 / PVMLayer (Parallel Vision Mamba) - copied from the source network.
 # ---------------------------------------------------------------------------
 
 class _PVMLayer(nn.Module):
-    """Parallel Vision Mamba: split channels into 4 groups, share one Mamba."""
+    """并行的 Vision Mamba: split 通道 into 4 groups, share one Mamba。
+        Parallel Vision Mamba: split channels into 4 groups, share one Mamba."""
 
     def __init__(self, input_dim: int, output_dim: int,
                  d_state: int = 16, d_conv: int = 4, expand: int = 2):
@@ -73,8 +75,8 @@ class _PVMLayer(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Pretrained-download SSL fallback (kept for parity even though this encoder
-# does not currently fetch any weights from the network).
+# Pretrained-download SSL fallback (kept for parity even though this 编码器 / Pretrained-download SSL fallback (kept for parity even though this encoder
+# does not currently fetch any 权重 from the 网络 ) / does not currently fetch any weights from the network).
 # ---------------------------------------------------------------------------
 
 def _load_with_ssl_fallback(load_fn, *args, **kwargs):
@@ -96,12 +98,13 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# UltraLight VM-UNet encoder
+# UltraLight VM-UNet 编码器 / UltraLight VM-UNet encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("ultralight_vm")
 class UltraLightVMUNetEncoder(nn.Module):
     """Standalone encoder portion of UltraLight VM-UNet.
+        Standalone 编码器。
 
     Pipeline (matches ``UltraLightVMUNet.forward`` up to ``encoder6``):
 
@@ -143,8 +146,8 @@ class UltraLightVMUNetEncoder(nn.Module):
         self.img_size = img_size
         self.c_list = c_list
 
-        # Optional 1x1 stem to handle non-RGB inputs without touching the
-        # downstream conv weights' channel count.
+        # 可选 1x1 主干 to handle non-RGB inputs without touching the / Optional 1x1 stem to handle non-RGB inputs without touching the
+        # downstream conv 权重 ' 通道 count / downstream conv weights' channel count.
         if in_channels != 3:
             self.stem = nn.Conv2d(in_channels, 3, kernel_size=1)
             stage1_in = 3
@@ -152,11 +155,11 @@ class UltraLightVMUNetEncoder(nn.Module):
             self.stem = nn.Identity()
             stage1_in = in_channels
 
-        # Stages 1-3: pure conv.
+        # 阶段 1 - 3: 纯 conv / Stages 1-3: pure conv.
         self.encoder1 = nn.Conv2d(stage1_in, c_list[0], 3, stride=1, padding=1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, stride=1, padding=1)
-        # Stages 4-6: PVMLayer.
+        # 阶段 4 - 6: PVMLayer / Stages 4-6: PVMLayer.
         self.encoder4 = _PVMLayer(c_list[2], c_list[3],
                                   d_state=d_state, d_conv=d_conv, expand=expand)
         self.encoder5 = _PVMLayer(c_list[3], c_list[4],

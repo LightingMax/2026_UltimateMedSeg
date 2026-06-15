@@ -1,8 +1,9 @@
 # LiteMedSAM MaskGenerator wrapper (pipeline segmenter 端)
-# LiteMedSAM MaskGenerator wrapper (pipeline segmenter side)
-# Reference: https://github.com/bowang-lab/MedSAM/tree/LiteMedSAM
+# LiteMedSAM MaskGenerator 封装器 ( pipeline segmenter side ) / LiteMedSAM MaskGenerator wrapper (pipeline segmenter side)
+# 参考: https: / / github. com / bowang-lab / MedSAM / tree / LiteMedSAM / Reference: https://github.com/bowang-lab/MedSAM/tree/LiteMedSAM
 # Paper: https://arxiv.org/abs/2403.20329
 """LiteMedSAM mask generator for the MLLM grounding pipeline.
+    LiteMedSAM 掩码 generator for the MLLM grounding pipeline。
 
 轻量级 MedSAM (TinyViT-5M encoder)，可作为 pipeline 的 segmenter 端。
 Lightweight MedSAM (TinyViT-5M encoder), usable as pipeline segmenter.
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class LiteMedSAMMaskGenerator:
     """LiteMedSAM box-prompt mask generator。
+        LiteMedSAM box-prompt 掩码 generator 。。
     LiteMedSAM box-prompt mask generator.
 
     接口与 SAM2MaskGenerator / MedSAMMaskGenerator 一致。

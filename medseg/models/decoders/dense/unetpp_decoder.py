@@ -1,4 +1,5 @@
 """UNet++ (Nested UNet) Decoder.
+    UNet++ (Nested UNet) 解码器。
 Reference: Zhou et al. "UNet++: A Nested U-Net Architecture for Medical Image Segmentation"
 
 UNet++ has its own dense nested skip connection mechanism.
@@ -32,6 +33,7 @@ class ConvBlock(nn.Module):
 @DECODER_REGISTRY.register("unetpp")
 class UNetPPDecoder(nn.Module):
     """UNet++ decoder with dense nested skip connections.
+        UNet++ 解码器。
 
     External skip_connection is IGNORED - UNet++ has its own dense skip mechanism.
     """
@@ -42,15 +44,15 @@ class UNetPPDecoder(nn.Module):
         super().__init__()
         self.deep_supervision = deep_supervision
 
-        # encoder_channels: [c0, c1, c2, c3], bottleneck_channels: c4
+        # 编码器 _ 通道: [ c0, c1, c2, c3 ], 瓶颈层 _ 通道: c4 / encoder_channels: [c0, c1, c2, c3], bottleneck_channels: c4
         all_ch = list(encoder_channels) + [bottleneck_channels]
         n = len(all_ch)  # number of levels
 
-        # Dense connections: X_{i,j} where i is depth, j is dense index
+        # 密集的 connections: X _ { i, j } where i is 深度, j is 密集的 index / Dense connections: X_{i,j} where i is depth, j is dense index
         self.dense_blocks = nn.ModuleDict()
         for j in range(1, n):
             for i in range(n - j):
-                # Input: upsampled from X_{i+1, j-1} + all X_{i, 0..j-1}
+                # 输入: upsampled from X _ { i + 1, j - 1 } + all X _ { i, 0.. j - 1 } / Input: upsampled from X_{i+1, j-1} + all X_{i, 0..j-1}
                 in_ch = all_ch[i + 1] + all_ch[i] * j
                 out_ch = all_ch[i]
                 self.dense_blocks[f"{i}_{j}"] = ConvBlock(in_ch, out_ch)
@@ -65,7 +67,7 @@ class UNetPPDecoder(nn.Module):
         all_features = list(skip_features) + [bottleneck_feat]
         n = len(all_features)
 
-        # nodes[i][j] stores feature at depth i, dense index j
+        # nodes [ i ] [ j ] stores 特征 at 深度 i, 密集的 index j / nodes[i][j] stores feature at depth i, dense index j
         nodes = [[None] * n for _ in range(n)]
         for i in range(n):
             nodes[i][0] = all_features[i]

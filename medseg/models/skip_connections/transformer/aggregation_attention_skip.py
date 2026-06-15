@@ -1,4 +1,5 @@
-"""CASCADE AAM-style aggregation attention skip connection."""
+"""CASCADE AAM-style aggregation attention 跳跃连接。
+    CASCADE AAM-style aggregation attention skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("aggregation_attention")
 class AggregationAttentionSkip(nn.Module):
     """CASCADE Aggregation Attention Module (AAM)-style skip.
+        CASCADE Aggregation Attention Module (AAM)-style 跳跃连接。
 
     Projects skip to decoder_ch via 1x1 conv, computes a soft attention
     gate from the decoder feature via sigmoid(Conv1x1(d)), multiplies the
@@ -21,7 +23,7 @@ class AggregationAttentionSkip(nn.Module):
 
     def __init__(self, **kwargs):
         super().__init__()
-        # Lazily built submodules keyed by (decoder_ch, skip_ch)
+        # Lazily built submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazily built submodules keyed by (decoder_ch, skip_ch)
         self._skip_projs = nn.ModuleDict()
         self._gates = nn.ModuleDict()
 
@@ -35,9 +37,9 @@ class AggregationAttentionSkip(nn.Module):
         key = self._key(decoder_ch, skip_ch)
         if key in self._gates:
             return
-        # 1x1 conv projecting skip features to decoder_ch
+        # 1x1 conv projecting 跳跃连接 / 1x1 conv projecting skip features to decoder_ch
         skip_proj = nn.Conv2d(skip_ch, decoder_ch, kernel_size=1)
-        # 1x1 conv on decoder feature -> sigmoid gate (per-channel, per-pixel)
+        # 1x1 conv on 解码器 / 1x1 conv on decoder feature -> sigmoid gate (per-channel, per-pixel)
         gate = nn.Sequential(
             nn.Conv2d(decoder_ch, decoder_ch, kernel_size=1),
             nn.Sigmoid(),
@@ -46,7 +48,7 @@ class AggregationAttentionSkip(nn.Module):
         self._gates[key] = gate.to(device)
 
     def forward(self, decoder_feat, skip_feat):
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[-2:] != decoder_feat.shape[-2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[-2:],
@@ -58,11 +60,11 @@ class AggregationAttentionSkip(nn.Module):
         self._build(decoder_ch, skip_ch, decoder_feat.device)
         key = self._key(decoder_ch, skip_ch)
 
-        # Project skip to decoder_ch
+        # Project 跳跃连接 / Project skip to decoder_ch
         skip_proj = self._skip_projs[key](skip_feat)
-        # Soft attention gate from decoder
+        # Soft attention gate from 解码器 / Soft attention gate from decoder
         gate = self._gates[key](decoder_feat)
-        # Apply gate to projected skip
+        # Apply gate to projected 跳跃连接 / Apply gate to projected skip
         gated_skip = skip_proj * gate
-        # Concatenate gated skip with decoder feature
+        # Concatenate gated skip with 解码器 / Concatenate gated skip with decoder feature
         return torch.cat([gated_skip, decoder_feat], dim=1)

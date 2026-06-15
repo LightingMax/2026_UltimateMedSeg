@@ -1,4 +1,5 @@
-"""SE (Squeeze-and-Excitation) bottleneck."""
+"""SE (Squeeze-and-Excitation) 瓶颈层。
+    SE (Squeeze-and-Excitation) bottleneck."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch.nn as nn
@@ -7,7 +8,8 @@ from medseg.registry import BOTTLENECK_REGISTRY
 
 @BOTTLENECK_REGISTRY.register("se")
 class SEBottleneck(nn.Module):
-    """SE bottleneck with channel attention."""
+    """SE 瓶颈层。
+        SE bottleneck with channel attention."""
     def __init__(self, in_channels, reduction=16, **kwargs):
         super().__init__()
         mid = max(in_channels // reduction, 1)

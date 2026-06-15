@@ -60,10 +60,13 @@ Modular feature extractors that produce multi-scale feature maps for the U-shape
 model:
   encoder:
     name: timm_resnet50       # any registered key
-    pretrained: true
+    pretrained: true           # auto-download backbone weights
+    pretrained_path: null      # optional: manual local path to backbone weights
     in_channels: 3
-    params: {}                # extra kwargs forwarded to constructor
+    params: {}                 # extra kwargs forwarded to constructor
 ```
+
+> **Pretrained weights**: `pretrained: true` downloads backbone weights automatically (via timm or WEIGHT_REGISTRY). Set `pretrained_path` to use a local checkpoint instead. For full-model transfer learning, use `model.transfer_learning_path` at the top level.
 
 ## Adding a New Encoder
 

@@ -80,9 +80,9 @@ class StreamToLogger(object):
         self.linebuf = ""
         for line in temp_linebuf.splitlines(True):
             # From the io.TextIOWrapper docs:
-            #   On output, if newline is None, any '\n' characters written
-            #   are translated to the system default line separator.
-            # By default sys.stdout.write() expects '\n' newlines and then
+            # On 输出, if newline is None, any ' \ n ' characters written / On output, if newline is None, any '\n' characters written
+            # are translated to the system 默认值 line separator / are translated to the system default line separator.
+            # By 默认值 sys. stdout. write ( ) expects ' \ n ' newlines and then / By default sys.stdout.write() expects '\n' newlines and then
             # translates them so this is still cross platform.
             if line[-1] == "\n":
                 self.logger.log(self.log_level, line.rstrip())

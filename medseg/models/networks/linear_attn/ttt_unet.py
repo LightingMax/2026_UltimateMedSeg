@@ -1,4 +1,5 @@
 """TTT-UNet: Enhancing U-Net with Test-Time Training Layers for
+    TTT-UNet: Enhancing U-Net with Test-Time 训练 Layers for。
 Biomedical Image Segmentation.
 
 Faithful reimplementation from:
@@ -19,11 +20,12 @@ from typing import List, Optional, Tuple
 
 
 # ---------------------------------------------------------------------------
-# RoPE (Rotary Position Embedding)
+# RoPE ( Rotary Position 嵌入 ) / RoPE (Rotary Position Embedding)
 # ---------------------------------------------------------------------------
 
 class RotaryEmbedding(nn.Module):
-    """Rotary Position Embedding for TTT."""
+    """Rotary Position 嵌入 for TTT。
+        Rotary Position Embedding for TTT."""
     def __init__(self, dim, max_position_embeddings=4096, base=10000.0):
         super().__init__()
         inv_freq = 1.0 / (
@@ -33,7 +35,7 @@ class RotaryEmbedding(nn.Module):
 
     @torch.no_grad()
     def forward(self, x, position_ids):
-        # x: (B, num_heads, L, head_dim)
+        # x: ( B, num _ heads, L, 头部 _ dim ) / x: (B, num_heads, L, head_dim)
         inv_freq = self.inv_freq[None, :, None].float().expand(
             position_ids.shape[0], -1, 1)
         pos_expanded = position_ids[:, None, :].float()
@@ -73,11 +75,12 @@ class RMSNorm(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# TTTLinear: Test-Time Training Linear Layer
+# TTTLinear: Test-Time 训练 Linear 层 / TTTLinear: Test-Time Training Linear Layer
 # ---------------------------------------------------------------------------
 
 class TTTLinear(nn.Module):
     """Test-Time Training (TTT) Linear layer.
+        Test-Time 训练 ( TTT ) Linear 层。
 
     Core idea: uses a learnable linear model W that is updated at test time
     via self-supervised gradient descent on a reconstruction objective.
@@ -108,12 +111,12 @@ class TTTLinear(nn.Module):
         self.v_proj = nn.Linear(hidden_size, hidden_size, bias=False)
         self.o_proj = nn.Linear(hidden_size, hidden_size, bias=False)
 
-        # TTT learnable parameters
+        # TTT learnable 参数 / TTT learnable parameters
         self.W = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.learnable_lr = nn.Parameter(
             torch.ones(self.num_heads, 1, 1) * math.log(base_lr))
 
-        # Layer norms
+        # 层 norms / Layer norms
         self.ln_q = RMSNorm(self.head_dim)
         self.ln_k = RMSNorm(self.head_dim)
         self.post_norm = nn.LayerNorm(hidden_size)
@@ -149,20 +152,20 @@ class TTTLinear(nn.Module):
         q = self.q_proj(h_conv).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k = self.k_proj(h_conv).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        # q, k, v: (B, num_heads, L, head_dim)
+        # q, k, v: ( B, num _ heads, L, 头部 _ dim ) / q, k, v: (B, num_heads, L, head_dim)
 
         # RoPE
         cos, sin = self.rotary_emb(q, position_ids)
         q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # Normalize
+        # 归一化 / Normalize
         q = self.ln_q(q)
         k = self.ln_k(k)
 
-        # TTT: test-time training via self-supervised gradient update
+        # TTT: test-time 训练 via self-supervised 梯度 update / TTT: test-time training via self-supervised gradient update
         output = self._ttt_forward(q, k, v)
 
-        # Output projection
+        # 输出 projection / Output projection
         output = output.transpose(1, 2).reshape(B, L, D)
         output = self.o_proj(output)
         output = self.post_norm(output)
@@ -170,6 +173,7 @@ class TTTLinear(nn.Module):
 
     def _ttt_forward(self, q, k, v):
         """TTT forward: use mini-batch gradient descent to update W.
+            TTT 前向传播: use mini-batch 梯度 descent to update W。
 
         For each mini-batch of tokens, compute reconstruction loss on k→v
         mapping and update W, then apply updated W to q.
@@ -182,12 +186,12 @@ class TTTLinear(nn.Module):
         B, H, L, d = q.shape
         lr = torch.exp(self.learnable_lr)  # (H, 1, 1)
 
-        # Process in mini-batches
+        # 处理 in mini-batches / Process in mini-batches
         mb = min(self.mini_batch_size, L)
         n_batches = (L + mb - 1) // mb
         outputs = []
 
-        # Get initial W weight
+        # Get initial W 权重 / Get initial W weight
         W = self.W.weight.unsqueeze(0).unsqueeze(0).expand(
             B, H, d, d).clone()  # (B, H, d, d)
 
@@ -199,20 +203,20 @@ class TTTLinear(nn.Module):
             v_mb = v[:, :, start:end, :]
             q_mb = q[:, :, start:end, :]
 
-            # Reconstruction: predict v from k using W
+            # 重建: 预测 v from k using W / Reconstruction: predict v from k using W
             pred = torch.matmul(k_mb, W)  # (B, H, mb, d)
 
-            # Gradient of MSE loss w.r.t. W
-            # loss = 0.5 * ||pred - v||^2
+            # Gradient of MSE 损失 / Gradient of MSE loss w.r.t. W
+            # 损失 = 0. 5 * | | pred - v | | ^ 2 / loss = 0.5 * ||pred - v||^2
             # grad = k^T @ (pred - v) / mb
             residual = pred - v_mb  # (B, H, mb, d)
             grad = torch.matmul(
                 k_mb.transpose(-2, -1), residual) / max(end - start, 1)
 
-            # Update W with gradient descent
+            # Update W with 梯度 descent / Update W with gradient descent
             W = W - lr.unsqueeze(0) * grad
 
-            # Apply updated W to queries
+            # 应用 updated W to queries / Apply updated W to queries
             out_mb = torch.matmul(q_mb, W)  # (B, H, mb, d)
             outputs.append(out_mb)
 
@@ -220,11 +224,12 @@ class TTTLinear(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# TTTLayer: wraps TTTLinear for 2D features (like MambaLayer)
+# TTTLayer: wraps TTTLinear for 2D 特征 ( like MambaLayer ) / TTTLayer: wraps TTTLinear for 2D features (like MambaLayer)
 # ---------------------------------------------------------------------------
 
 class TTTLayer(nn.Module):
     """TTT layer for 2D features: flatten → TTTLinear → reshape.
+        TTT 层 for 2D 特征: 展平 → TTTLinear → 重塑。
 
     Faithful to TTT-UNet's TTTLayer interface.
     """
@@ -339,11 +344,12 @@ class UNetDecoder(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# TTT-UNet Bot: TTT at bottleneck (primary variant from paper)
+# TTT-UNet Bot: TTT at 瓶颈层 / TTT-UNet Bot: TTT at bottleneck (primary variant from paper)
 # ---------------------------------------------------------------------------
 
 class TTTUNet(nn.Module):
     """TTT-UNet: UNet with Test-Time Training layer at bottleneck.
+        TTT-UNet: UNet with Test-Time Training layer at 瓶颈层。
 
     Same architecture as U-Mamba Bot, but replaces MambaLayer with TTTLayer.
 
@@ -367,17 +373,17 @@ class TTTUNet(nn.Module):
 
         self.encoder = UNetEncoder(in_channels, features, n_blocks_per_stage)
 
-        # TTT at bottleneck
+        # TTT at 瓶颈层 / TTT at bottleneck
         self.ttt_bot = TTTLayer(features[-1], d_state=ttt_d_state)
 
-        # Decoder
+        # 解码 / Decoder
         dec_features = list(reversed(features))
         dec_n_blocks = list(reversed(n_blocks_per_stage[:-1]))
         self.decoder = UNetDecoder(dec_features, dec_n_blocks)
 
         self.head = nn.Conv2d(features[0], num_classes, 1)
 
-        # Deep supervision side output heads
+        # 深度 supervision side 输出 heads / Deep supervision side output heads
         if deep_supervision:
             self.ds_heads = nn.ModuleList([
                 nn.Conv2d(f, num_classes, 1) for f in reversed(features[:-1])
@@ -387,10 +393,10 @@ class TTTUNet(nn.Module):
         input_size = x.shape[2:]
         skips = self.encoder(x)
 
-        # TTT bottleneck
+        # TTT 瓶颈层 / TTT bottleneck
         bot = self.ttt_bot(skips[-1])
 
-        # Decoder
+        # 解码 / Decoder
         if self.training and self.deep_supervision:
             out, intermediates = self.decoder(bot, skips, return_intermediates=True)
         else:

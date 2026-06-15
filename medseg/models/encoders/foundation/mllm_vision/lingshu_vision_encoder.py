@@ -36,7 +36,8 @@ _PATCH_SIZE = 14
 
 @ENCODER_REGISTRY.register("lingshu_vision")
 class LingshuVisionEncoder(BaseFoundationEncoder):
-    """Lingshu MLLM ViT-H/14 vision encoder with DPT-style multi-block output."""
+    """Lingshu MLLM ViT-H/14 vision 编码器。
+        Lingshu MLLM ViT-H/14 vision encoder with DPT-style multi-block output."""
 
     native_img_size: int = 336
 
@@ -67,7 +68,7 @@ class LingshuVisionEncoder(BaseFoundationEncoder):
                     f"{type(e).__name__}: {e}. Provide a local checkpoint via "
                     f"pretrained_path."
                 ) from e
-            # Extract the vision tower (Qwen2.5-VL-based).
+            # 提取 the vision tower ( Qwen2. 5-VL-based ) / Extract the vision tower (Qwen2.5-VL-based).
             _visual = getattr(_full_model, "visual", None)
             if _visual is None:
                 _model_inner = getattr(_full_model, "model", None)
@@ -115,7 +116,7 @@ class LingshuVisionEncoder(BaseFoundationEncoder):
 
         dim = self.embed_dim
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -138,7 +139,7 @@ class LingshuVisionEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

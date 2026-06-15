@@ -1,6 +1,9 @@
 # MISSFormer (Huang et al., 2022)
+# MISSFormer 分割网络
 # MISSFormer (Huang et al., 2022)
+# MISSFormer 分割网络
 # Standalone architecture: missformer
+# 独立架构: missformer
 
 model:
   num_classes: 2

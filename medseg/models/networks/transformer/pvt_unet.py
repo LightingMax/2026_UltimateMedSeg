@@ -1,4 +1,5 @@
 """PVT-Former: Pyramid Vision Transformer encoder + CNN decoder.
+    PVT-Former: Pyramid Vision Transformer 编码器。
 
 Uses a PVT-v2 style encoder (hierarchical transformer with spatial-reduction
 attention) combined with a U-Net decoder for medical image segmentation.
@@ -21,7 +22,8 @@ from typing import List, Optional
 
 
 class _SRAttention(nn.Module):
-    """Spatial-Reduction Attention: reduces KV spatial dim for efficiency."""
+    """Spatial-Reduction 注意力: reduces KV 空间的 dim for efficiency。
+        Spatial-Reduction Attention: reduces KV spatial dim for efficiency."""
 
     def __init__(self, dim, num_heads=4, sr_ratio=2):
         super().__init__()
@@ -93,6 +95,7 @@ class _PVTStage(nn.Module):
 
 class PVTUNet(nn.Module):
     """PVT-Former: Pyramid Vision Transformer U-Net.
+        PVT-Former: 金字塔 Vision Transformer U-Net。
 
     Args:
         in_channels: Input channels.
@@ -124,7 +127,7 @@ class PVTUNet(nn.Module):
         num_heads = num_heads or [1, 2, 5, 8]
         sr_ratios = sr_ratios or [8, 4, 2, 1]
 
-        # Stem
+        # 主干 / Stem
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, embed_dims[0] // 2, 7, 2, 3, bias=False),
             nn.BatchNorm2d(embed_dims[0] // 2),
@@ -134,22 +137,22 @@ class PVTUNet(nn.Module):
             nn.GELU(),
         )
 
-        # PVT encoder stages
+        # PVT 编码器 / PVT encoder stages
         self.stages = nn.ModuleList()
         in_c = embed_dims[0]
         for i in range(len(embed_dims)):
             self.stages.append(_PVTStage(in_c, embed_dims[i], depths[i], num_heads[i], sr_ratios[i]))
             in_c = embed_dims[i]
 
-        # Decoder
+        # 解码 / Decoder
         self.up_convs = nn.ModuleList()
         self.dec_convs = nn.ModuleList()
         for i in range(len(embed_dims) - 1, 0, -1):
             up_in_c = embed_dims[i]
             up_out_c = embed_dims[i - 1]
             self.up_convs.append(nn.ConvTranspose2d(up_in_c, up_out_c, 2, 2))
-            # After cat: up_out_c + skip_channels
-            # Skip from stage i has embed_dims[i] channels
+            # After cat: up _ out _ c + 跳跃 _ 通道 / After cat: up_out_c + skip_channels
+            # 跳跃 from 阶段 i has embed _ dims [ i ] 通道 / Skip from stage i has embed_dims[i] channels
             skip_c = embed_dims[i]
             cat_c = up_out_c + skip_c
             self.dec_convs.append(nn.Sequential(

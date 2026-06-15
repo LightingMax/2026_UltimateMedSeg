@@ -1,4 +1,5 @@
-"""Multimodal medical foundation encoders."""
+"""Multimodal 医学的 foundation encoders。
+    Multimodal medical foundation encoders."""
 import sys as _sys
 for _stem in ('biomedclip_encoder', 'medclip_encoder', 'keep_encoder'):
     try:

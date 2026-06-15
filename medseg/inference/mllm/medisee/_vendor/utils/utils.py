@@ -91,7 +91,8 @@ class Summary(Enum):
 
 
 class AverageMeter(object):
-    """Computes and stores the average and current value"""
+    """计算 and stores the average and current value。
+        Computes and stores the average and current value"""
 
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
         self.name = name
@@ -155,7 +156,7 @@ class AverageMeter(object):
 
 
 def intersectionAndUnionGPU(output, target, K, ignore_index=255):
-    # 'K' classes, output and target sizes are N or N * L or N * H * W, each value in range 0 to K - 1.
+    # ' K ' classes, 输出 and 目标 sizes are N or N * L or N * H * W, each value in range 0 to K - 1 / 'K' classes, output and target sizes are N or N * L or N * H * W, each value in range 0 to K - 1.
     assert output.dim() in [1, 2, 3]
     assert output.shape == target.shape
     output = output.view(-1)
@@ -169,7 +170,7 @@ def intersectionAndUnionGPU(output, target, K, ignore_index=255):
     return area_intersection, area_union, area_target
 
 def diceCoefficientGPU(output, target, K, ignore_index=255):
-    # 'K' classes, output and target sizes are N or N * L or N * H * W, each value in range 0 to K - 1.
+    # ' K ' classes, 输出 and 目标 sizes are N or N * L or N * H * W, each value in range 0 to K - 1 / 'K' classes, output and target sizes are N or N * L or N * H * W, each value in range 0 to K - 1.
     assert output.dim() in [1, 2, 3]
     assert output.shape == target.shape
     output = output.view(-1)

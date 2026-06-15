@@ -1,4 +1,5 @@
 """AAU-Net: Adaptive Attention U-Net for Breast Ultrasound Image Segmentation.
+    AAU-Net: 自适应的 注意力 U-Net for Breast Ultrasound 图像 分割。
 
 Reference:
     Chen et al., "AAU-Net: An Adaptive Attention U-Net for Breast Lesions
@@ -77,7 +78,8 @@ class _ConvBNReLU(nn.Module):
 
 
 class _DoubleConv(nn.Module):
-    """Standard double Conv-BN-ReLU block used in vanilla UNet."""
+    """标准 double Conv-BN-ReLU 块 used in 基础版 UNet。
+        Standard double Conv-BN-ReLU block used in vanilla UNet."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -91,10 +93,11 @@ class _DoubleConv(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# AAB / HAAM module
+# AAB / HAAM 模块 / AAB / HAAM module
 # ---------------------------------------------------------------------------
 class _ChannelBlock(nn.Module):
     """Channel-attention branch of the AAB module.
+        Channel-attention 分支 of the AAB 模块。
 
     Two parallel sub-branches with different receptive fields:
       * 3x3 conv with an adaptive (per-level) dilation rate;
@@ -105,14 +108,14 @@ class _ChannelBlock(nn.Module):
 
     def __init__(self, in_ch, out_ch, dilation=3):
         super().__init__()
-        # dilated 3x3 branch
+        # dilated 3x3 分支 / dilated 3x3 branch
         self.branch_dil = _ConvBNReLU(
             in_ch, out_ch, kernel_size=3, dilation=dilation
         )
-        # 5x5 branch
+        # 5x5 分支 / 5x5 branch
         self.branch_5x5 = _ConvBNReLU(in_ch, out_ch, kernel_size=5)
 
-        # SE-style channel gating on the concat of the two branches
+        # SE-style 通道 gating on the concat of the two branches / SE-style channel gating on the concat of the two branches
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Linear(out_ch * 2, out_ch, bias=True),
@@ -122,7 +125,7 @@ class _ChannelBlock(nn.Module):
             nn.Sigmoid(),
         )
 
-        # 1x1 fusion conv after re-weighting
+        # 1x1 融合 conv after re-weighting / 1x1 fusion conv after re-weighting
         self.fuse = _ConvBNReLU(out_ch * 2, out_ch, kernel_size=1, padding=0)
 
     def forward(self, x):
@@ -132,8 +135,8 @@ class _ChannelBlock(nn.Module):
         cat = torch.cat([b1, b2], dim=1)
         v = self.gap(cat).flatten(1)              # (B, 2C)
         if v.size(0) == 1:
-            # BatchNorm1d cannot operate on a single sample in train mode;
-            # only apply BN over the Linear layers when batch > 1.
+            # BatchNorm1d cannot operate on a single 样本 in train mode / BatchNorm1d cannot operate on a single sample in train mode;
+            # only 应用 BN over the Linear layers when 批次 > 1 / only apply BN over the Linear layers when batch > 1.
             # We therefore inline the FC computation manually:
             w = torch.sigmoid(
                 self.fc[3](self.fc[2](self.fc[0](v)))
@@ -152,15 +155,16 @@ class _ChannelBlock(nn.Module):
 
 
 class _SpatialBlock(nn.Module):
-    """Spatial-attention branch of the AAB module."""
+    """Spatial-attention 分支 of the AAB 模块。
+        Spatial-attention branch of the AAB module."""
 
     def __init__(self, in_ch, out_ch, fuse_kernel=3):
         super().__init__()
-        # spatial pathway computed directly from the raw input
+        # 空间的 pathway computed directly from the raw 输入 / spatial pathway computed directly from the raw input
         self.spatial_a = _ConvBNReLU(in_ch, out_ch, kernel_size=3)
         self.spatial_b = _ConvBNReLU(out_ch, out_ch, kernel_size=1, padding=0)
 
-        # 1x1 conv to compress to a single attention channel
+        # 1x1 conv to compress to a single 注意力 通道 / 1x1 conv to compress to a single attention channel
         self.gate = nn.Sequential(
             nn.Conv2d(out_ch, 1, kernel_size=1),
             nn.Sigmoid(),
@@ -189,6 +193,7 @@ class _SpatialBlock(nn.Module):
 
 class _AAB(nn.Module):
     """Adaptive Attention Block (a.k.a. HAAM in the original repo).
+        自适应的 注意力 块 ( a. k. a. HAAM in the original repo )。
 
     Combines a channel-attention branch with an adaptive dilation rate and
     a spatial-attention branch.  Output has ``out_ch`` channels.
@@ -205,7 +210,7 @@ class _AAB(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder / decoder pieces
+# Encoder / 解码器 / Encoder / decoder pieces
 # ---------------------------------------------------------------------------
 class _Down(nn.Module):
     """MaxPool 2x then double-conv."""
@@ -222,7 +227,8 @@ class _Down(nn.Module):
 
 
 class _Up(nn.Module):
-    """Up-conv 2x, concatenate skip, then double-conv."""
+    """Up-conv 2x, concatenate 跳跃连接。
+        Up-conv 2x, concatenate skip, then double-conv."""
 
     def __init__(self, in_ch, skip_ch, out_ch):
         super().__init__()
@@ -231,7 +237,7 @@ class _Up(nn.Module):
 
     def forward(self, x, skip):
         x = self.up(x)
-        # Pad to match skip spatial dims if needed (odd sizes after pooling).
+        # Pad to match 跳跃连接 / Pad to match skip spatial dims if needed (odd sizes after pooling).
         diff_h = skip.size(2) - x.size(2)
         diff_w = skip.size(3) - x.size(3)
         if diff_h != 0 or diff_w != 0:
@@ -245,7 +251,7 @@ class _Up(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Main network
+# Main 网络 / Main network
 # ---------------------------------------------------------------------------
 class AAUNet(nn.Module):
     """AAU-Net.
@@ -264,10 +270,10 @@ class AAUNet(nn.Module):
                  img_size: int = 224, **kwargs):
         super().__init__()
         chs = [64, 128, 256, 512, 1024]
-        # Per-level dilation rates for the AAB channel branch.  Deeper
-        # features already have a large receptive field, so we shrink the
-        # dilation rate as we go down -- this realises the "adaptive
-        # dilation rate" of the AAB module.
+        # Per-level 膨胀率 rates for the AAB 通道 分支. Deeper / Per-level dilation rates for the AAB channel branch.  Deeper
+        # 特征 already have a large receptive field, so we shrink the / features already have a large receptive field, so we shrink the
+        # 膨胀率 率 as we go down - - this realises the " 自适应的 / dilation rate as we go down -- this realises the "adaptive
+        # 膨胀率 率 " of the AAB 模块 / dilation rate" of the AAB module.
         dilations = [3, 3, 2, 2, 1]
 
         # Encoder ------------------------------------------------------
@@ -277,8 +283,8 @@ class AAUNet(nn.Module):
         self.down3 = _Down(chs[2], chs[3])
         self.down4 = _Down(chs[3], chs[4])
 
-        # Skip-connection adaptive attention blocks -------------------
-        # Channel count is preserved by each AAB.
+        # Skip-connection 自适应的 注意力 blocks - - - - - - - - - - - - - - - - - - - / Skip-connection adaptive attention blocks -------------------
+        # 通道 count is preserved by each AAB / Channel count is preserved by each AAB.
         self.aab1 = _AAB(chs[0], chs[0], dilation=dilations[0])
         self.aab2 = _AAB(chs[1], chs[1], dilation=dilations[1])
         self.aab3 = _AAB(chs[2], chs[2], dilation=dilations[2])
@@ -293,7 +299,7 @@ class AAUNet(nn.Module):
         # Output head --------------------------------------------------
         self.out_conv = nn.Conv2d(chs[0], num_classes, kernel_size=1)
 
-        # Standard Kaiming init
+        # 标准 Kaiming init / Standard Kaiming init
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(
@@ -312,27 +318,27 @@ class AAUNet(nn.Module):
     def forward(self, x):
         h_in, w_in = x.shape[-2], x.shape[-1]
 
-        # Pad up to multiple of 16 to guarantee the 4 pooling stages
-        # roundtrip without losing spatial information.
+        # Pad up to multiple of 16 to guarantee the 4 池化 阶段 / Pad up to multiple of 16 to guarantee the 4 pooling stages
+        # roundtrip without losing 空间的 information / roundtrip without losing spatial information.
         pad_h = (16 - h_in % 16) % 16
         pad_w = (16 - w_in % 16) % 16
         if pad_h or pad_w:
             x = F.pad(x, [0, pad_w, 0, pad_h])
 
-        # Encoder
+        # 编码器 / Encoder
         e1 = self.inc(x)            # (B,  64, H,    W)
         e2 = self.down1(e1)         # (B, 128, H/2,  W/2)
         e3 = self.down2(e2)         # (B, 256, H/4,  W/4)
         e4 = self.down3(e3)         # (B, 512, H/8,  W/8)
         b = self.down4(e4)          # (B, 1024, H/16, W/16)
 
-        # Skip-connection adaptive attention
+        # Skip-connection 自适应的 注意力 / Skip-connection adaptive attention
         s1 = self.aab1(e1)
         s2 = self.aab2(e2)
         s3 = self.aab3(e3)
         s4 = self.aab4(e4)
 
-        # Decoder
+        # 解码 / Decoder
         d4 = self.up1(b,  s4)
         d3 = self.up2(d4, s3)
         d2 = self.up3(d3, s2)
@@ -340,11 +346,11 @@ class AAUNet(nn.Module):
 
         logits = self.out_conv(d1)
 
-        # Crop back to original input size
+        # Crop back to original 输入 大小 / Crop back to original input size
         if pad_h or pad_w:
             logits = logits[..., :h_in, :w_in]
 
-        # Safety net: ensure spatial dims match the original input.
+        # Safety net: ensure 空间的 dims match the original 输入 / Safety net: ensure spatial dims match the original input.
         if logits.shape[-2] != h_in or logits.shape[-1] != w_in:
             logits = F.interpolate(
                 logits, size=(h_in, w_in),

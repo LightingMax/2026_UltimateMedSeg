@@ -1,4 +1,5 @@
-"""Transposed Convolution (Deconv) Decoder."""
+"""Transposed Convolution (Deconv) 解码器。
+    Transposed Convolution (Deconv) Decoder."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -26,7 +27,8 @@ class DeconvBlock(nn.Module):
 
 @DECODER_REGISTRY.register("deconv")
 class DeconvDecoder(nn.Module):
-    """Standard transposed-convolution UNet decoder."""
+    """Standard transposed-convolution UNet 解码器。
+        Standard transposed-convolution UNet decoder."""
 
     def __init__(self, encoder_channels: List[int], bottleneck_channels: int,
                  skip_connection=None, **kwargs):
@@ -38,7 +40,7 @@ class DeconvDecoder(nn.Module):
         self.up_blocks = nn.ModuleList()
         self.channel_adapts = nn.ModuleList()
         for i, (in_ch, skip_ch) in enumerate(zip(in_channels, skip_channels)):
-            # After skip merge, channel count depends on skip type
+            # After skip merge, channel count depends on 跳跃连接 / After skip merge, channel count depends on skip type
             if skip_connection is not None:
                 merged_ch = skip_connection.get_out_channels(in_ch, skip_ch)
             else:

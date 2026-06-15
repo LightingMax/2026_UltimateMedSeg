@@ -1,4 +1,5 @@
 """CFA-Net Encoder.
+    CFA-Net 编码器。
 
 Faithful 1:1 port of the official implementation in
     https://github.com/taozh2017/CFANet
@@ -37,7 +38,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 # ---------------------------------------------------------------------------
-# Res2Net v1b backbone (1:1 from lib/res2net_v1b_base.py)
+# Res2Net v1b 骨干网络 ( 1: 1 from lib / res2net _ v1b _ base. py ) / Res2Net v1b backbone (1:1 from lib/res2net_v1b_base.py)
 # ---------------------------------------------------------------------------
 
 
@@ -121,7 +122,8 @@ class Bottle2neck(nn.Module):
 
 
 class Res2Net(nn.Module):
-    """Vanilla Res2Net v1b classifier (kept for state-dict compatibility)."""
+    """基础版 Res2Net v1b classifier ( kept for state-dict 兼容性 )。
+        Vanilla Res2Net v1b classifier (kept for state-dict compatibility)."""
 
     def __init__(self, block, layers, baseWidth=26, scale=4, num_classes=1000,
                  in_channels: int = 3):
@@ -192,6 +194,7 @@ class Res2Net(nn.Module):
 
 class Res2Net_Ours(nn.Module):
     """Res2Net v1b backbone returning the 5 intermediate stages used by CFA-Net.
+        Res2Net v1b 骨干网络 returning the 5 intermediate 阶段 used by CFA-Net。
 
     Output strides for ``in_size=H``: ``x0=H/4`` (after stem+maxpool, 64ch),
     ``x1=H/4`` (256ch), ``x2=H/8`` (512ch), ``x3=H/16`` (1024ch), ``x4=H/32``
@@ -278,6 +281,7 @@ def res2net50_v1b_Ours(pretrained=False, **kwargs):
 
 def Res2Net_model(ind: int = 50, pretrained: bool = False, in_channels: int = 3):
     """Build the Res2Net_Ours backbone and optionally seed its weights from
+        Build the Res2Net _ Ours 骨干网络 and optionally seed its 权重 from。
     the corresponding ImageNet-pretrained ``Res2Net`` classifier.
     """
     if ind == 50:
@@ -297,7 +301,7 @@ def Res2Net_model(ind: int = 50, pretrained: bool = False, in_channels: int = 3)
 
 
 # ---------------------------------------------------------------------------
-# CFA-Net building blocks (1:1 from lib/model.py)
+# CFA-Net building blocks ( 1: 1 from lib / 模型. py ) / CFA-Net building blocks (1:1 from lib/model.py)
 # ---------------------------------------------------------------------------
 
 
@@ -367,7 +371,8 @@ class GateFusion(nn.Module):
 
 
 class BAM(nn.Module):
-    """Boundary Aware Module."""
+    """边界感知 模块。
+        Boundary Aware Module."""
 
     def __init__(self, channel):
         super().__init__()
@@ -383,7 +388,8 @@ class BAM(nn.Module):
 
 
 class CFF(nn.Module):
-    """Cross Feature Fusion."""
+    """Cross 特征 融合。
+        Cross Feature Fusion."""
 
     def __init__(self, in_channel1, in_channel2, out_channel):
         super().__init__()
@@ -418,12 +424,13 @@ class CFF(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Full CFA-Net network (preserved verbatim for reference / standalone use)
+# Full CFA-Net 网络 ( preserved verbatim for 参考 / standalone use ) / Full CFA-Net network (preserved verbatim for reference / standalone use)
 # ---------------------------------------------------------------------------
 
 
 class CFANet(nn.Module):
     """Full CFA-Net segmentation network from the official lib/model.py.
+        Full CFA-Net 分割 网络 from the official lib / 模型. py。
 
     This is the boundary-aware dual-branch network used in the paper. The
     project's encoder/decoder pipeline does not call into this class but it
@@ -568,13 +575,14 @@ class CFANet(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder wrapper for project's 4-stage decoder pipeline
+# Encoder wrapper for project's 4-stage 解码器 / Encoder wrapper for project's 4-stage decoder pipeline
 # ---------------------------------------------------------------------------
 
 
 @ENCODER_REGISTRY.register("cfanet")
 class CFANetEncoder(nn.Module):
     """CFA-Net encoder (Res2Net-50 v1b backbone) returning 4 deep stages.
+        CFA-Net 编码器。
 
     The official network couples a Res2Net-50 v1b backbone with a
     boundary-aware dual-branch decoder. The decoder is project-specific and
@@ -607,9 +615,9 @@ class CFANetEncoder(nn.Module):
             self.load_state_dict(state, strict=False)
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        # ``Res2Net_Ours.conv1`` is fixed to in_channels=3 internally only in
+        # ` ` Res2Net _ Ours. conv1 ` ` is fixed to in _ 通道 = 3 internally only in / ``Res2Net_Ours.conv1`` is fixed to in_channels=3 internally only in
         # the official lib; here we have re-parameterised it through
-        # ``Res2Net_model(in_channels=...)`` so we just forward as-is.
+        # ` ` Res2Net _ 模型 ( in _ 通道 =... ) ` ` so we just 前向传播 as-is / ``Res2Net_model(in_channels=...)`` so we just forward as-is.
         _x0, x1, x2, x3, x4 = self.resnet(x)
         return [x1, x2, x3, x4]
 

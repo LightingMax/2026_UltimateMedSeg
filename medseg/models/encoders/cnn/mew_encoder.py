@@ -1,4 +1,5 @@
 """MEW-UNet Encoder.
+    MEW-UNet 编码器。
 
 Standalone encoder extracted from ``medseg.models.networks.cnn.mew_unet.MEWUNet``.
 
@@ -45,6 +46,7 @@ _MEW = None
 @ENCODER_REGISTRY.register("mew")
 class MEWEncoder(nn.Module):
     """Standalone MEW-UNet encoder.
+        Standalone MEW-UNet 编码器。
 
     Args:
         in_channels: Number of input channels (e.g. 1 for grayscale, 3 for RGB).
@@ -68,11 +70,11 @@ class MEWEncoder(nn.Module):
         c_list = list(c_list)
         assert len(c_list) == 6, "MEW encoder expects exactly 6 channel widths."
 
-        # Construction-time spectrum sizes for the two MEW-bearing stages.
+        # Construction-time spectrum sizes for the two MEW-bearing 阶段 / Construction-time spectrum sizes for the two MEW-bearing stages.
         s4 = max(img_size // 16, 4)
         s5 = max(img_size // 32, 2)
 
-        # -- Conv stages --
+        # - - Conv 阶段 - - / -- Conv stages --
         self.encoder1 = nn.Conv2d(in_channels, c_list[0], 3, 1, 1)
         self.encoder2 = nn.Conv2d(c_list[0], c_list[1], 3, 1, 1)
         self.encoder3 = nn.Conv2d(c_list[1], c_list[2], 3, 1, 1)
@@ -87,12 +89,12 @@ class MEWEncoder(nn.Module):
         self.ebn5 = nn.GroupNorm(4, c_list[4])
         self.ebn6 = nn.GroupNorm(4, c_list[5])
 
-        # MEW blocks at the deeper encoder stages (post-pool features).
+        # MEW blocks at the deeper 编码器 / MEW blocks at the deeper encoder stages (post-pool features).
         MEW = _get_MEW()
         self.mew_e4 = MEW(c_list[3], s4, s4)
         self.mew_e5 = MEW(c_list[4], s5, s5)
 
-        # Channel list for each returned feature (deepest LAST).
+        # 通道 list for each returned 特征 ( deepest LAST ) / Channel list for each returned feature (deepest LAST).
         self.out_channels: List[int] = list(c_list)
 
         self._pretrained_requested = bool(pretrained)

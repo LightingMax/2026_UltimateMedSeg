@@ -31,7 +31,7 @@ from medseg.models.encoders.foundation._base import BaseFoundationEncoder
 from medseg.registry import ENCODER_REGISTRY
 
 
-# Verified open_clip artifact: https://huggingface.co/redlessone/DermLIP_ViT-B-16
+# Verified open _ clip 伪影: https: / / huggingface. co / redlessone / DermLIP _ ViT-B - 16 / Verified open_clip artifact: https://huggingface.co/redlessone/DermLIP_ViT-B-16
 PRIMARY_BACKBONE_NAME = "redlessone/DermLIP_ViT-B-16"
 _EMBED_DIM = 768
 _PATCH_SIZE = 16
@@ -39,7 +39,8 @@ _PATCH_SIZE = 16
 
 @ENCODER_REGISTRY.register("dermclip")
 class DermCLIPEncoder(BaseFoundationEncoder):
-    """Dermatology CLIP vision encoder (open_clip native loading)."""
+    """Dermatology CLIP vision 编码器。
+        Dermatology CLIP vision encoder (open_clip native loading)."""
 
     native_img_size: int = 224
 
@@ -58,7 +59,7 @@ class DermCLIPEncoder(BaseFoundationEncoder):
         self.embed_dim = _EMBED_DIM
         self.patch_size = _PATCH_SIZE
 
-        # Load the DermCLIP vision tower via open_clip (native loading).
+        # 加载 the DermCLIP vision tower via open _ clip ( native loading ) / Load the DermCLIP vision tower via open_clip (native loading).
         if pretrained:
             try:
                 import open_clip
@@ -105,7 +106,7 @@ class DermCLIPEncoder(BaseFoundationEncoder):
         self.proj2 = nn.Conv2d(d, chs[2], kernel_size=1, bias=False)
         self.proj3 = nn.Conv2d(d, chs[3], kernel_size=1, bias=False)
 
-        # Optionally load a local pretrained checkpoint.
+        # Optionally 加载 a 局部的 预训练 检查点 / Optionally load a local pretrained checkpoint.
         if pretrained_path:
             try:
                 state = torch.load(pretrained_path, map_location="cpu")

@@ -1,4 +1,5 @@
 """AC-MambaSeg: Adaptive Convolution and Mamba-based Skin Lesion Segmentation.
+    AC-MambaSeg: 自适应的 卷积 and Mamba-based Skin 病灶 分割。
 
 Reference:
     Nguyen et al., "AC-MAMBASEG: An Adaptive Convolution and Mamba-based
@@ -26,7 +27,7 @@ from medseg.models.encoders.vmunet_encoder import SS2D
 
 
 # ---------------------------------------------------------------------------
-# CBAM attention
+# CBAM 注意力 / CBAM attention
 # ---------------------------------------------------------------------------
 
 class _ChannelAttention(nn.Module):
@@ -73,7 +74,7 @@ class CBAM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder / Decoder blocks
+# Encoder / 解码器 / Encoder / Decoder blocks
 # ---------------------------------------------------------------------------
 
 class _DoubleConv(nn.Module):
@@ -93,7 +94,8 @@ class _DoubleConv(nn.Module):
 
 
 class _AdaptiveConvMamba(nn.Module):
-    """Bottleneck: adaptive convolution + Mamba SS2D."""
+    """瓶颈层: 自适应的 卷积 + Mamba SS2D。
+        Bottleneck: adaptive convolution + Mamba SS2D."""
     def __init__(self, dim):
         super().__init__()
         self.conv = nn.Sequential(
@@ -118,30 +120,31 @@ class _AdaptiveConvMamba(nn.Module):
 # ---------------------------------------------------------------------------
 
 class ACMambaSeg(nn.Module):
-    """AC-MambaSeg for skin lesion segmentation."""
+    """AC-MambaSeg for skin 病灶 分割。
+        AC-MambaSeg for skin lesion segmentation."""
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  base_channels=64, **kwargs):
         super().__init__()
         C = base_channels
         self.num_classes = num_classes
 
-        # Encoder
+        # 编码器 / Encoder
         self.enc1 = _DoubleConv(in_channels, C)
         self.enc2 = _DoubleConv(C, C * 2)
         self.enc3 = _DoubleConv(C * 2, C * 4)
         self.enc4 = _DoubleConv(C * 4, C * 8)
         self.pool = nn.MaxPool2d(2)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.bottleneck = _AdaptiveConvMamba(C * 8)
 
-        # CBAM on skip connections
+        # CBAM on 跳跃连接 / CBAM on skip connections
         self.cbam1 = CBAM(C)
         self.cbam2 = CBAM(C * 2)
         self.cbam3 = CBAM(C * 4)
         self.cbam4 = CBAM(C * 8)
 
-        # Decoder
+        # 解码 / Decoder
         self.b_reduce = nn.Conv2d(C * 8, C * 4, 1)
         self.dec4 = _DoubleConv(C * 4 + C * 8, C * 4)
         self.up3 = nn.ConvTranspose2d(C * 4, C * 2, 2, stride=2)
@@ -149,7 +152,7 @@ class ACMambaSeg(nn.Module):
         self.up2 = nn.ConvTranspose2d(C * 2, C, 2, stride=2)
         self.dec2 = _DoubleConv(C + C * 2, C)
 
-        # Head
+        # 头部 / Head
         self.head = nn.Conv2d(C, num_classes, 1)
 
     def forward(self, x):
@@ -166,7 +169,7 @@ class ACMambaSeg(nn.Module):
         e4 = self.enc4(self.pool(e3))
 
         b = self.bottleneck(self.pool(e4))
-        # Interpolate b to e4 size, reduce channels, concat with CBAM skip
+        # Interpolate b to e4 size, reduce channels, concat with CBAM 跳跃连接 / Interpolate b to e4 size, reduce channels, concat with CBAM skip
         b_up = self.b_reduce(F.interpolate(b, size=e4.shape[2:],
                                            mode='bilinear', align_corners=False))
 
@@ -177,6 +180,6 @@ class ACMambaSeg(nn.Module):
                                   self.cbam2(e2)], dim=1))
 
         out = self.head(d2)
-        # Interpolate to original size
+        # 插值 to original 大小 / Interpolate to original size
         out = F.interpolate(out, size=(H, W), mode='bilinear', align_corners=False)
         return out

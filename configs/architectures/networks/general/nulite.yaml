@@ -1,5 +1,9 @@
-# NuLite
+# NuLite - Lightweight nuclei segmentation network
+# NuLite - 轻量级细胞核分割网络
 # Domain: pathology
+# 领域: 病理学
+# Standalone architecture: nulite
+# 独立架构: nulite
 
 model:
   num_classes: 2

@@ -1,4 +1,5 @@
-"""Cross Attention skip connection."""
+"""Cross Attention 跳跃连接。
+    Cross Attention skip connection."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,6 +11,7 @@ from medseg.registry import SKIP_REGISTRY
 @SKIP_REGISTRY.register("cross_attn")
 class CrossAttnSkip(nn.Module):
     """Cross-attention skip: decoder attends to skip features via cross attention.
+        Cross-attention skip: 解码器。
 
     For very high-resolution feature maps (>max_tokens), falls back to
     simple concatenation to avoid O(n^2) memory.
@@ -28,15 +30,15 @@ class CrossAttnSkip(nn.Module):
         Cs = skip_feat.shape[1]
         N = H * W
 
-        # Fall back to concat if spatial size too large
+        # Fall back to concat if 空间的 大小 too large / Fall back to concat if spatial size too large
         if N > self._MAX_TOKENS:
             return torch.cat([decoder_feat, skip_feat], dim=1)
 
-        # Flatten spatial dims
+        # 展平 空间的 dims / Flatten spatial dims
         d_flat = decoder_feat.reshape(B, Cd, N).permute(0, 2, 1)  # B, N, Cd
         s_flat = skip_feat.reshape(B, Cs, N).permute(0, 2, 1)    # B, N, Cs
 
-        # Project to common dim (use min of channels)
+        # Project to common dim ( use min of 通道 ) / Project to common dim (use min of channels)
         dim = min(Cd, Cs)
         scale = dim ** -0.5
         q = d_flat[..., :dim]  # B, N, dim

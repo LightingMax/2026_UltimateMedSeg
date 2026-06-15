@@ -86,8 +86,9 @@ class SAMed2DDataset(torch.utils.data.Dataset):
         return self.samples_per_epoch
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
+        """归一化 pixel values and pad to a square 输入。
+            Normalize pixel values and pad to a square input."""
+        # 归一化 colors / Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
@@ -133,7 +134,7 @@ class SAMed2DDataset(torch.utils.data.Dataset):
 
             img = cv2.imread(os.path.join(self.base_image_dir, "SAMed2Dv1", image_path))
             image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            # preprocess image for clip
+            # preprocess 图像 for clip / preprocess image for clip
             image_clip = self.clip_image_processor.preprocess(
                 image, return_tensors="pt"
             )["pixel_values"][0]

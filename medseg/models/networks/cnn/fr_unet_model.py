@@ -1,4 +1,5 @@
 """FR-UNet: Full-Resolution Network for vessel segmentation.
+    FR-UNet: Full-Resolution 网络 for 血管 分割。
 
 Reference:
     Liu et al., "Full-Resolution Network and Dual-Threshold Iteration for
@@ -18,7 +19,8 @@ import torch.nn.functional as F
 
 
 class _Conv(nn.Module):
-    """Double conv block with LeakyReLU, faithful to original FR-UNet."""
+    """Double conv 块 with LeakyReLU, 忠实 to original FR-UNet。
+        Double conv block with LeakyReLU, faithful to original FR-UNet."""
 
     def __init__(self, in_c, out_c, dp=0):
         super().__init__()
@@ -38,7 +40,8 @@ class _Conv(nn.Module):
 
 
 class _FeatureFuse(nn.Module):
-    """Multi-scale feature fusion: 1×1 + 3×3 + dilated 3×3."""
+    """Multi-scale 特征 融合: 1 × 1 + 3 × 3 + dilated 3 × 3。
+        Multi-scale feature fusion: 1×1 + 3×3 + dilated 3×3."""
 
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -82,7 +85,8 @@ class _Down(nn.Module):
 
 
 class _Block(nn.Module):
-    """FR-UNet block with optional up/down sampling paths."""
+    """FR-UNet 块 with 可选 up / down sampling paths。
+        FR-UNet block with optional up/down sampling paths."""
 
     def __init__(self, in_c, out_c, dp=0, is_up=False, is_down=False,
                  fuse=False):
@@ -121,6 +125,7 @@ class _Block(nn.Module):
 
 class FRUNet(nn.Module):
     """FR-UNet: Full-Resolution Network.
+        FR-UNet: Full-Resolution 网络。
 
     Args:
         in_channels: number of input channels.
@@ -174,11 +179,11 @@ class FRUNet(nn.Module):
         self.block31 = _Block(filters[2] * 3, filters[2], dp=dropout,
                                is_up=True, is_down=False, fuse=fuse)
 
-        # Level 4 block
+        # Level 4 块 / Level 4 block
         self.block40 = _Block(filters[3], filters[3], dp=dropout,
                                is_up=True, is_down=False, fuse=fuse)
 
-        # Deep supervision heads
+        # 深度 supervision heads / Deep supervision heads
         self.final1 = nn.Conv2d(filters[0], num_classes, 1)
         self.final2 = nn.Conv2d(filters[0], num_classes, 1)
         self.final3 = nn.Conv2d(filters[0], num_classes, 1)
@@ -188,7 +193,7 @@ class FRUNet(nn.Module):
     def forward(self, x):
         inp_size = x.shape[2:]
 
-        # Forward pass faithful to original FR-UNet
+        # 前向传播 pass 忠实 to original FR-UNet / Forward pass faithful to original FR-UNet
         x1_3, x_down1_3 = self.block1_3(x)
         x1_2, x_down1_2 = self.block1_2(x1_3)
 
@@ -216,7 +221,7 @@ class FRUNet(nn.Module):
         _, x_up22 = self.block22(torch.cat([x_down11, x21, x_up31], dim=1))
         x13 = self.block13(torch.cat([x12, x_up22], dim=1))
 
-        # Deep supervision: average 5 heads
+        # 深度 supervision: average 5 heads / Deep supervision: average 5 heads
         output = (self.final1(x1_1) + self.final2(x10) +
                   self.final3(x11) + self.final4(x12) +
                   self.final5(x13)) / 5.0

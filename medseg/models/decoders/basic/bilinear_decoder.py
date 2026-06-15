@@ -1,4 +1,5 @@
-"""Bilinear Upsampling Decoder."""
+"""Bilinear Upsampling 解码器。
+    Bilinear Upsampling Decoder."""
 # Source: INTERNAL — framework adaptation (this repo).
 
 import torch
@@ -10,7 +11,8 @@ from medseg.registry import DECODER_REGISTRY
 
 @DECODER_REGISTRY.register("bilinear")
 class BilinearDecoder(nn.Module):
-    """UNet decoder using bilinear upsampling instead of transposed convolutions."""
+    """UNet 解码器。
+        UNet decoder using bilinear upsampling instead of transposed convolutions."""
 
     def __init__(self, encoder_channels: List[int], bottleneck_channels: int,
                  skip_connection=None, **kwargs):

@@ -1,4 +1,5 @@
 """TA-MoSC (Task-Adaptive Mixture of Skip Connections) — adapted from
+    TA-MoSC (Task-Adaptive Mixture of 跳跃连接。
 UTANet (AAAI 2025, Luo et al.).
 
 Adapted from: https://github.com/AshleyLuo001/UTANet
@@ -70,7 +71,8 @@ class _MoEGate(nn.Module):
 
     @staticmethod
     def _cv_squared(x):
-        """Squared coefficient of variation for load balancing."""
+        """Squared coefficient of variation for 加载 balancing。
+            Squared coefficient of variation for load balancing."""
         eps = 1e-10
         if x.numel() <= 1:
             return torch.tensor(0.0, device=x.device)
@@ -83,7 +85,7 @@ class _MoEGate(nn.Module):
         logits = pooled @ self.gate_weight  # (B, num_experts)
         probs = F.softmax(logits, dim=1)
 
-        # Load balancing loss
+        # Load balancing 损失 / Load balancing loss
         expert_usage = probs.sum(dim=0)
         lb_loss = self._cv_squared(expert_usage)
 
@@ -97,6 +99,7 @@ class _MoEGate(nn.Module):
 @SKIP_REGISTRY.register("ta_mosc")
 class TAMoSCSkip(nn.Module):
     """TA-MoSC skip connection with Mixture of Experts routing.
+        TA-MoSC 跳跃连接。
 
     Args:
         num_experts: Number of expert networks.
@@ -110,29 +113,30 @@ class TAMoSCSkip(nn.Module):
         self.num_experts = num_experts
         self.top_k = min(top_k, num_experts)
         self.hidden_rate = hidden_rate
-        # Lazily-built submodules keyed by (decoder_ch, skip_ch)
+        # Lazily-built submodules keyed by ( 解码 _ ch, 跳跃 _ ch ) / Lazily-built submodules keyed by (decoder_ch, skip_ch)
         self._cache: dict = {}
-        # Auxiliary load balancing loss (accessible externally)
+        # Auxiliary load balancing 损失 / Auxiliary load balancing loss (accessible externally)
         self.aux_loss = torch.tensor(0.0)
 
     def get_out_channels(self, decoder_ch: int, skip_ch: int) -> int:
         return max(decoder_ch, skip_ch)
 
     def _build(self, decoder_ch: int, skip_ch: int, device):
-        """Lazily build layers for a (decoder_ch, skip_ch) pair."""
+        """Lazily build layers for a ( 解码 _ ch, 跳跃 _ ch ) pair。
+            Lazily build layers for a (decoder_ch, skip_ch) pair."""
         key = (decoder_ch, skip_ch, str(device))
         if key in self._cache:
             return self._cache[key]
 
         unified = max(decoder_ch, skip_ch)
 
-        # Project both to unified channels
+        # Project both to 统一的 通道 / Project both to unified channels
         dec_proj = (nn.Conv2d(decoder_ch, unified, 1, bias=False)
                     if decoder_ch != unified else nn.Identity()).to(device)
         skip_proj = (nn.Conv2d(skip_ch, unified, 1, bias=False)
                      if skip_ch != unified else nn.Identity()).to(device)
 
-        # Concat projection: 2*unified -> unified
+        # Concat projection: 2 * 统一的 - > 统一的 / Concat projection: 2*unified -> unified
         concat_proj = nn.Sequential(
             nn.Conv2d(unified * 2, unified, 1, bias=False),
             nn.BatchNorm2d(unified),
@@ -148,7 +152,7 @@ class TAMoSCSkip(nn.Module):
         # Gating mechanism
         gate = _MoEGate(unified, self.num_experts, self.top_k).to(device)
 
-        # Output projection
+        # 输出 projection / Output projection
         out_conv = nn.Sequential(
             nn.Conv2d(unified, unified, 3, 1, 1, bias=False),
             nn.BatchNorm2d(unified),
@@ -171,7 +175,7 @@ class TAMoSCSkip(nn.Module):
 
     def forward(self, decoder_feat: torch.Tensor,
                 skip_feat: torch.Tensor) -> torch.Tensor:
-        # Spatial align skip to decoder if needed
+        # Spatial align skip to 解码器 / Spatial align skip to decoder if needed
         if skip_feat.shape[2:] != decoder_feat.shape[2:]:
             skip_feat = F.interpolate(
                 skip_feat, size=decoder_feat.shape[2:],
@@ -182,11 +186,11 @@ class TAMoSCSkip(nn.Module):
         skip_ch = skip_feat.shape[1]
         mod = self._build(dec_ch, skip_ch, decoder_feat.device)
 
-        # Project both to unified channels
+        # Project both to 统一的 通道 / Project both to unified channels
         d = mod["dec_proj"](decoder_feat)
         s = mod["skip_proj"](skip_feat)
 
-        # Concatenate and project to unified dim
+        # 拼接 and project to 统一的 dim / Concatenate and project to unified dim
         fused = mod["concat_proj"](torch.cat([d, s], dim=1))
 
         # MoE routing
@@ -196,13 +200,13 @@ class TAMoSCSkip(nn.Module):
         B, C, H, W = fused.shape
         experts = mod["experts"]
 
-        # Process top-k experts
+        # 处理 top-k experts / Process top-k experts
         result = torch.zeros_like(fused)
         for k in range(self.top_k):
             w_k = top_w[:, k].view(B, 1, 1, 1)  # (B, 1, 1, 1)
             idx_k = top_idx[:, k]  # (B,)
 
-            # Group batch items by selected expert for efficiency
+            # Group 批次 items by selected expert for efficiency / Group batch items by selected expert for efficiency
             for expert_i in range(self.num_experts):
                 mask = (idx_k == expert_i)
                 if mask.any():
@@ -210,5 +214,5 @@ class TAMoSCSkip(nn.Module):
                     y_expert = experts[expert_i](x_expert)
                     result[mask] = result[mask] + w_k[mask] * y_expert
 
-        # Output refinement
+        # 输出 refinement / Output refinement
         return mod["out_conv"](result)

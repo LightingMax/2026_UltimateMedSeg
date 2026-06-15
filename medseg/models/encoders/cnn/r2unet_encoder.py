@@ -1,4 +1,5 @@
 """R2U-Net encoder.
+    R2U-Net 编码器。
 
 Extracts the 5-stage RRCNN-based encoder from R2U-Net (Alom et al., 2018)
 for use in bottleneck/decoder ablation studies.
@@ -25,6 +26,7 @@ from medseg.registry import ENCODER_REGISTRY
 
 class RecurrentBlock(nn.Module):
     """Recurrent convolution: Conv3x3 + BN + ReLU iterated ``t`` times,
+        循环的 卷积: Conv3x3 + BN + ReLU iterated ` ` t ` ` times。
     adding the original input back to the accumulating activation at each
     iteration (RCNN cell from Alom et al., 2018).
     """
@@ -50,6 +52,7 @@ class RecurrentBlock(nn.Module):
 
 class RRCNNBlock(nn.Module):
     """Recurrent Residual CNN block.
+        循环的 残差 CNN 块。
 
     1x1 conv first projects the incoming features to ``ch_out`` channels,
     then two stacked recurrent conv blocks are applied. A residual skip
@@ -74,6 +77,7 @@ class RRCNNBlock(nn.Module):
 @ENCODER_REGISTRY.register("r2unet")
 class R2UNetEncoder(nn.Module):
     """R2U-Net encoder with 5 RRCNN stages (4 MaxPool2x2 downsamples).
+        R2U-Net 编码器。
 
     Args:
         in_channels: Number of input image channels.

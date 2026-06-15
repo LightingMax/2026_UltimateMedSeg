@@ -1,4 +1,5 @@
 """EfficientNetV2 encoder via timm.
+    EfficientNetV2 编码器。
 
 Wraps `timm.create_model("tf_efficientnetv2_s", features_only=True)` to expose
 multi-scale features. Includes an SSL fallback for pretrained weight downloads.
@@ -33,6 +34,7 @@ def _load_with_ssl_fallback(load_fn, *args, **kwargs):
 @ENCODER_REGISTRY.register("efficientnetv2")
 class EfficientNetV2Encoder(nn.Module):
     """EfficientNetV2-S encoder producing multi-scale features.
+        EfficientNetV2-S 编码器。
 
     Uses timm's `features_only=True` interface so that the forward pass
     returns a list of feature maps from shallow (high-res) to deep (low-res).
@@ -53,7 +55,7 @@ class EfficientNetV2Encoder(nn.Module):
         self.in_channels = in_channels
         self.img_size = img_size
 
-        # If user passes non-RGB input, prepend a 1x1 conv stem to map to 3 channels.
+        # If user passes non-RGB 输入, prepend a 1x1 conv 主干 to 映射 to 3 通道 / If user passes non-RGB input, prepend a 1x1 conv stem to map to 3 channels.
         if in_channels != 3:
             self.stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
             backbone_in_chans = 3
@@ -73,7 +75,8 @@ class EfficientNetV2Encoder(nn.Module):
         self._out_strides = list(self.model.feature_info.reduction())
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
-        """Return multi-scale features, deepest LAST."""
+        """返回 多尺度 特征, deepest LAST。
+            Return multi-scale features, deepest LAST."""
         x = self.stem(x)
         features = self.model(x)
         out: List[torch.Tensor] = []

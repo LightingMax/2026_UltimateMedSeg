@@ -1,4 +1,5 @@
 """PanDerm dermatology foundation-model encoder.
+    PanDerm dermatology foundation-model 编码器。
 
 Reference:
     Yan et al., "A multimodal vision foundation model for clinical dermatology",
@@ -16,7 +17,7 @@ Registered as ``"panderm"`` in ``ENCODER_REGISTRY``.
 """
 # Source: https://github.com/SiyuanYan1/PanDerm
 # Paper:  https://arxiv.org/abs/2410.15038  (Nature Medicine 2025)
-# HF Hub: NONE — weights distributed via Google Drive only.
+# HF Hub: NONE — 权重 distributed via Google Drive only / HF Hub: NONE — weights distributed via Google Drive only.
 
 from __future__ import annotations
 
@@ -40,6 +41,7 @@ _PATCH_SIZE = 16
 @ENCODER_REGISTRY.register("panderm")
 class PanDermEncoder(BaseFoundationEncoder):
     """PanDerm (dermatology ViT-L/16) encoder with DPT-style multi-block pyramid.
+        PanDerm (dermatology ViT-L/16) 编码器。
 
     The backbone is a self-supervised ViT-Large/16 (``embed_dim=1024``,
     ``patch_size=16``) pretrained on 2M+ dermatology images.
@@ -66,7 +68,7 @@ class PanDermEncoder(BaseFoundationEncoder):
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — PanDerm has no HF Hub artifact; require local checkpoint.
+        # 骨干网络 — PanDerm has no HF Hub 伪影; require 局部的 检查点 / Backbone — PanDerm has no HF Hub artifact; require local checkpoint.
         if pretrained:
             if not pretrained_path:
                 raise RuntimeError(
@@ -75,7 +77,7 @@ class PanDermEncoder(BaseFoundationEncoder):
                     "https://github.com/SiyuanYan1/PanDerm and pass the "
                     "local path via pretrained_path=..."
                 )
-            # Build ViT-L/16 skeleton and load local weights.
+            # Build ViT-L / 16 skeleton and 加载 局部的 权重 / Build ViT-L/16 skeleton and load local weights.
             import transformers
             _skel = transformers.ViTModel(transformers.ViTConfig(
                 hidden_size=1024, num_hidden_layers=24,
@@ -117,7 +119,7 @@ class PanDermEncoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -140,7 +142,7 @@ class PanDermEncoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

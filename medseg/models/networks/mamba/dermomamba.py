@@ -1,4 +1,5 @@
 """DermoMamba: Cross-Scale Mamba for Skin Lesion Segmentation.
+    DermoMamba: Cross-Scale Mamba for Skin 病灶 分割。
 
 Reference:
     Hoang et al., "DermoMamba: A cross-scale Mamba-based model with Guide
@@ -29,7 +30,7 @@ import torch.nn.functional as F
 from medseg.models.encoders.vmunet_encoder import SS2D
 
 
-# ── CBAM (Channel + Spatial attention) ────────────────────────────────────────
+# ─ ─ CBAM ( 通道 + 空间的 注意力 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── CBAM (Channel + Spatial attention) ────────────────────────────────────────
 
 class _ChannelGate(nn.Module):
     def __init__(self, channels, reduction=16):
@@ -70,7 +71,7 @@ class CBAM(nn.Module):
         return self.sp(self.ch(x))
 
 
-# ── Axial Spatial Depthwise Conv ──────────────────────────────────────────────
+# ─ ─ Axial 空间的 Depthwise Conv ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Axial Spatial Depthwise Conv ──────────────────────────────────────────────
 
 class _AxialSpatialDW(nn.Module):
     def __init__(self, dim, kernel=7, dilation=1):
@@ -86,10 +87,11 @@ class _AxialSpatialDW(nn.Module):
         return self.conv(self.mixer_h(self.mixer_w(x))) + x
 
 
-# ── Cross-Scale Mamba Block ──────────────────────────────────────────────────
+# ─ ─ Cross-Scale Mamba 块 ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Cross-Scale Mamba Block ──────────────────────────────────────────────────
 
 class _CrossScaleMambaBlock(nn.Module):
     """Splits channels into 4 groups, applies axial DW + SS2D with
+        Splits 通道 into 4 groups, 应用 axial DW + SS2D with。
     different dilation rates on first 3 groups, passes 4th through."""
 
     def __init__(self, dim):
@@ -149,7 +151,7 @@ class _EncoderBlock(nn.Module):
         return x, skip
 
 
-# ── PCA (Channel Attention) ──────────────────────────────────────────────────
+# ─ ─ PCA ( 通道 注意力 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── PCA (Channel Attention) ──────────────────────────────────────────────────
 
 class _PCA(nn.Module):
     def __init__(self, dim):
@@ -166,10 +168,11 @@ class _PCA(nn.Module):
         return x * att.unsqueeze(-1).unsqueeze(-1)
 
 
-# ── Sweep_Mamba (Bottleneck) ─────────────────────────────────────────────────
+# ─ ─ Sweep _ Mamba ( 瓶颈层 ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── Sweep_Mamba (Bottleneck) ─────────────────────────────────────────────────
 
 class _SweepMamba(nn.Module):
-    """3-directional SS2D bottleneck with channel reduction."""
+    """3-directional SS2D 瓶颈层。
+        3-directional SS2D bottleneck with channel reduction."""
 
     def __init__(self, dim, ratio=8):
         super().__init__()
@@ -212,7 +215,7 @@ class _DecoderBlock(nn.Module):
 
     def forward(self, x, skip):
         x = self.up(x)
-        # Handle size mismatch
+        # Handle 大小 mismatch / Handle size mismatch
         if x.shape[2:] != skip.shape[2:]:
             x = F.interpolate(x, size=skip.shape[2:], mode="bilinear",
                               align_corners=False)
@@ -225,6 +228,7 @@ class _DecoderBlock(nn.Module):
 
 class DermoMamba(nn.Module):
     """Cross-scale Mamba with CBAM skip + PCA/SweepMamba bottleneck.
+        Cross-scale Mamba with CBAM 跳跃连接。
 
     Channel progression: 16 -> 32 -> 64 -> 128 -> 256 -> 512.
     """
@@ -236,25 +240,25 @@ class DermoMamba(nn.Module):
 
         self.pw_in = nn.Conv2d(in_channels, c, 1)
 
-        # Encoder
+        # 编码器 / Encoder
         self.e1 = _EncoderBlock(c, c * 2)
         self.e2 = _EncoderBlock(c * 2, c * 4)
         self.e3 = _EncoderBlock(c * 4, c * 8)
         self.e4 = _EncoderBlock(c * 8, c * 16)
         self.e5 = _EncoderBlock(c * 16, c * 32)
 
-        # Skip connections (CBAM)
+        # 跳跃连接 ( CBAM ) / Skip connections (CBAM)
         self.s1 = CBAM(c * 2)
         self.s2 = CBAM(c * 4)
         self.s3 = CBAM(c * 8)
         self.s4 = CBAM(c * 16)
         self.s5 = CBAM(c * 32)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         self.pca = _PCA(c * 32)
         self.sweep = _SweepMamba(c * 32)
 
-        # Decoder
+        # 解码 / Decoder
         self.d5 = _DecoderBlock(c * 32, c * 16)
         self.d4 = _DecoderBlock(c * 16, c * 8)
         self.d3 = _DecoderBlock(c * 8, c * 4)
@@ -273,26 +277,26 @@ class DermoMamba(nn.Module):
 
         x = self.pw_in(x)
 
-        # Encoder
+        # 编码器 / Encoder
         x, skip1 = self.e1(x)
         x, skip2 = self.e2(x)
         x, skip3 = self.e3(x)
         x, skip4 = self.e4(x)
         x, skip5 = self.e5(x)
 
-        # Skip attention
+        # 跳跃 注意力 / Skip attention
         skip1 = self.s1(skip1)
         skip2 = self.s2(skip2)
         skip3 = self.s3(skip3)
         skip4 = self.s4(skip4)
         skip5 = self.s5(skip5)
 
-        # Bottleneck
+        # 瓶颈层 / Bottleneck
         x = self.pca(x)
         # Sweep_Mamba operates in (B,H,W,C) space
         x = self.sweep(x.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
 
-        # Decoder
+        # 解码 / Decoder
         x = self.d5(x, skip5)
         x = self.d4(x, skip4)
         x = self.d3(x, skip3)

@@ -1,4 +1,5 @@
 """TransUNet CUP (Cascaded Upsampler) Decoder.
+    TransUNet CUP (Cascaded Upsampler) 解码器。
 Faithfully ported from: https://github.com/Beckschen/TransUNet/blob/main/networks/vit_seg_modeling.py
 
 Reference: Chen et al., "TransUNet: Transformers Make Strong Encoders for Medical Image Segmentation"
@@ -26,7 +27,8 @@ class Conv2dReLU(nn.Sequential):
 
 
 class DecoderBlock(nn.Module):
-    """Single decoder block: bilinear 2x upsample -> concat skip -> two Conv2dReLU."""
+    """Single 解码器。
+        Single decoder block: bilinear 2x upsample -> concat skip -> two Conv2dReLU."""
     def __init__(self, in_channels, out_channels, skip_channels=0, use_batchnorm=True):
         super().__init__()
         self.conv1 = Conv2dReLU(
@@ -51,6 +53,7 @@ class DecoderBlock(nn.Module):
 @DECODER_REGISTRY.register("transunet")
 class TransUNetDecoder(nn.Module):
     """TransUNet CUP (Cascaded Upsampler) decoder.
+        TransUNet CUP (Cascaded Upsampler) 解码器。
 
     Faithful to the original DecoderCup class.
     Architecture:
@@ -68,13 +71,13 @@ class TransUNetDecoder(nn.Module):
                  decoder_channels: tuple = (256, 128, 64, 16),
                  **kwargs):
         super().__init__()
-        # conv_more: reduce bottleneck channels to head_channels (original: 768 -> 512)
+        # conv_more: reduce 瓶颈层 / conv_more: reduce bottleneck channels to head_channels (original: 768 -> 512)
         self.conv_more = Conv2dReLU(bottleneck_channels, head_channels,
                                      kernel_size=3, padding=1, use_batchnorm=True)
 
-        # Skip channels from encoder (reversed: deep to shallow)
+        # Skip channels from 编码器 / Skip channels from encoder (reversed: deep to shallow)
         skip_channels = list(reversed(encoder_channels))
-        # Pad with 0 for extra decoder blocks without skip
+        # Pad with 0 for extra 解码器 / Pad with 0 for extra decoder blocks without skip
         while len(skip_channels) < len(decoder_channels):
             skip_channels.append(0)
 

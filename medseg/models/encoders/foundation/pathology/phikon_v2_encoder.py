@@ -1,4 +1,5 @@
 """Phikon-v2 pathology foundation-model encoder.
+    Phikon-v2 pathology foundation-model 编码器。
 
 Reference:
     Filiot et al., "Phikon-v2, A large and public feature extractor for
@@ -40,6 +41,7 @@ _PATCH_SIZE = 14
 @ENCODER_REGISTRY.register("phikon_v2")
 class PhikonV2Encoder(BaseFoundationEncoder):
     """Phikon-v2 (pathology DINOv2 ViT-L/14) encoder with DPT-style multi-block pyramid.
+        Phikon-v2 (pathology DINOv2 ViT-L/14) 编码器。
 
     The backbone is a DINOv2-pretrained ViT-Large/14 (``embed_dim=1024``,
     ``patch_size=14``).  ``out_channels = [dim/8, dim/4, dim/2, dim]``
@@ -65,7 +67,7 @@ class PhikonV2Encoder(BaseFoundationEncoder):
         else:
             self.input_adapter = nn.Identity()
 
-        # Backbone — Dinov2Model via transformers.
+        # 骨干网络 — Dinov2Model via transformers / Backbone — Dinov2Model via transformers.
         if pretrained:
             self.backbone = load_hf_vit(
                 hf_name=_PRIMARY_HF_NAME,
@@ -87,7 +89,7 @@ class PhikonV2Encoder(BaseFoundationEncoder):
         self.num_prefix_tokens = int(self.backbone.num_prefix_tokens)
 
         # DPT head: 从不同深度 block 构建真正多尺度金字塔
-        # DPT head: genuine multi-scale pyramid from different-depth blocks
+        # DPT 头部: genuine 多尺度 金字塔 from different-depth blocks / DPT head: genuine multi-scale pyramid from different-depth blocks
         self.dpt = DPTHead(
             embed_dim=self.embed_dim,
             num_prefix_tokens=int(self.num_prefix_tokens),
@@ -110,7 +112,7 @@ class PhikonV2Encoder(BaseFoundationEncoder):
         Hp, Wp = x.shape[-2], x.shape[-1]
 
         # 从不同深度 block 提取 token（DPT 核心）
-        # Extract tokens from different-depth blocks (DPT core)
+        # 提取 标记 from different-depth blocks ( DPT core ) / Extract tokens from different-depth blocks (DPT core)
         multi_tokens = self.backbone.get_intermediate_layers(
             x, n=self._block_indices,
         )

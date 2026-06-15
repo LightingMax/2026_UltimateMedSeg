@@ -1,7 +1,10 @@
 # Local smoke-training config using auto-generated dummy data.
+# Local smoke-training config using auto-generated dummy data. (中文翻译待补充)
 # Run: python train.py --config configs/intro_to_datasets/local_dummy.yaml --output_dir output/local_dummy --epochs 2
+# Run: python train.py --config configs/intro_to_datasets/local_dummy.yaml --output_dir output/local_dummy --epochs 2 (中文翻译待补充)
 #
 # Dummy data is created by: python scripts/smoke_test_modular.py
+# Dummy data is created by: python scripts/smoke_test_modular.py (中文翻译待补充)
 
 model:
   num_classes: 2

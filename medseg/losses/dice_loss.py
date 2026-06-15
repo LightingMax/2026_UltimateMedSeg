@@ -1,4 +1,5 @@
-"""Dice Loss."""
+"""Dice 损失。
+    Dice Loss."""
 
 import torch
 import torch.nn as nn
@@ -8,18 +9,20 @@ from medseg.registry import LOSS_REGISTRY
 
 @LOSS_REGISTRY.register("dice")
 class DiceLoss(nn.Module):
-    """Soft Dice loss for segmentation."""
+    """Soft Dice 损失。
+        Soft Dice loss for segmentation."""
     def __init__(self, smooth=1.0, ignore_index=None, **kwargs):
         super().__init__()
         self.smooth = smooth
         self.ignore_index = ignore_index
 
     def forward(self, pred, target):
-        """pred: B,C,H,W  target: B,H,W (long)"""
+        """pred: B, C, H, W 目标: B, H, W ( long )。
+            pred: B,C,H,W  target: B,H,W (long)"""
         num_classes = pred.shape[1]
         pred_soft = F.softmax(pred, dim=1)
 
-        # One-hot encode target
+        # One-hot 编码 目标 / One-hot encode target
         target_onehot = F.one_hot(target.long(), num_classes).permute(0, 3, 1, 2).float()
 
         total_loss = 0.0

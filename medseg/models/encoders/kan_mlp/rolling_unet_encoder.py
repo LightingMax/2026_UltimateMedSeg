@@ -1,4 +1,5 @@
 """Rolling-UNet encoder (AAAI 2024).
+    Rolling-UNet 编码器。
 
 Extracted from ``medseg.models.networks.kan_mlp.rolling_unet``. Provides the
 hybrid Conv + DOR-MLP encoder up to the deepest bottleneck feature.
@@ -32,7 +33,8 @@ from medseg.registry import ENCODER_REGISTRY
 # ---------------------------------------------------------------------------
 
 class _DWConv(nn.Module):
-    """Depthwise convolution + pointwise convolution."""
+    """深度可分离卷积 + 逐点卷积。
+        Depthwise convolution + pointwise convolution."""
 
     def __init__(self, dim=768):
         super().__init__()
@@ -88,7 +90,7 @@ class _Lo2(nn.Module):
     def forward(self, x, H, W):
         B, N, C = x.shape
 
-        # --- OR-MLP branch 1 (row-shift -> col-shift) ---
+        # - - - OR-MLP 分支 1 ( row-shift - > col-shift ) - - - / --- OR-MLP branch 1 (row-shift -> col-shift) ---
         xn = x.transpose(1, 2).view(B, C, H, W).contiguous()
         xs = torch.chunk(xn, C, 1)
         x_shift = [torch.roll(x_c, shift, 2)
@@ -109,7 +111,7 @@ class _Lo2(nn.Module):
         x_shift_c = self.fc2(x_shift_c)
         x_1 = self.drop(x_shift_c)
 
-        # --- OR-MLP branch 2 (col-shift -> row-shift, opposite direction) ---
+        # - - - OR-MLP 分支 2 ( col-shift - > row-shift, opposite direction ) - - - / --- OR-MLP branch 2 (col-shift -> row-shift, opposite direction) ---
         xn = x.transpose(1, 2).view(B, C, H, W).contiguous()
         xs = torch.chunk(xn, C, 1)
         x_shift = [torch.roll(x_c, -shift, 3)
@@ -130,7 +132,7 @@ class _Lo2(nn.Module):
         x_shift_r = self.fc4(x_shift_r)
         x_2 = self.drop(x_shift_r)
 
-        # Merge two OR-MLP branches
+        # 合并 two OR-MLP branches / Merge two OR-MLP branches
         x_1 = torch.add(x_1, x)
         x_2 = torch.add(x_2, x)
         x1 = torch.cat([x_1, x_2], dim=2)
@@ -139,14 +141,14 @@ class _Lo2(nn.Module):
         x1 = self.drop(x1)
         x1 = torch.add(x1, x)
 
-        # --- DSC branch ---
+        # - - - DSC 分支 - - - / --- DSC branch ---
         x2 = x.transpose(1, 2).view(B, C, H, W)
         x2 = self.dwconv(x2, H, W)
         x2 = self.act2(x2)
         x2 = self.norm2(x2)
         x2 = x2.flatten(2).transpose(1, 2)
 
-        # Merge DOR-MLP + DSC
+        # 合并 DOR-MLP + DSC / Merge DOR-MLP + DSC
         x3 = torch.cat([x1, x2], dim=2)
         x3 = self.fc6(x3)
         x3 = self.drop(x3)
@@ -154,7 +156,8 @@ class _Lo2(nn.Module):
 
 
 class _Lo2Block(nn.Module):
-    """Wrapper: LayerNorm -> Lo2 with DropPath."""
+    """封装器: LayerNorm - > Lo2 with DropPath。
+        Wrapper: LayerNorm -> Lo2 with DropPath."""
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False,
                  qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
@@ -189,6 +192,7 @@ class _Lo2Block(nn.Module):
 
 class _FeatureIncentiveBlock(nn.Module):
     """Patch embedding with GELU activation (Feature Incentive Block).
+        图块 嵌入 with GELU 激活 ( 特征 Incentive 块 )。
 
     Resolution-friendly: forward derives H, W from the runtime tensor shape
     so the ``img_size`` argument is informational only.
@@ -237,7 +241,8 @@ class _FeatureIncentiveBlock(nn.Module):
 
 
 class _DoubleConv(nn.Module):
-    """Two Conv3x3-BN-ReLU blocks (encoder conv stage)."""
+    """Two Conv3x3-BN-ReLU blocks ( 编码器 conv 阶段 )。
+        Two Conv3x3-BN-ReLU blocks (encoder conv stage)."""
 
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -255,12 +260,13 @@ class _DoubleConv(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder
+# 编码器 / Encoder
 # ---------------------------------------------------------------------------
 
 @ENCODER_REGISTRY.register("rolling_unet")
 class RollingUNetEncoder(nn.Module):
     """Rolling-UNet encoder.
+        Rolling-UNet 编码器。
 
     3 stage stack of ``DoubleConv + MaxPool`` followed by 2 Lo2 (DOR-MLP)
     stages wrapped by ``Feature_Incentive_Block``. Returns five multi-scale
@@ -299,7 +305,7 @@ class RollingUNetEncoder(nn.Module):
         assert len(embed_dims) == 5, "embed_dims must have 5 entries"
         assert len(depths) == 2, "depths must have 2 entries (Lo2 stages)"
 
-        # Optional 1x1 stem when in_channels != 3 — matches the framework
+        # 可选 1x1 主干 when in _ 通道! = 3 — matches the framework / Optional 1x1 stem when in_channels != 3 — matches the framework
         # convention used by peer encoders.
         if in_channels != 3:
             self.stem = nn.Conv2d(in_channels, 3, kernel_size=1, bias=False)
@@ -313,7 +319,7 @@ class RollingUNetEncoder(nn.Module):
         norm_layer = nn.LayerNorm
         sr_ratios = [8, 4, 2, 1]
 
-        # ---- Conv encoder stages ----
+        # ---- Conv 编码器 / ---- Conv encoder stages ----
         self.conv1 = _DoubleConv(3, embed_dims[0])
         self.pool1 = nn.MaxPool2d(2)
         self.conv2 = _DoubleConv(embed_dims[0], embed_dims[1])
@@ -322,9 +328,9 @@ class RollingUNetEncoder(nn.Module):
         self.pool3 = nn.MaxPool2d(2)
         self.pool4 = nn.MaxPool2d(2)
 
-        # ---- Lo2 encoder / bottleneck stages ----
-        # Feature_Incentive_Block uses stride=1, padding=1 so spatial size
-        # is preserved; ``img_size`` is only used for stored metadata.
+        # ---- Lo2 编码器 / ---- Lo2 encoder / bottleneck stages ----
+        # 特征 _ Incentive _ 块 uses 步长 = 1, 填充 = 1 so 空间的 大小 / Feature_Incentive_Block uses stride=1, padding=1 so spatial size
+        # is preserved; ` ` img _ 大小 ` ` is only used for stored metadata / is preserved; ``img_size`` is only used for stored metadata.
         self.FIBlock1 = _FeatureIncentiveBlock(
             img_size=max(img_size // 4, 1), patch_size=3, stride=1,
             in_chans=embed_dims[2], embed_dim=embed_dims[3])
@@ -354,22 +360,22 @@ class RollingUNetEncoder(nn.Module):
         x = self.stem(x)
         B = x.shape[0]
 
-        # Stage 1: conv (full res)
+        # 阶段 1: conv ( full res ) / Stage 1: conv (full res)
         out = self.conv1(x)
         t1 = out
         out = self.pool1(out)
 
-        # Stage 2: conv (1/2)
+        # 阶段 2: conv ( 1 / 2 ) / Stage 2: conv (1/2)
         out = self.conv2(out)
         t2 = out
         out = self.pool2(out)
 
-        # Stage 3: conv (1/4)
+        # 阶段 3: conv ( 1 / 4 ) / Stage 3: conv (1/4)
         out = self.conv3(out)
         t3 = out
         out = self.pool3(out)
 
-        # Stage 4: Lo2 (1/8)
+        # 阶段 4: Lo2 ( 1 / 8 ) / Stage 4: Lo2 (1/8)
         out, H, W = self.FIBlock1(out)
         for blk in self.block1:
             out = blk(out, H, W)
@@ -378,7 +384,7 @@ class RollingUNetEncoder(nn.Module):
         t4 = out
         out = self.pool4(out)
 
-        # Stage 5 (bottleneck): Lo2 (1/16)
+        # 阶段 5 ( 瓶颈层 ): Lo2 ( 1 / 16 ) / Stage 5 (bottleneck): Lo2 (1/16)
         out, H, W = self.FIBlock2(out)
         for blk in self.block2:
             out = blk(out, H, W)

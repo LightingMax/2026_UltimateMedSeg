@@ -1,6 +1,7 @@
-# Reference: https://github.com/HUANGLIZI/LViT
+# 参考: https: / / github. com / HUANGLIZI / LViT / Reference: https://github.com/HUANGLIZI/LViT
 # Paper:     https://arxiv.org/abs/2206.14718
 """LViT: Language meets Vision Transformer in Medical Image Segmentation.
+    LViT: Language meets Vision Transformer in 医学的 图像 分割。
 
 Implemented from the paper (Li et al., "LViT: Language meets Vision
 Transformer in Medical Image Segmentation", IEEE TMI, 2023) and the
@@ -43,7 +44,7 @@ from medseg.utils.timm_compat import DropPath  # type: ignore
 
 
 # ============================================================================
-# Activation helpers (1:1 from nets/LViT.py / nets/UNet.py)
+# 激活 helpers ( 1: 1 from nets / LViT. py / nets / UNet. py ) / Activation helpers (1:1 from nets/LViT.py / nets/UNet.py)
 # ============================================================================
 
 
@@ -62,7 +63,8 @@ def _make_n_conv(in_channels, out_channels, nb_conv, activation="ReLU"):
 
 
 class ConvBatchNorm(nn.Module):
-    """(convolution => [BN] => ReLU)."""
+    """( 卷积 = > [ BN ] = > ReLU )。
+        (convolution => [BN] => ReLU)."""
 
     def __init__(self, in_channels, out_channels, activation="ReLU"):
         super().__init__()
@@ -75,7 +77,8 @@ class ConvBatchNorm(nn.Module):
 
 
 class DownBlock(nn.Module):
-    """Downscaling with maxpool convolution."""
+    """Downscaling with maxpool 卷积。
+        Downscaling with maxpool convolution."""
 
     def __init__(self, in_channels, out_channels, nb_conv, activation="ReLU"):
         super().__init__()
@@ -92,7 +95,8 @@ class DownBlock(nn.Module):
 
 
 class PixLevelModule(nn.Module):
-    """Pixel-level attention used by the U-Net upsample blocks."""
+    """Pixel-level 注意力 used by the U-Net 上采样 blocks。
+        Pixel-level attention used by the U-Net upsample blocks."""
 
     def __init__(self, in_channels):
         super().__init__()
@@ -129,7 +133,8 @@ class PixLevelModule(nn.Module):
 
 
 class UpblockAttention(nn.Module):
-    """Upsample → PixLevelModule on skip → concat → conv."""
+    """Upsample → PixLevelModule on 跳跃连接。
+        Upsample → PixLevelModule on skip → concat → conv."""
 
     def __init__(self, in_channels, out_channels, nb_conv, activation="ReLU"):
         super().__init__()
@@ -145,12 +150,13 @@ class UpblockAttention(nn.Module):
 
 
 # ============================================================================
-# ViT branch (1:1 from nets/Vit.py)
+# ViT 分支 ( 1: 1 from nets / Vit. py ) / ViT branch (1:1 from nets/Vit.py)
 # ============================================================================
 
 
 class _Reconstruct(nn.Module):
-    """Reshape token sequence back to a feature map and upscale."""
+    """重塑 标记 序列 back to a 特征图 and upscale。
+        Reshape token sequence back to a feature map and upscale."""
 
     def __init__(self, in_channels, out_channels, kernel_size, scale_factor):
         super().__init__()
@@ -171,7 +177,8 @@ class _Reconstruct(nn.Module):
 
 
 class _Embeddings(nn.Module):
-    """Patch + position embedding for a single ViT stage."""
+    """图块 + position 嵌入 for a single ViT 阶段。
+        Patch + position embedding for a single ViT stage."""
 
     def __init__(self, patch_size, img_size, in_channels):
         super().__init__()
@@ -267,7 +274,8 @@ class _ConvTransBN(nn.Module):
 
 
 class _VisionTransformer(nn.Module):
-    """Single-stage ViT branch with text injection at the lowest level."""
+    """Single-stage ViT 分支 with text injection at the lowest level。
+        Single-stage ViT branch with text injection at the lowest level."""
 
     def __init__(self, img_size, channel_num, patch_size, embed_dim,
                  depth=1, num_heads=8, mlp_ratio=4.0, qkv_bias=True,
@@ -323,6 +331,7 @@ class _VisionTransformer(nn.Module):
 
 class LViT(nn.Module):
     """LViT model.  Takes an image + text embedding (BERT [B, L=10, 768]) and
+        LViT 模型. Takes an 图像 + text 嵌入 ( BERT [ B, L = 10, 768 ] ) and。
     returns a multi-class segmentation map.
 
     Args:
@@ -388,13 +397,13 @@ class LViT(nn.Module):
         self.up_vit3 = _VisionTransformer(img_size=28, channel_num=512,
                                           patch_size=2, embed_dim=512)
 
-        # ---- Reconstruction modules ----------------------------------------
+        # - - - - 重建 modules - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - / ---- Reconstruction modules ----------------------------------------
         self.reconstruct1 = _Reconstruct(64, 64, kernel_size=1, scale_factor=(16, 16))
         self.reconstruct2 = _Reconstruct(128, 128, kernel_size=1, scale_factor=(8, 8))
         self.reconstruct3 = _Reconstruct(256, 256, kernel_size=1, scale_factor=(4, 4))
         self.reconstruct4 = _Reconstruct(512, 512, kernel_size=1, scale_factor=(2, 2))
 
-        # ---- Text pyramid (upstream's text_module4..1) ---------------------
+        # - - - - Text 金字塔 ( upstream's text _ module4.. 1 ) - - - - - - - - - - - - - - - - - - - - - / ---- Text pyramid (upstream's text_module4..1) ---------------------
         self.text_module4 = nn.Conv1d(text_embed_dim, 512, kernel_size=3, padding=1)
         self.text_module3 = nn.Conv1d(512, 256, kernel_size=3, padding=1)
         self.text_module2 = nn.Conv1d(256, 128, kernel_size=3, padding=1)
@@ -405,6 +414,7 @@ class LViT(nn.Module):
     # ------------------------------------------------------------------
     def forward(self, image, text=None, **kwargs):
         """Forward.
+            前向传播。
 
         Args:
             image: (B, C, 224, 224)
@@ -433,15 +443,15 @@ class LViT(nn.Module):
         x = image.float()
         x1 = self.inc(x)
 
-        # Text pyramid (downsample BERT embedding along channel axis).
-        # ``text`` is (B, L, C); upstream applies a Conv1d that operates over
-        # the channel axis, so we transpose channel/length pairs accordingly.
+        # Text 金字塔 ( 下采样 BERT 嵌入 along 通道 axis ) / Text pyramid (downsample BERT embedding along channel axis).
+        # ` ` text ` ` is ( B, L, C ); upstream 应用 a Conv1d that operates over / ``text`` is (B, L, C); upstream applies a Conv1d that operates over
+        # the 通道 axis, so we 转置 通道 / length pairs accordingly / the channel axis, so we transpose channel/length pairs accordingly.
         text4 = self.text_module4(text.transpose(1, 2)).transpose(1, 2)
         text3 = self.text_module3(text4.transpose(1, 2)).transpose(1, 2)
         text2 = self.text_module2(text3.transpose(1, 2)).transpose(1, 2)
         text1 = self.text_module1(text2.transpose(1, 2)).transpose(1, 2)
 
-        # Down ViT path (text injected only at stage-1).
+        # Down ViT path ( text injected only at 阶段 - 1 ) / Down ViT path (text injected only at stage-1).
         y1 = self.down_vit(x1, x1, text1)
         x2 = self.down1(x1)
         y2 = self.down_vit1(x2, y1, text2)
@@ -457,13 +467,13 @@ class LViT(nn.Module):
         y2 = self.up_vit1(y2, y3, text2, True)
         y1 = self.up_vit(y1, y2, text1, True)
 
-        # Add reconstructed ViT tokens back to CNN features.
+        # Add reconstructed ViT 标记 back to CNN 特征 / Add reconstructed ViT tokens back to CNN features.
         x1 = self.reconstruct1(y1) + x1
         x2 = self.reconstruct2(y2) + x2
         x3 = self.reconstruct3(y3) + x3
         x4 = self.reconstruct4(y4) + x4
 
-        # Decoder.
+        # 解码 / Decoder.
         x = self.up4(x5, x4)
         x = self.up3(x, x3)
         x = self.up2(x, x2)

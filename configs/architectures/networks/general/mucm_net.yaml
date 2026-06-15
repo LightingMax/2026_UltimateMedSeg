@@ -1,5 +1,7 @@
 # MUCM-Net: UCMBlock (Mamba + Shifted MLP) (Skin)
+# MUCM-Net: UCMBlock 分割网络
 # MUCM-Net: UCMBlock (Mamba + Shifted MLP) (Skin)
+# MUCM-Net: UCMBlock 分割网络
 # Domain: skin
 
 model:

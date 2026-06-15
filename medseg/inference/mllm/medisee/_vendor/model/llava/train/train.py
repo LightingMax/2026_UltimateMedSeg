@@ -121,7 +121,7 @@ def maybe_zero_3(param, ignore_status=False, name=None):
     return param
 
 
-# Borrowed from peft.utils.get_peft_model_state_dict
+# Borrowed from peft. utils. get _ peft _ 模型 _ state _ dict / Borrowed from peft.utils.get_peft_model_state_dict
 def get_peft_state_maybe_zero_3(named_params, bias):
     if bias == "none":
         to_return = {k: t for k, t in named_params if "lora_" in k}
@@ -186,7 +186,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
     """Collects the state dict and dump to disk."""
 
     if getattr(trainer.args, "tune_mm_mlp_adapter", False):
-        # Only save Adapter
+        # Only 保存 适配器 / Only save Adapter
         keys_to_match = ["mm_projector"]
         if getattr(trainer.args, "use_im_start_end", False):
             keys_to_match.extend(["embed_tokens", "embed_in"])
@@ -230,6 +230,7 @@ def smart_tokenizer_and_embedding_resize(
     model: transformers.PreTrainedModel,
 ):
     """Resize tokenizer and embedding.
+        Resize tokenizer and 嵌入。
 
     Note: This is the unoptimized version that may make your embedding size not be divisible by 64.
     """
@@ -347,11 +348,11 @@ def preprocess_llama_2(
     conv = conversation_lib.default_conversation.copy()
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
 
-    # Apply prompt templates
+    # 应用 prompt templates / Apply prompt templates
     conversations = []
     for i, source in enumerate(sources):
         if roles[source[0]["from"]] != conv.roles[0]:
-            # Skip the first one if it is not from human
+            # 跳跃 the first one if it is not from human / Skip the first one if it is not from human
             source = source[1:]
 
         conv.messages = []
@@ -384,7 +385,7 @@ def preprocess_llama_2(
 
     assert conv.sep_style == conversation_lib.SeparatorStyle.LLAMA_2
 
-    # Mask targets
+    # 掩码 targets / Mask targets
     sep = "[/INST] "
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
@@ -433,11 +434,11 @@ def preprocess_v1(
     conv = conversation_lib.default_conversation.copy()
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
 
-    # Apply prompt templates
+    # 应用 prompt templates / Apply prompt templates
     conversations = []
     for i, source in enumerate(sources):
         if roles[source[0]["from"]] != conv.roles[0]:
-            # Skip the first one if it is not from human
+            # 跳跃 the first one if it is not from human / Skip the first one if it is not from human
             source = source[1:]
 
         conv.messages = []
@@ -470,7 +471,7 @@ def preprocess_v1(
 
     assert conv.sep_style == conversation_lib.SeparatorStyle.TWO
 
-    # Mask targets
+    # 掩码 targets / Mask targets
     sep = conv.sep + conv.roles[1] + ": "
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
@@ -520,11 +521,11 @@ def preprocess_mpt(
     conv = conversation_lib.default_conversation.copy()
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
 
-    # Apply prompt templates
+    # 应用 prompt templates / Apply prompt templates
     conversations = []
     for i, source in enumerate(sources):
         if roles[source[0]["from"]] != conv.roles[0]:
-            # Skip the first one if it is not from human
+            # 跳跃 the first one if it is not from human / Skip the first one if it is not from human
             source = source[1:]
 
         conv.messages = []
@@ -545,7 +546,7 @@ def preprocess_mpt(
     targets = input_ids.clone()
     assert conv.sep_style == conversation_lib.SeparatorStyle.MPT
 
-    # Mask targets
+    # 掩码 targets / Mask targets
     sep = conv.sep + conv.roles[1]
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
@@ -593,7 +594,7 @@ def preprocess_plain(
     sources: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
 ) -> Dict:
-    # add end signal and concatenate together
+    # add end signal and 拼接 together / add end signal and concatenate together
     conversations = []
     for source in sources:
         assert len(source) == 2
@@ -644,7 +645,7 @@ def preprocess(
         return preprocess_v1(sources, tokenizer, has_image=has_image)
     if conversation_lib.default_conversation.version == "mpt":
         return preprocess_mpt(sources, tokenizer)
-    # add end signal and concatenate together
+    # add end signal and 拼接 together / add end signal and concatenate together
     conversations = []
     for source in sources:
         header = f"{conversation_lib.default_conversation.system}\n\n"
@@ -679,7 +680,8 @@ def preprocess(
 
 
 class LazySupervisedDataset(Dataset):
-    """Dataset for supervised fine-tuning."""
+    """数据集 for supervised fine-tuning。
+        Dataset for supervised fine-tuning."""
 
     def __init__(
         self,
@@ -750,11 +752,11 @@ class LazySupervisedDataset(Dataset):
                 input_ids=data_dict["input_ids"][0], labels=data_dict["labels"][0]
             )
 
-        # image exist in the data
+        # 图像 exist in the 数据 / image exist in the data
         if "image" in self.list_data_dict[i]:
             data_dict["image"] = image
         elif self.data_args.is_multimodal:
-            # image does not exist in the data, but the model is multimodal
+            # 图像 does not exist in the 数据, but the 模型 is multimodal / image does not exist in the data, but the model is multimodal
             crop_size = self.data_args.image_processor.crop_size
             data_dict["image"] = torch.zeros(3, crop_size["height"], crop_size["width"])
         return data_dict
@@ -797,7 +799,8 @@ class DataCollatorForSupervisedDataset(object):
 def make_supervised_data_module(
     tokenizer: transformers.PreTrainedTokenizer, data_args
 ) -> Dict:
-    """Make dataset and collator for supervised fine-tuning."""
+    """Make 数据集 and collator for supervised fine-tuning。
+        Make dataset and collator for supervised fine-tuning."""
     train_dataset = LazySupervisedDataset(
         tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args
     )

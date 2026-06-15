@@ -1,8 +1,8 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This 来源 code is licensed under the license found in the / This source code is licensed under the license found in the
+# LICENSE file in the root directory of this 来源 tree / LICENSE file in the root directory of this source tree.
 
 from typing import Optional, Tuple, Type
 
@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from .common import LayerNorm2d, MLPBlock
 
 
-# This class and its supporting functions below lightly adapted from the ViTDet backbone available at: https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/vit.py # noqa
+# This class and its supporting functions below lightly adapted from the ViTDet 骨干网络 available at: https: / / github. com / facebookresearch / detectron2 / blob / main / detectron2 / modeling / 骨干网络 / vit. py # noqa / This class and its supporting functions below lightly adapted from the ViTDet backbone available at: https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/vit.py # noqa
 class ImageEncoderViT(nn.Module):
     def __init__(
         self,
@@ -66,7 +66,7 @@ class ImageEncoderViT(nn.Module):
 
         self.pos_embed: Optional[nn.Parameter] = None
         if use_abs_pos:
-            # Initialize absolute positional embedding with pretrain image size.
+            # 初始化 绝对的 positional 嵌入 with pretrain 图像 大小 / Initialize absolute positional embedding with pretrain image size.
             self.pos_embed = nn.Parameter(
                 torch.zeros(
                     1, img_size // patch_size, img_size // patch_size, embed_dim
@@ -126,7 +126,8 @@ class ImageEncoderViT(nn.Module):
 
 
 class Block(nn.Module):
-    """Transformer blocks with support of window attention and residual propagation blocks"""
+    """Transformer blocks with support of 窗口 注意力 and 残差 propagation blocks。
+        Transformer blocks with support of window attention and residual propagation blocks"""
 
     def __init__(
         self,
@@ -177,13 +178,13 @@ class Block(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         shortcut = x
         x = self.norm1(x)
-        # Window partition
+        # 窗口 partition / Window partition
         if self.window_size > 0:
             H, W = x.shape[1], x.shape[2]
             x, pad_hw = window_partition(x, self.window_size)
 
         x = self.attn(x)
-        # Reverse window partition
+        # Reverse 窗口 partition / Reverse window partition
         if self.window_size > 0:
             x = window_unpartition(x, self.window_size, pad_hw, (H, W))
 
@@ -194,7 +195,8 @@ class Block(nn.Module):
 
 
 class Attention(nn.Module):
-    """Multi-head Attention block with relative position embeddings."""
+    """Multi-head 注意力 块 with 相对的 position 嵌入。
+        Multi-head Attention block with relative position embeddings."""
 
     def __init__(
         self,
@@ -228,17 +230,17 @@ class Attention(nn.Module):
             assert (
                 input_size is not None
             ), "Input size must be provided if using relative positional encoding."
-            # initialize relative positional embeddings
+            # 初始化 相对的 positional 嵌入 / initialize relative positional embeddings
             self.rel_pos_h = nn.Parameter(torch.zeros(2 * input_size[0] - 1, head_dim))
             self.rel_pos_w = nn.Parameter(torch.zeros(2 * input_size[1] - 1, head_dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, H, W, _ = x.shape
-        # qkv with shape (3, B, nHead, H * W, C)
+        # qkv with 形状 ( 3, B, nHead, H * W, C ) / qkv with shape (3, B, nHead, H * W, C)
         qkv = (
             self.qkv(x).reshape(B, H * W, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
         )
-        # q, k, v with shape (B * nHead, H * W, C)
+        # q, k, v with 形状 ( B * nHead, H * W, C ) / q, k, v with shape (B * nHead, H * W, C)
         q, k, v = qkv.reshape(3, B * self.num_heads, H * W, -1).unbind(0)
 
         attn = (q * self.scale) @ k.transpose(-2, -1)
@@ -331,9 +333,9 @@ def get_rel_pos(q_size: int, k_size: int, rel_pos: torch.Tensor) -> torch.Tensor
         Extracted positional embeddings according to relative positions.
     """
     max_rel_dist = int(2 * max(q_size, k_size) - 1)
-    # Interpolate rel pos if needed.
+    # 插值 rel pos if needed / Interpolate rel pos if needed.
     if rel_pos.shape[0] != max_rel_dist:
-        # Interpolate rel pos.
+        # 插值 rel pos / Interpolate rel pos.
         rel_pos_resized = F.interpolate(
             rel_pos.reshape(1, rel_pos.shape[0], -1).permute(0, 2, 1),
             size=max_rel_dist,

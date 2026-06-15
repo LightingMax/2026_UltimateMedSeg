@@ -1,4 +1,5 @@
 """U-VixLSTM — 2-D Vision-xLSTM segmentation network.
+    U-VixLSTM — 2-D Vision-xLSTM 分割 网络。
 
 Ported from:
     https://github.com/willxxy/2D-U-VixLSTM  (twoDUVixLSTM.py + vLSTM.py)
@@ -50,7 +51,8 @@ def _wang_init_(param: torch.Tensor, dim: int, num_blocks: int):
 
 
 class _DropPath(nn.Sequential):
-    """Stochastic depth per-sample drop-path."""
+    """Stochastic 深度 per-sample drop-path。
+        Stochastic depth per-sample drop-path."""
 
     def __init__(self, *args, drop_prob: float = 0., scale_by_keep: bool = True,
                  stochastic_drop_prob: bool = False):
@@ -100,7 +102,8 @@ class _DropPath(nn.Sequential):
 def _parallel_stabilized_simple(queries, keys, values, igate_preact, fgate_preact,
                                 lower_triangular_matrix=None, stabilize_rowwise=True,
                                 eps=1e-6):
-    """mLSTM cell in parallel form (stabilized)."""
+    """mLSTM 细胞 in 并行的 form ( stabilized )。
+        mLSTM cell in parallel form (stabilized)."""
     B, NH, S, DH = queries.shape
     _dtype, _device = queries.dtype, queries.device
 
@@ -331,7 +334,7 @@ class _ViLBlock(nn.Module):
 
 
 # ============================================================================
-# Encoder / Decoder (from upstream twoDUVixLSTM.py)
+# Encoder / 解码器 / Encoder / Decoder (from upstream twoDUVixLSTM.py)
 # ============================================================================
 
 
@@ -360,7 +363,8 @@ class _EncoderBottleneck(nn.Module):
 
 
 class _Encoder(nn.Module):
-    """ResNet-stem + VisionLSTM blocks encoder."""
+    """ResNet-stem + VisionLSTM blocks 编码器。
+        ResNet-stem + VisionLSTM blocks encoder."""
 
     def __init__(self, img_dim, in_channels, out_channels,
                  depth=24, dim=1024, drop_path_rate=0.0,
@@ -374,8 +378,8 @@ class _Encoder(nn.Module):
         self.encoder2 = _EncoderBottleneck(out_channels * 2, out_channels * 4)
         self.encoder3 = _EncoderBottleneck(out_channels * 4, out_channels * 8)
 
-        # Feed encoder output directly to ViL blocks (no patch_embed)
-        # to preserve channel count (out_channels * 8) == dim.
+        # Feed 编码器 / Feed encoder output directly to ViL blocks (no patch_embed)
+        # to preserve 通道 count ( out _ 通道 * 8 ) = = dim / to preserve channel count (out_channels * 8) == dim.
         self.conv2 = nn.Conv2d(out_channels * 8, dim, 3, stride=1, padding=1)
         self.norm2 = nn.BatchNorm2d(dim)
         self.alternation = alternation
@@ -399,7 +403,7 @@ class _Encoder(nn.Module):
             for i in range(depth)
         ])
         self.norm = nn.LayerNorm(dim, eps=1e-6)
-        # Spatial resolution after encoder: img_dim / 16
+        # Spatial resolution after 编码器 / Spatial resolution after encoder: img_dim / 16
         self.spatial_size_div = 16
         self.feat_dim = dim
 
@@ -409,7 +413,7 @@ class _Encoder(nn.Module):
         x2 = self.encoder1(x1)
         x3 = self.encoder2(x2)
         x = self.encoder3(x3)
-        # Project to dim channels, then reshape to sequence for ViL blocks
+        # Project to dim 通道, then 重塑 to 序列 for ViL blocks / Project to dim channels, then reshape to sequence for ViL blocks
         x = self.relu(self.norm2(self.conv2(x)))
         H = x.shape[2]
         x = einops.rearrange(x, "b c h w -> b (h w) c")
@@ -445,8 +449,8 @@ class _Decoder(nn.Module):
         super().__init__()
         if dim is None:
             dim = out_channels * 8
-        # ViL output: dim channels; skip x3: out_channels*4 channels
-        # After concat: dim + out_channels*4
+        # ViL output: dim channels; 跳跃连接 / ViL output: dim channels; skip x3: out_channels*4 channels
+        # After concat: dim + out _ 通道 * 4 / After concat: dim + out_channels*4
         self.decoder1 = _DecoderBottleneck(dim + out_channels * 4, out_channels * 2)
         self.decoder2 = _DecoderBottleneck(out_channels * 4, out_channels)
         self.decoder3 = _DecoderBottleneck(out_channels * 2, out_channels // 2)
@@ -462,12 +466,13 @@ class _Decoder(nn.Module):
 
 
 # ============================================================================
-# Public model
+# Public 模型 / Public model
 # ============================================================================
 
 
 class UVixLSTM(nn.Module):
     """2-D U-VixLSTM segmentation network.
+        2-D U-VixLSTM 分割 网络。
 
     Ported from ``willxxy/2D-U-VixLSTM`` (twoDUVixLSTM.py + vLSTM.py).
     Uses a ResNet-stem encoder followed by VisionLSTM (mLSTM) blocks,
@@ -481,7 +486,7 @@ class UVixLSTM(nn.Module):
                  out_channels=64, depth=12, dim=None,
                  drop_path_rate=0.0, **kwargs):
         super().__init__()
-        # dim must equal out_channels*8 to match encoder output channels
+        # dim must equal out_channels*8 to match 编码器 / dim must equal out_channels*8 to match encoder output channels
         if dim is None:
             dim = out_channels * 8
         self.encoder = _Encoder(

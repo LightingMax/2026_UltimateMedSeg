@@ -1,4 +1,5 @@
 """Performer (FAVOR+) linear-attention encoder.
+    Performer (FAVOR+) linear-attention 编码器。
 
 Extracted from `medseg.models.networks.other.performer_unet`. Follows the standard
 encoder interface used by the rest of the codebase:
@@ -25,10 +26,11 @@ from medseg.registry import ENCODER_REGISTRY
 
 
 # ---------------------------------------------------------------------------
-# FAVOR+ random-feature linear attention
+# FAVOR + random-feature linear 注意力 / FAVOR+ random-feature linear attention
 # ---------------------------------------------------------------------------
 class _FavorAttention(nn.Module):
-    """Multi-head FAVOR+ linear attention with fixed random projection."""
+    """Multi-head FAVOR + linear 注意力 with fixed random projection。
+        Multi-head FAVOR+ linear attention with fixed random projection."""
 
     def __init__(self, dim: int, num_heads: int, num_features: int = 64,
                  qkv_bias: bool = True, proj_drop: float = 0.0):
@@ -43,7 +45,7 @@ class _FavorAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-        # Fixed random Gaussian projection W: (num_heads, m, head_dim)
+        # Fixed random Gaussian projection W: ( num _ heads, m, 头部 _ dim ) / Fixed random Gaussian projection W: (num_heads, m, head_dim)
         w = torch.randn(num_heads, num_features, self.head_dim)
         for h in range(num_heads):
             q, _ = torch.linalg.qr(torch.randn(max(num_features, self.head_dim),
@@ -82,7 +84,7 @@ class _FavorAttention(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# MLP and Performer block
+# MLP and Performer 块 / MLP and Performer block
 # ---------------------------------------------------------------------------
 class _Mlp(nn.Module):
     def __init__(self, in_features: int, hidden_features: int, drop: float = 0.0):
@@ -113,10 +115,11 @@ class _PerformerBlock(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Patch embed / patch merging
+# 图块 embed / 图块 merging / Patch embed / patch merging
 # ---------------------------------------------------------------------------
 class _PatchEmbed(nn.Module):
-    """Stride-4 patch embedding (Conv stem)."""
+    """步长 - 4 图块 嵌入 ( Conv 主干 )。
+        Stride-4 patch embedding (Conv stem)."""
 
     def __init__(self, in_channels: int, embed_dim: int, patch_size: int = 4):
         super().__init__()
@@ -134,7 +137,8 @@ class _PatchEmbed(nn.Module):
 
 
 class _PatchMerging(nn.Module):
-    """Halves spatial resolution, doubles channels (controlled by out_dim)."""
+    """Halves 空间的 分辨率, doubles 通道 ( controlled by out _ dim )。
+        Halves spatial resolution, doubles channels (controlled by out_dim)."""
 
     def __init__(self, in_dim: int, out_dim: int):
         super().__init__()
@@ -163,7 +167,7 @@ class _PatchMerging(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Stage = stack of Performer blocks
+# 阶段 = stack of Performer blocks / Stage = stack of Performer blocks
 # ---------------------------------------------------------------------------
 class _PerformerStage(nn.Module):
     def __init__(self, dim: int, depth: int, num_heads: int,
@@ -183,11 +187,12 @@ class _PerformerStage(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Encoder
+# 编码器 / Encoder
 # ---------------------------------------------------------------------------
 @ENCODER_REGISTRY.register("performer")
 class PerformerEncoder(nn.Module):
     """Performer / FAVOR+ kernel linear-attention encoder (Choromanski 2021).
+        Performer / FAVOR+ kernel linear-attention 编码器。
 
     4-stage hierarchical encoder mirroring the PerformerUNet wrapper. Returns
     multi-scale BCHW feature maps at strides 4, 8, 16, 32, shallowest first
@@ -199,7 +204,7 @@ class PerformerEncoder(nn.Module):
     def __init__(self, in_channels: int = 3, img_size: int = 224,
                  pretrained: bool = False, num_features: int = 64, **kwargs):
         super().__init__()
-        # pretrained is a no-op for this from-scratch encoder.
+        # pretrained is a no-op for this from-scratch 编码器 / pretrained is a no-op for this from-scratch encoder.
         del pretrained
 
         self.in_channels = in_channels
@@ -213,8 +218,8 @@ class PerformerEncoder(nn.Module):
         self.depths = depths
         self.out_channels = list(dims)
 
-        # 1x1 conv to map arbitrary input channel count to 3 before the
-        # standard patch-embed stem.
+        # 1x1 conv to 映射 arbitrary 输入 通道 count to 3 before the / 1x1 conv to map arbitrary input channel count to 3 before the
+        # 标准 patch-embed 主干 / standard patch-embed stem.
         if in_channels != 3:
             self.input_proj = nn.Conv2d(in_channels, 3, kernel_size=1, bias=True)
             stem_in_channels = 3
@@ -255,8 +260,8 @@ class PerformerEncoder(nn.Module):
 
         x = self.input_proj(x)
 
-        # Pad to a multiple of 32 so 3 patch-merging steps (over a stride-4
-        # patch embed) divide evenly.
+        # Pad to a multiple of 32 so 3 patch-merging steps ( over a 步长 - 4 / Pad to a multiple of 32 so 3 patch-merging steps (over a stride-4
+        # 图块 embed ) divide evenly / patch embed) divide evenly.
         pad_mult = 32
         pad_h = (pad_mult - H_in % pad_mult) % pad_mult
         pad_w = (pad_mult - W_in % pad_mult) % pad_mult
@@ -268,8 +273,8 @@ class PerformerEncoder(nn.Module):
         feats: List[torch.Tensor] = []
         for i in range(4):
             x = self.enc_stages[i](x)
-            # Reshape token sequence (B, N, C) -> (B, C, H, W) for the
-            # standard encoder interface.
+            # 重塑 标记 序列 ( B, N, C ) - > ( B, C, H, W ) for the / Reshape token sequence (B, N, C) -> (B, C, H, W) for the
+            # standard 编码器 / standard encoder interface.
             feat = x.transpose(1, 2).reshape(B, self.dims[i], H, W).contiguous()
             feats.append(feat)
             if i < 3:

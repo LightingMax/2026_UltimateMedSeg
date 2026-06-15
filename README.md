@@ -1,5 +1,9 @@
-<div align="center">
-  <img src="figs/logo.png" alt="UltimateMedSeg Logo" width="500"/>
+﻿<div align="center">
+  <img src="figs/logo.png" alt="APRIL-MedSeg Logo" width="500"/>
+  <p>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache 2.0"/></a>
+    <a href=""><img src="https://img.shields.io/badge/arXiv-Paper-b31b1b.svg" alt="arXiv"/></a>
+  </p>
   <p>
     <strong>Juntao Jiang</strong>,
     <strong>Jinsheng Bai</strong>,
@@ -14,12 +18,20 @@
   </p>
 </div>
 
-> **128** networks · **169** encoders · **40** decoders · **88** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **876** YAML configs · switch anything with one line of YAML
+> **146** networks · **178** encoders · **45** decoders · **89** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **921** YAML configs · switch anything with one line of YAML
+
+---
+
+## 📰 Updates
+
+- **2026.06.15** — The project has been officially renamed to **APRIL-MedSeg**, named after the [APRIL Lab](https://april.zju.edu.cn/) at Zhejiang University (led by Prof. Yong Liu).
+- **2026.06.11** — **UltimateMedSeg** is officially released!
 
 ---
 
 ## 📑 Table of Contents
 
+- [Updates](#updates)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Tutorial](#tutorial)
@@ -43,8 +55,8 @@
 ### Basic Installation
 
 ```bash
-git clone https://github.com/juntaoJianggavin/UltimateMedSeg.git
-cd UltimateMedSeg
+git clone https://github.com/juntaoJianggavin/APRIL-MedSeg.git
+cd APRIL-MedSeg
 
 # Install dependencies
 pip install -r requirements.txt
@@ -74,20 +86,56 @@ pip install causal-conv1d
 pip install mamba-ssm
 ```
 
+### Pretrained Weights & Transfer Learning
+
+Three levels of weight loading, from lightest to heaviest:
+
+| Method | YAML Key | Scope | Use Case |
+|---|---|---|---|
+| Encoder pretrained | `encoder.pretrained: true` | Backbone only | ImageNet / domain-specific backbone weights |
+| Manual pretrained path | `encoder.pretrained_path: /path/to/weights.pth` | Backbone only | Offline / custom backbone checkpoint |
+| Transfer learning | `model.transfer_learning_path: /path/to/full_model.pth` | Entire network | Load full model (encoder+decoder+bottleneck+head) from a previous training run |
+
+```yaml
+model:
+  # Full-model transfer learning (loads AFTER encoder pretrained, takes priority)
+  transfer_learning_path: null  # or /path/to/checkpoint.pth
+
+  encoder:
+    name: timm_resnet50
+    pretrained: true              # auto-download ImageNet backbone weights
+    pretrained_path: null         # or /path/to/backbone.pth (manual override)
+```
+
+> **Note**: Models requiring specific pretrained weights (**43** architectures in `REQUIRES_PRETRAINED`) will display a 10-second warning when `pretrained: false`. All auto-downloadable weights support manual path override via `pretrained_path` or `transfer_learning_path`.
+
+#### Pretrained Weight Sources (3 Categories)
+
+| Category | Mechanism | Models |
+|---|---|---|
+| **A. WEIGHT_REGISTRY auto-download** | `ensure_weight()` with GitHub/GCS/HF sources | swinunet, h2former, hiformer, transunet, vm_unet, rwkv_unet (B/S/T), cswin_unet, da_transunet, mamba_unet, fcbformer, transnuseg |
+| **B. timm / torchvision runtime** | `pretrained: true` triggers built-in download | segformer_b0–b5, esfpnet, cascade, emcad, polyp_pvt, fatnet, transfuse, mist, hsnet, ssformer, ldnet, dconnnet, cfanet, lv_unet, nulite, polyper |
+| **C. SAM family** | `pretrained: true` auto-downloads ViT/SAM weights | sam_b, sam_l, mobile_sam, sam2, sam_med2d, samed, samus, auto_sam, lite_medsam, medical_sam_adapter |
+
 ### Automatic Weight Download
 
 ```bash
-# List all auto-downloadable weights
+# List all registered weights and cache status
 python -m medseg.utils.weight_downloader list
 
-# Download specific weights
+# Download a specific weight (auto-retries all sources)
 python -m medseg.utils.weight_downloader download medsam_vit_b
 
-# Check cache status
+# Check which auto-downloadable weights are present
 python -m medseg.utils.weight_downloader check
 ```
 
-timm encoder weights are downloaded automatically, no manual management needed.
+When all auto-download sources fail, the error message includes:
+- Manual download URL
+- Exact cache path to place the file at
+- Alternative: set `pretrained_path` in YAML to point to a local file
+
+timm encoder weights are downloaded automatically via timm's built-in mechanism.
 
 ---
 <a id="quick-start"></a>
@@ -278,11 +326,11 @@ A step-by-step tutorial series covering deep learning medical image segmentation
 segmentation_tool/
 ├── medseg/                                      # Core framework
 │   ├── models/                                  # Model components
-│   │   ├── encoders/                            #   169 encoders
-│   │   │   ├── cnn/              (12 modules)   #     CNN: basic, ResNet, ConvNeXt, EfficientNet, MedNeXt, MEW, R2U, AttUNet, ...
-│   │   │   ├── transformer/      (18 modules)   #     Transformer: TransUNet, SwinUNet, MISSFormer, DAEFormer, HiFormer, PVTv2, MaxViT, ...
+│   │   ├── encoders/                            #   178 encoders (93 native + 85 timm presets + 1000+ via timm_ prefix)
+│   │   │   ├── cnn/              (11 modules)   #     CNN: basic, DCSAU, CFA, MedNeXt, MEW, R2U, AttUNet, LV, MALU, EGE, HRNet
+│   │   │   ├── transformer/      (17 modules)   #     Transformer: TransUNet, SwinUNet, MISSFormer, DAEFormer, HiFormer, PVTv2, MaxViT, ...
 │   │   │   ├── mamba/            (10 modules)   #     Mamba/SSM: VMUNet, UMamba, LKM, LoG-VMamba, UltraLight-VM, VMKLA, ...
-│   │   │   ├── rwkv/             (4 modules)    #     RWKV: RWKV-UNet, U-RWKV, MD-RWKV, RIR-Zigzag
+│   │   │   ├── rwkv/             (5 modules)    #     RWKV: RWKV-UNet, U-RWKV (MICCAI), U-RWKV (TIP), MD-RWKV, RIR-Zigzag
 │   │   │   ├── linear_attn/      (5 modules)    #     Linear attention: RetNet, Linformer, Performer, TTT, xLSTM
 │   │   │   ├── kan_mlp/          (4 modules)    #     KAN/MLP: UKAN, Rolling-UNet, UNeXt, Wav-KAN
 │   │   │   ├── foundation/       (35 modules)   #     Foundation models (DPT head)
@@ -295,44 +343,47 @@ segmentation_tool/
 │   │   │   │   ├── mllm_vision/  (8)            #       Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, ...
 │   │   │   │   ├── endoscopy/    (1)            #       EndoViT
 │   │   │   │   └── ultrasound/   (3)            #       UltraDINO, UltraFedFM, USF-MAE
-│   │   │   └── wrapper/          (1 module)     #     timm dynamic wrapper (1000+ models, timm_ prefix)
-│   │   ├── decoders/                            #   40 decoders
+│   │   │   └── wrapper/          (1 module)     #     timm dynamic wrapper (85 pre-registered + 1000+ via timm_ prefix)
+│   │   ├── decoders/                            #   45 decoders
 │   │   │   ├── basic/            (4 registered) #     Basic upsampling: UNet, Bilinear, Deconv, DepthwiseSep
 │   │   │   ├── dense/            (2 registered) #     Dense connections: UNet++, UNet3+
 │   │   │   ├── cascade/          (10 registered)#     CASCADE, EMCAD (2 variants), G-CASCADE (2 variants), CFM, MERIT (2 variants), EDLDNet
-│   │   │   ├── attention/        (3 registered) #     Attention Gate, HAM, Lawin
+│   │   │   ├── attention/        (5 registered) #     Attention Gate, HAM, Lawin, OCRNet, CCNet
 │   │   │   ├── transformer/      (5 registered) #     DAEFormer, MTUNet, nnFormer, SwinUNet, UCTransNet
 │   │   │   ├── mlp/              (2 registered) #     SegFormer MLP, MLP Decoder
-│   │   │   ├── specific/         (12 registered)#     TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, ...
+│   │   │   ├── specific/         (14 registered)#     TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, BANet, FF-Parser, ...
 │   │   │   ├── pyramid/          (1 registered) #     UPerNet
 │   │   │   └── mamba/            (1 registered) #     VM-UNet
 │   │   ├── bottlenecks/          (17 modules)   #   17 bottlenecks: none, basic, ASPP, DenseASPP, PPM, Transformer, SE, CBAM, ...
 │   │   ├── skip_connections/                    #   25 skip connections
-│   │   │   ├── basic/            (2 modules)    #     Basic: concat, dense
+│   │   │   ├── basic/            (3 modules)    #     Basic: concat, dense, add
 │   │   │   ├── attention/        (10 modules)   #     Attention: AG, CAB, SAB, SCSE, CBAM, Gating, GRU, GAB, SC-Att, TA-MoSC
 │   │   │   ├── transformer/      (5 modules)    #     Transformer: CrossAttn, TransFusion, AggAttn, MISSFormer, UCTrans
 │   │   │   ├── mamba/            (1 module)     #     Mamba: SK-VM++
 │   │   │   └── fusion/           (6 modules)    #     CNN fusion: BiFusion, Deformable, MultiScale, FeatureRefine, CCM, SDI
-│   │   ├── networks/                            #   128 complete architectures (136 registered, size variants merged)
-│   │   │   ├── cnn/              (35 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, ACC-UNet, CMUNeXt, STUNet, ...
-│   │   │   ├── transformer/      (36 registered)#     Transformer: TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, CTNet, ...
+│   │   ├── networks/                            #   146 complete architectures (145 registered, size variants merged)
+│   │   │   ├── cnn/              (37 registered)#     CNN: UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, STUNet, MEW-UNet, HRNet, ...
+│   │   │   ├── transformer/      (42 registered)#     Transformer: SegFormer B0-B5, TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, SEPNet, ...
 │   │   │   ├── mamba/            (25 registered)#     Mamba: VMUNet, UMamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
 │   │   │   ├── sam/              (12 registered)#     SAM family: MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, ...
-│   │   │   ├── rwkv/             (4 registered) #     RWKV: U-RWKV, RWKV-UNet, MD-RWKV, RIR-Zigzag
-│   │   │   ├── kan_mlp/          (7 registered) #     KAN/MLP: UKAN, Rolling-UNet (4 variants), UNeXt, Wav-KAN
-│   │   │   └── linear_attn/      (4 registered) #     Linear attention: TTT-UNet, xLSTM-UNet (2 variants), U-VixLSTM
+│   │   │   ├── rwkv/             (5 registered) #     RWKV: U-RWKV (MICCAI 2025), U-RWKV (TIP 2026), RWKV-UNet, MD-RWKV, RIR-Zigzag
+│   │   │   ├── kan_mlp/          (9 registered) #     KAN/MLP: RollingUNet (4 variants), UNeXt, UKAN, Wav-KAN, xLSTM-UNet (2 variants)
+│   │   │   └── linear_attn/      (2 registered) #     Linear attention: TTT-UNet, U-VixLSTM
 │   │   └── text_unet/            (13 modules)   #   Text-guided: CRIS, BiomedParse, LanGuideMedSeg, LViT, TGANet, TPRO, ...
 │   ├── training/                                # Training paradigms
-│   │   ├── semi/                 (23 modules)   #   21 semi-supervised: MeanTeacher, CPS, UniMatch, FixMatch, SSL4MIS-U, CorrMatch, ...
+│   │   ├── semi/                 (23 modules)   #   21 semi-supervised methods + 2 utils (base, utils)
+│   │   │                                        #     MeanTeacher, CPS, UniMatch, FixMatch, SSL4MIS-U, CorrMatch, AllSpark, ...
 │   │   ├── domain_adaptation/    (18 modules)   #   18 domain adaptation: AdvEnt, DANN, TENT, FDA, MIC, HRDA, SePiCo, ...
 │   │   ├── distillation/         (28 modules)   #   27 distillation: VanillaKD, DKD, MGD, DIST, CWD, ReviewKD, SimKD, NORM, ...
-│   │   └── weakly_supervised/    (28 modules)   #   28 weakly supervised: Box, CAM, Point, Scribble, SEAM, PuzzleCAM, EPS, ...
+│   │   └── weakly_supervised/    (28 modules)   #   28 weakly supervised methods (CAM, SEAM, PuzzleCAM, GatedCRF, TreeEnergy, ...)
 │   ├── inference/                               # Inference
-│   │   └── mllm/                 (16 modules)   #   MLLM pipeline: 5 detector × 4 segmenter = 20 combinations
-│   │       │                                    #     Detector: GroundingDINO, Qwen2/2.5/3-VL, InternVL
+│   │   ├── ensemble.py                          #   Ensemble inference (multi-model voting)
+│   │   ├── tta.py                               #   Test-time augmentation
+│   │   └── mllm/                 (16 modules)   #   MLLM pipeline: 9 detector × 4 segmenter = 36 combinations
+│   │       │                                    #     Detector: GroundingDINO, Qwen2/2.5/3-VL, InternVL, LLaVA, MiniCPM-V, Phi3-V, CogVLM
 │   │       │                                    #     Segmenter: SAM2, MedSAM, SAM-Med2D, LiteMedSAM
 │   │       └── medisee/          (3 modules)    #     MediSee: LLM reasoning segmenter
-│   ├── losses/                   (15 modules)   # 88 losses
+│   ├── losses/                   (15 modules)   # 89 losses
 │   │                                            #   Supervised: CE, Dice, Focal, Tversky, Lovász, Boundary, Hausdorff, ...
 │   │                                            #   Distillation: VanillaKD, DKD, CWD, MGD, DIST, AT, RKD, ...
 │   │                                            #   Domain adaptation: AdvEnt, DANN, FDA, MIC, TENT, ...
@@ -340,7 +391,7 @@ segmentation_tool/
 │   ├── datasets/                 (10 modules)   # Data loading: Synapse, ACDC, Generic, QaTa-COV19, MosMedData+, 24 augmentations
 │   │   ├── advanced_aug.py                      #   24 advanced augmentations (YAML configurable)
 │   │   └── transforms.py                        #   Basic transforms (Resize, ToTensor, Normalize)
-│   ├── utils/                    (8 modules)    # Utilities
+│   ├── utils/                    (11 modules)   # Utilities
 │   │   ├── amp_ddp.py                           #   AMP mixed precision + DDP distributed + DataParallel
 │   │   ├── logger.py                            #   TensorBoard / WandB unified logging
 │   │   ├── config.py                            #   Config inheritance (_base_ field support)
@@ -348,7 +399,10 @@ segmentation_tool/
 │   │   ├── augmentation.py                      #   Augmentation builder (basic/albumentations/pipeline)
 │   │   ├── reproducibility.py                   #   Reproducibility (global seed + cuDNN deterministic)
 │   │   ├── weight_downloader.py                 #   Automatic weight download + manual URL hints
-│   │   └── metrics.py                           #   Evaluation metrics: Dice, IoU, HD95, NSD
+│   │   ├── metrics.py                           #   Evaluation metrics: Dice, IoU, HD95, NSD
+│   │   ├── hf_hub.py                            #   HuggingFace Hub model/dataset download
+│   │   ├── timm_compat.py                       #   timm version compatibility utilities
+│   │   └── timm_pretrained.py                   #   timm pretrained weight management
 │   ├── text_guided.py                           # Text-guided segmentation (CRIS, BiomedParse, LanGuideMedSeg, ...)
 │   ├── model_builder.py                         # YAML → model auto-assembler
 │   └── registry.py                              # 6 registries: ENCODER / DECODER / SKIP / BOTTLENECK / LOSS / AUGMENTATION
@@ -362,21 +416,21 @@ segmentation_tool/
 │   └── logo.png                                 #   Project logo
 ├── examples/                                    # Usage examples
 │   └── grounding_dino_example.py                #   GroundingDINO detection example
-├── configs/                      (876 yamls)    # YAML configs
-│   ├── architectures/            (749 yamls)    #   Network architecture configs
-│   │   ├── networks/             (281 yamls)    #     Complete networks (128 arch across general/acdc/synapse)
-│   │   ├── combinations/         (167 yamls)    #     Encoder+decoder free combinations
-│   │   ├── decoder_study/        (121 yamls)    #     Decoder ablation (3 enc × 40 dec)
+├── configs/                      (921 yamls)    # YAML configs
+│   ├── architectures/            (791 yamls)    #   Network architecture configs
+│   │   ├── networks/             (307 yamls)    #     Complete networks (146 arch across general/acdc/synapse)
+│   │   ├── combinations/         (171 yamls)    #     Encoder+decoder free combinations
+│   │   ├── decoder_study/        (133 yamls)    #     Decoder ablation (3 enc × 45 dec)
 │   │   ├── skip_study/           (75 yamls)     #     Skip ablation (3 enc × 25 skip)
 │   │   ├── bottleneck_study/     (51 yamls)     #     Bottleneck ablation (3 enc × 17 bn)
 │   │   └── foundation/           (54 yamls)     #     Foundation models (9 modalities × 35 encoders)
-│   ├── training_paradigms/       (99 yamls)     #   Training paradigm configs
+│   ├── training_paradigms/       (100 yamls)    #   Training paradigm configs
 │   │   ├── semi_supervision/     (21 yamls)     #     Semi-supervised (21 methods)
 │   │   ├── domain_adaptation/    (18 yamls)     #     Domain adaptation (18 methods)
 │   │   ├── distillation/         (22 yamls)     #     Distillation (27 methods)
 │   │   ├── text_guided/          (19 yamls)     #     Text-guided (13 models + pipeline)
-│   │   └── weak_supervision/     (19 yamls)     #     Weakly supervised (28 methods)
-│   ├── intro_to_datasets/        (25 yamls)     #   25 dataset introductions + example configs
+│   │   └── weak_supervision/     (20 yamls)     #     Weakly supervised (28 methods)
+│   ├── intro_to_datasets/        (27 yamls)     #   27 dataset introductions + example configs
 │   └── experiments/                             #   Experiment configs
 ├── scripts/                                     # Utility + experiment scripts
 │   ├── experiments/              (14 scripts)   #   Experiment bash scripts
@@ -401,12 +455,12 @@ segmentation_tool/
 │   ├── gen_standalone_yamls.py                  #   Generate standalone model YAML configs
 │   ├── prepare_qata_mosmed.py                   #   QaTa-COV19 / MosMedData+ dataset validation
 │   └── visualize.py                             #   Prediction visualization (input + pred + overlay)
-├── docs/                         (36 docs)      # Detailed documentation
+├── docs/                         (51 docs)      # Detailed documentation
 │   ├── tutorial/                 (21 files)     #   Step-by-step tutorial (01-09, EN+CN, README, complete_guide)
 │   ├── models/                                  #   Model docs: overview, networks, encoders, decoders, skip, bottleneck
 │   ├── paradigms/                               #   Paradigm docs: infrastructure, semi, weak, DA, distillation, text-guided
 │   ├── deployment/                              #   Deployment docs: ONNX, FLOPs, params, FPS
-│   ├── data/                                    #   Data docs: 25 datasets, 5 types, 4 split modes
+│   ├── data/                                    #   Data docs: 26 datasets, 5 types, 4 split modes
 │   └── research_guide.md                        #   Research guide: 8 directions + 14 experiment scripts
 ├── train.py                                     # Supervised training (AMP + DDP + DataParallel + Logger + Warmup)
 ├── semi_train.py                                # Semi-supervised training (21 methods)
@@ -426,22 +480,26 @@ segmentation_tool/
 ## 🧩 Model Components
 > Detailed docs: [docs/models/](docs/models/README.md)
 
-### Complete Networks — 128
+### Complete Networks — 146
 
 | Category | Count | Examples |
 |---|---|---|
-| CNN | 35 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, ACC-UNet, CMUNeXt |
-| Transformer | 35 | TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
-| Mamba / SSM | 24 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
-| SAM family | 10 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM |
-| KAN / MLP | 4 | U-KAN, Rolling-UNet, UNeXt, Wav-KAN |
-| Linear Attention | 3 | TTT-UNet, xLSTM-UNet, U-VixLSTM |
-| RWKV | 4 | U-RWKV, RWKV-UNet, MD-RWKV-UNet, RIR-Zigzag |
+| CNN | 37 | UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, STUNet, MEW-UNet, HRNet |
+| Transformer | 42 | SegFormer B0-B5, TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
+| Mamba / SSM | 25 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
+| SAM family | 12 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, LiteMedSAM, SAMMed2DWrapper |
+| KAN / MLP | 9 | RollingUNet (4 variants), UNeXt, U-KAN, Wav-KAN, xLSTM-UNet (2 variants) |
+| Linear Attention | 2 | TTT-UNet, U-VixLSTM |
+| RWKV | 5 | U-RWKV (MICCAI 2025), U-RWKV (TIP 2026), RWKV-UNet, MD-RWKV-UNet, RIR-Zigzag |
 | Text-guided | 13 | CRIS, BiomedParse, LanGuideMedSeg, LViT, TGANet, TPRO, CausalCLIPSeg |
 
 > Full list: [docs/models/networks.md](docs/models/networks.md)
 
-### Encoders — 169
+> **Note on U-RWKV disambiguation:** Two distinct networks share the "U-RWKV" name:
+> - `u_rwkv` — **MICCAI 2025**: Direction-Adaptive RWKV Module (DARM) + Stage-Adaptive Squeeze-and-Excitation (SASE), lightweight design with RWKV integrated within conv stages. Source: [hbyecoding/U-RWKV](https://github.com/hbyecoding/U-RWKV)
+> - `u_rwkv_tip` — **IEEE TIP 2026**: Standard U-Net + post-conv RWKV attention blocks with OmniShift multi-scale conv, originally for volumetric segmentation. Source: [Yaziwel/Restore-RWKV](https://github.com/Yaziwel/Restore-RWKV)
+
+### Encoders — 178
 
 **Highlight: 35 foundation model encoders covering 9 medical modalities**
 
@@ -469,17 +527,17 @@ encoder:
 
 > Full list: [docs/models/encoders.md](docs/models/encoders.md)
 
-### Decoders — 40
+### Decoders — 45
 
 | Category | Count | Examples |
 |---|---|---|
 | Basic (upsampling) | 4 | UNet, Bilinear, Deconv, DepthwiseSep |
 | Dense (connections) | 2 | UNet++, UNet3+ |
 | Cascade | 10 | CASCADE, EMCAD (2 variants), G-CASCADE (2 variants), CFM, MERIT (2 variants), EDLDNet |
-| Attention | 3 | Attention Gate, HAM, Lawin |
+| Attention | 5 | Attention Gate, HAM, Lawin, OCRNet, CCNet |
 | Transformer | 5 | DAEFormer, MTUNet, SwinUNet, nnFormer, UCTransNet |
 | MLP | 2 | SegFormer MLP, MLP Decoder |
-| Specific (network) | 12 | TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, ... |
+| Specific (network) | 15 | TransUNet CUP, HiFormer, H2Former, MISSFormer, ScaleFormer, FAT-Net, MALUNet, EGE-UNet, DeepLabV3, BANet, FF-Parser, ... |
 | Mamba | 1 | VM-UNet |
 | Pyramid | 1 | UPerNet |
 
@@ -577,9 +635,9 @@ Vanilla KD · FitNets · AT · FSP · NST · RKD · VID · DKD · MGD · DIST ·
 
 > Details: [docs/paradigms/distillation.md](docs/paradigms/distillation.md)
 
-### Weakly Supervised — 28 Methods
+### Weakly Supervised — 29 Methods
 
-Box · CAM · Point · Scribble · MIL · EM · GatedCRF · TreeEnergy · SEAM · PuzzleCAM · AdvCAM · EPS · BoxInst · ReCAM · ToCo · LPCAM · MARS · BACoN · WPGSeg · DuPL · MoRe · PSDPM · SemPLeS
+Box · CAM · MIL · EM · Point · Scribble · GatedCRF · Affinity · TreeEnergy · SEAM · PuzzleCAM · AdvCAM · MCTformer · SAMGuidedWeak · fBRS · iSeg · ClickSupervision · EPS · BoxInst · ReCAM · ToCo · LPCAM · MARS · BACoN · WPGSeg · DuPL · MoRe · PSDPM · SemPLeS
 
 > Details: [docs/paradigms/weakly_supervised.md](docs/paradigms/weakly_supervised.md)
 
@@ -587,8 +645,8 @@ Box · CAM · Point · Scribble · MIL · EM · GatedCRF · TreeEnergy · SEAM �
 
 **Trainable models**: CRIS · BiomedParse · LanGuideMedSeg · LViT · TGANet · TPRO · CausalCLIPSeg · CLIP-Universal · CXR-CLIP-Seg · TP-DRSeg · MedCLIP-SAM · SaLIP · MediSee
 
-**Inference Pipeline** (5 detector × 4 segmenter = 20 combinations):
-- Detector: GroundingDINO · Qwen2-VL · Qwen2.5-VL · Qwen3-VL · InternVL
+**Inference Pipeline** (9 detector × 4 segmenter = 36 combinations):
+- Detector: GroundingDINO · Qwen2-VL · Qwen2.5-VL · Qwen3-VL · InternVL · LLaVA · MiniCPM-V · Phi3-V · CogVLM
 - Segmenter: SAM2 · MedSAM · SAM-Med2D · LiteMedSAM
 
 > Details: [docs/paradigms/text_guided.md](docs/paradigms/text_guided.md)
@@ -656,7 +714,7 @@ data:
   fold_idx: 0
 ```
 
-### Included Datasets (25)
+### Included Datasets (26)
 
 **Skin**: ISIC 2016/2017/2018, PH2
 **Polyp**: CVC-ClinicDB, CVC-ColonDB, Kvasir-SEG
@@ -712,9 +770,11 @@ training:
 model:
   num_classes: 9
   img_size: 224
+  transfer_learning_path: null   # full-model checkpoint for transfer learning
   encoder:
     name: timm_resnet50
     pretrained: true
+    pretrained_path: null         # manual backbone checkpoint override
     in_channels: 3
   decoder:
     name: unet
@@ -830,11 +890,11 @@ After registration and import in `__init__.py`, use via `name: my_encoder` in YA
 <a id="citation--license"></a>
 ## 📜 Citation & License
 ```bibtex
-@software{ultimatemedseg_2026,
-  title  = {UltimateMedSeg: A Modern Modular 2D Medical Image Segmentation Toolbox},
+@software{APRIL-MedSeg_2026,
+  title  = {APRIL-MedSeg: A Modern Modular 2D Medical Image Segmentation Toolbox},
   author = {Juntao Jiang and Jinsheng Bai and Linxuan Fan and Yali Bi and Jiangning Zhang and Yong Liu},
   year   = {2026},
-  url    = {https://github.com/juntaoJianggavin/UltimateMedSeg},
+  url    = {https://github.com/juntaoJianggavin/APRIL-MedSeg},
 }
 ```
 

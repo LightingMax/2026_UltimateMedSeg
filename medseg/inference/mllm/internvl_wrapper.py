@@ -1,4 +1,5 @@
 """InternVL grounding wrapper.
+    InternVL grounding 封装器。
 
 # Reference: https://github.com/OpenGVLab/InternVL
 # Reference: https://huggingface.co/OpenGVLab/InternVL2_5-8B
@@ -82,7 +83,7 @@ class InternVLGrounder(MLLMGrounder):
             )
             logger.info(f"InternVL loaded: {self.model_id} on {self.device}")
         except Exception:
-            # Strict: no mock fallback on load failure.
+            # Strict: no mock fallback on 加载 failure / Strict: no mock fallback on load failure.
             raise
 
     # ------------------------------------------------------------

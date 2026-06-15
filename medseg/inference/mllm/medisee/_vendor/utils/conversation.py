@@ -34,9 +34,9 @@ class Conversation:
     sep_style: SeparatorStyle
     sep: str
     sep2: str = None
-    # Stop criteria (the default one is EOS token)
+    # Stop criteria ( the 默认值 one is EOS 标记 ) / Stop criteria (the default one is EOS token)
     stop_str: str = None
-    # Stops generation if meeting any token in this list
+    # Stops generation if meeting any 标记 in this list / Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
 
     # Used for the state in the gradio servers.
@@ -144,7 +144,7 @@ class Conversation:
         }
 
 
-# A template with one conversation example
+# A template with one conversation 示例 / A template with one conversation example
 conv_one_shot = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
     "The assistant gives helpful, detailed, and polite answers to the human's questions.",
@@ -195,7 +195,7 @@ conv_vicuna_v1_1 = Conversation(
     sep2="</s>",
 )
 
-# Koala default template
+# Koala 默认值 template / Koala default template
 conv_koala_v1 = Conversation(
     system="BEGINNING OF CONVERSATION:",
     roles=("USER", "GPT"),
@@ -206,7 +206,7 @@ conv_koala_v1 = Conversation(
     sep2="</s>",
 )
 
-# Dolly V2 default template
+# Dolly V2 默认值 template / Dolly V2 default template
 conv_dolly = Conversation(
     system="Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
     roles=("### Instruction", "### Response"),
@@ -217,7 +217,7 @@ conv_dolly = Conversation(
     sep2="### End",
 )
 
-# OpenAssistant Pythia default template
+# OpenAssistant Pythia 默认值 template / OpenAssistant Pythia default template
 conv_oasst = Conversation(
     system="",
     roles=("<|prompter|>", "<|assistant|>"),
@@ -227,7 +227,7 @@ conv_oasst = Conversation(
     sep="<|endoftext|>",
 )
 
-# StableLM Alpha default template
+# StableLM Alpha 默认值 template / StableLM Alpha default template
 conv_stablelm = Conversation(
     system="""<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
@@ -243,7 +243,7 @@ conv_stablelm = Conversation(
     stop_token_ids=[50278, 50279, 50277, 1, 0],
 )
 
-# Baize default template
+# Baize 默认值 template / Baize default template
 conv_baize = Conversation(
     system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
     roles=("[|Human|]", "[|AI|]"),
@@ -257,7 +257,7 @@ conv_baize = Conversation(
     stop_str="[|Human|]",
 )
 
-# RWKV-4-Raven default template
+# RWKV - 4-Raven 默认值 template / RWKV-4-Raven default template
 conv_rwkv = Conversation(
     system="",
     roles=("Bob", "Alice"),

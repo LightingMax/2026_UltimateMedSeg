@@ -1,4 +1,4 @@
-"""KAN / MLP encoders (UKAN, Rolling-UNet, UNeXt, etc.)."""
+"""KAN/MLP编码器 / KAN / MLP encoders."""
 
 import sys as _sys
 
