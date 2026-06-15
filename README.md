@@ -21,7 +21,7 @@
 > **132** networks · **178** encoders · **45** decoders · **89** losses · **25** skip connections · **17** bottlenecks · **6** training paradigms · **24** augmentations · **921** YAML configs · switch anything with one line of YAML
 
 ---
-
+<a id="updates"></a>
 ## 📰 Updates
 
 - **2026.06.15** — The project has been officially renamed to **APRIL-MedSeg**, named after the [APRIL Lab](https://april.zju.edu.cn/) at Zhejiang University (led by Prof. Yong Liu).
