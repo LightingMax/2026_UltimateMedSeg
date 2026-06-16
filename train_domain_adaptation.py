@@ -91,11 +91,17 @@ def build_source_dataset(data_cfg, img_size=224):
             img_size=img_size,
         )
     elif dataset_type in ('image_mask', 'binary'):
+        image_dir = source_cfg.get('image_dir')
+        mask_dir = source_cfg.get('mask_dir')
+        root_dir = source_cfg.get('root_dir', source_cfg.get('train_dir'))
+        if image_dir and mask_dir:
+            return GenericDataset(
+                image_dir=image_dir, mask_dir=mask_dir,
+                split='train', transform=transform, img_size=img_size,
+            )
         return GenericDataset(
-            root_dir=_pick_root(source_cfg, 'root_dir', 'image_dir', 'train_dir'),
-            split='train',
-            transform=transform,
-            img_size=img_size,
+            root_dir=root_dir,
+            split='train', transform=transform, img_size=img_size,
         )
     else:
         raise ValueError(f"Unknown source dataset type: {dataset_type}")
@@ -154,11 +160,17 @@ def build_val_dataset(data_cfg, img_size=224):
             img_size=img_size,
         )
     elif dataset_type in ('image_mask', 'binary'):
+        image_dir = val_cfg.get('image_dir')
+        mask_dir = val_cfg.get('mask_dir')
+        root_dir = val_cfg.get('root_dir', val_cfg.get('val_dir', val_cfg.get('test_dir')))
+        if image_dir and mask_dir:
+            return GenericDataset(
+                image_dir=image_dir, mask_dir=mask_dir,
+                split=split, transform=transform, img_size=img_size,
+            )
         return GenericDataset(
-            root_dir=_pick_root(val_cfg, 'root_dir', 'image_dir', 'val_dir', 'test_dir'),
-            split=split,
-            transform=transform,
-            img_size=img_size,
+            root_dir=root_dir,
+            split=split, transform=transform, img_size=img_size,
         )
     else:
         raise ValueError(f"Unknown val dataset type: {dataset_type}")
@@ -460,12 +472,16 @@ def main():
 
     # Build DA loss
     da_loss_fn = LOSS_REGISTRY.get(da_method)(**da_params)
+    if isinstance(da_loss_fn, nn.Module):
+        da_loss_fn = da_loss_fn.to(device)
     logger.info(f"DA method: {da_method}")
 
     # Build supervised loss (for non source-free methods)
     if not is_source_free:
         sup_loss_cfg = train_cfg.get('loss', {'name': 'compound', 'params': {}})
         supervised_loss_fn = build_loss(sup_loss_cfg)
+        if isinstance(supervised_loss_fn, nn.Module):
+            supervised_loss_fn = supervised_loss_fn.to(device)
 
     # Load source-pretrained checkpoint. Source-free methods REQUIRE this:
     # without it the EMA teacher would start from random weights and adapt
