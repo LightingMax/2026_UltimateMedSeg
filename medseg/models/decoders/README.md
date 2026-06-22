@@ -4,7 +4,7 @@
 
 U-shape upsampling decoders that consume multi-scale encoder features and produce the final segmentation map. All decoders follow a unified interface: `forward(bottleneck_feat, skip_features)`.
 
-## Registered Decoders (47 keys)
+## Registered Decoders (45 keys)
 
 ### basic/ — Basic Upsampling
 

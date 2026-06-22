@@ -2,7 +2,7 @@
 
 [中文文档](encoders_CN.md)
 
-This project provides 176 registered encoders in two usage modes.
+This project provides 177 registered encoders in two usage modes.
 
 ## Two Encoder Modes
 
@@ -99,6 +99,7 @@ Foundation model encoders use the **DPT head** (Dense Prediction Transformer) to
 |---|---|---|---|---|
 | `usfmae` | USF-MAE | 2024 | - | [usfmae.yaml](../../configs/architectures/foundation/ultrasound/usfmae.yaml) |
 | `ultrafedfm` | UltraFedFM | 2024 | - | [ultrafedfm_cascade_full.yaml](../../configs/architectures/combinations/general/ultrafedfm_cascade_full.yaml) |
+| `samus` | SAMUS | MICCAI 2023 | - | [samus.yaml](../../configs/architectures/foundation/sam/samus.yaml) |
 
 ### MLLM Vision Encoders
 

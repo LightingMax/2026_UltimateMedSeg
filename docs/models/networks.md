@@ -2,7 +2,7 @@
 
 [中文文档](networks_CN.md)
 
-This project supports 132 complete network architectures (135 registered, size variants merged; 120 standard + 12 text-guided), accessible via the `architecture` field.
+This project supports 133 complete network architectures (136 registered, size variants merged; 121 standard + 12 text-guided), accessible via the `architecture` field.
 
 ## CNN (36)
 
@@ -120,7 +120,7 @@ Mamba / State-Space Model based networks.
 | `vim_unet` | ViM-UNet | arXiv 2024 | [vim_unet.yaml](../../configs/architectures/networks/general/vim_unet.yaml) |
 | `uu_mamba` | UU-Mamba | arXiv 2024 | [uu_mamba.yaml](../../configs/architectures/networks/general/uu_mamba.yaml) |
 
-## SAM (10)
+## SAM (12)
 
 SAM (Segment Anything Model) based networks.
 

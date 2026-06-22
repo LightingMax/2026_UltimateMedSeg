@@ -2,7 +2,7 @@
 
 [English](networks.md)
 
-本项目支持 132 个完整网络架构（135 注册，合并尺寸变体；120 个标准 + 12 个文本引导），通过 `architecture` 字段直接使用。
+本项目支持 133 个完整网络架构（136 注册，合并尺寸变体；121 个标准 + 12 个文本引导），通过 `architecture` 字段直接使用。
 
 ## CNN (36)
 
@@ -120,7 +120,7 @@
 | `vim_unet` | ViM-UNet | arXiv 2024 | [vim_unet.yaml](../../configs/architectures/networks/general/vim_unet.yaml) |
 | `uu_mamba` | UU-Mamba | arXiv 2024 | [uu_mamba.yaml](../../configs/architectures/networks/general/uu_mamba.yaml) |
 
-## SAM (10)
+## SAM (12)
 
 基于 Segment Anything Model 的网络。
 

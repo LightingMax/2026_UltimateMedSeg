@@ -121,11 +121,11 @@ APRIL-MedSeg 采用**四模块自由组合**设计：
 
 | 模块 | 注册数量 | 示例 |
 |------|----------|------|
-| 编码器 (Encoder) | 176 | `basic`, `timm_resnet50`, `timm_swin_tiny_patch4_window7_224`, `dinov2`, `dino` |
-| 解码器 (Decoder) | 47 | `bilinear`, `deconv`, `emcad`, `cascade_full`, `unetpp` |
+| 编码器 (Encoder) | 177 | `basic`, `timm_resnet50`, `timm_swin_tiny_patch4_window7_224`, `dinov2`, `dino` |
+| 解码器 (Decoder) | 45 | `bilinear`, `deconv`, `emcad`, `cascade_full`, `unetpp` |
 | 跳跃连接 (Skip) | 25 | `concat`, `add`, `cab`, `scse`, `gating` |
 | 瓶颈层 (Bottleneck) | 17 | `none`, `aspp`, `dense_aspp`, `mamba`, `transformer` |
-| 完整网络 | 132 | `unet`, `transunet`, `swinunet`, `attention_unet`, `vmunet` |
+| 完整网络 | 133 | `unet`, `transunet`, `swinunet`, `attention_unet`, `vmunet` |
 
 ### 两种配置模式
 
@@ -166,7 +166,7 @@ APRIL-MedSeg/
 ├── train_text_guided.py        # 文本引导分割
 ├── configs/                    # 918 个 YAML 配置
 ├── medseg/                     # 核心库
-│   ├── models/                 # 176 编码器, 47 解码器, 132 完整网络
+│   ├── models/                 # 177 编码器, 45 解码器, 133 完整网络
 │   ├── losses/                 # 15 个损失函数
 │   ├── datasets/               # 6 个数据集类
 │   ├── training/               # 高级训练范式
@@ -263,8 +263,8 @@ python test.py --config configs/architectures/combinations/general/unet_basic.ya
 
 ### 相关文档
 
-- [编码器指南](../models/encoders_CN.md) -- 176 个编码器及 HuggingFace 模型路径
-- [解码器指南](../models/decoders_CN.md) -- 47 个解码器及设计理念
+- [编码器指南](../models/encoders_CN.md) -- 177 个编码器及 HuggingFace 模型路径
+- [解码器指南](../models/decoders_CN.md) -- 45 个解码器及设计理念
 - [损失函数](../paradigms/README_CN.md) -- 81 个注册损失（15 个实现文件）
 - [数据指南](../data/README.md) -- 25 个内置数据集及增强管线
 - [研究指南](../research_guide_CN.md) -- 消融实验设计与基准测试协议

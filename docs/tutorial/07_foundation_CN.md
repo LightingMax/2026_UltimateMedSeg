@@ -146,7 +146,7 @@ $$W' = W + \Delta W = W + BA, \quad B \in \mathbb{R}^{d \times r}, A \in \mathbb
 
 ### 3.1 医学模态——9 大类别
 
-APRIL-MedSeg 涵盖 9 个医学模态的 38 个 Foundation 模型：
+APRIL-MedSeg 涵盖 9 个医学模态的 39 个 Foundation 模型：
 
 | 模态 | 模型 | 关键应用 |
 |------|------|----------|
@@ -157,7 +157,7 @@ APRIL-MedSeg 涵盖 9 个医学模态的 38 个 Foundation 模型：
 | 皮肤 | DermCLIP, MoNet, PanDerm | 皮肤病变分割 |
 | 通用医学 | BiomedCLIP, MedCLIP, MedSigLIP | 通用生物医学 |
 | MLLM 视觉 | Qwen-VL, MedGemma, LLaVA-Med | 视觉语言推理 |
-| 超声 | UltraFedFM, US-FMAE | 超声分析 |
+| 超声 | UltraFedFM, US-FMAE, SAMUS | 超声分析 |
 | 内窥镜 | EndoViT, Endo-FM, Surgical-SAM | 消化道成像 |
 
 ### 3.2 Foundation 编码器输出
@@ -260,7 +260,7 @@ model:
 
 ### 相关文档
 
-- [Foundation 编码器](../models/encoders.md#foundation-models) — 9 个模态的所有 38 个 Foundation 编码器
+- [Foundation 编码器](../models/encoders.md#foundation-models) — 9 个模态的所有 39 个 Foundation 编码器
 - [权重管理](../models/encoders.md#weight-management) — 自动下载和缓存系统
 - [DPT Head](../models/encoders.md#dpt-head) — Dense Prediction Transformer 架构细节
 

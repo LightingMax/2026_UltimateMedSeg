@@ -8,9 +8,9 @@ This project provides a highly modular medical image segmentation model zoo, sup
 
 | Module | Count |
 |---|---|
-| Complete Networks | 132 |
-| Encoders | 176 |
-| Decoders | 47 |
+| Complete Networks | 133 |
+| Encoders | 177 |
+| Decoders | 45 |
 | Skip Connections | 25 |
 | Bottlenecks | 17 |
 
@@ -28,9 +28,9 @@ Input Image ──> [Encoder] ──> [Bottleneck] ──> [Decoder] ──> Seg
 
 | Document | Content |
 |---|---|
-| [networks.md](networks.md) | 132 complete network architectures |
-| [encoders.md](encoders.md) | 176 encoders (incl. foundation models) |
-| [decoders.md](decoders.md) | 47 decoders |
+| [networks.md](networks.md) | 133 complete network architectures |
+| [encoders.md](encoders.md) | 177 encoders (incl. foundation models) |
+| [decoders.md](decoders.md) | 45 decoders |
 | [skip_connections.md](skip_connections.md) | 25 skip connections |
 | [bottlenecks.md](bottlenecks.md) | 17 bottlenecks |
 

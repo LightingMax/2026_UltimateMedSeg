@@ -33,9 +33,9 @@
 
 **APRIL-MedSeg** is a modular 2D medical image segmentation toolbox built on PyTorch. It provides:
 
-- **132** complete network architectures (CNN, Transformer, Mamba, RWKV, KAN, SAM family, etc.)
-- **176** encoders (including 38 foundation models across 9 medical modalities + dynamic timm wrapper)
-- **47** decoders (cascade, attention, transformer, MLP, etc.)
+- **133** complete network architectures (CNN, Transformer, Mamba, RWKV, KAN, SAM family, etc.)
+- **177** encoders (including 39 foundation models across 9 medical modalities + dynamic timm wrapper)
+- **45** decoders (cascade, attention, transformer, MLP, etc.)
 - **81** loss functions (supervised, distillation, domain adaptation, weakly supervised)
 - **25** skip connection types
 - **6** training paradigms (supervised, semi-supervised, domain adaptation, distillation, weakly supervised, text-guided)
@@ -145,11 +145,11 @@ python -m medseg.utils.weight_downloader check
 APRIL-MedSeg/
 ├── medseg/                    # Core framework (pip installable)
 │   ├── models/
-│   │   ├── encoders/          # 176 encoders (CNN, Transformer, Mamba, RWKV, timm, foundation)
-│   │   ├── decoders/          # 47 decoders
+│   │   ├── encoders/          # 177 encoders (CNN, Transformer, Mamba, RWKV, timm, foundation)
+│   │   ├── decoders/          # 45 decoders
 │   │   ├── skip_connections/  # 25 skip connection types
 │   │   ├── bottlenecks/       # 17 bottlenecks
-│   │   ├── networks/          # 132 complete pre-assembled architectures
+│   │   ├── networks/          # 133 complete pre-assembled architectures
 │   │   └── text_unet/         # 12 text-guided models
 │   ├── training/              # Training paradigm implementations
 │   │   ├── semi/              # 21 semi-supervised methods
@@ -742,7 +742,7 @@ model:
   architecture: transunet    # or swinunet, medsam, vmunet, etc.
 ```
 
-132 complete architectures are available. Some popular ones:
+133 complete architectures are available. Some popular ones:
 
 | Category | Examples |
 |----------|----------|
@@ -836,7 +836,7 @@ bash scripts/experiments/run_bottleneck_study.sh
 
 ## 11. Using Foundation Models (Transfer Learning)
 
-The framework includes 38 foundation model encoders covering 9 medical modalities.
+The framework includes 39 foundation model encoders covering 9 medical modalities.
 
 ### 11.1 Available Foundation Models
 
@@ -849,7 +849,7 @@ The framework includes 38 foundation model encoders covering 9 medical modalitie
 | Dermatology | DermCLIP, MoNet, PanDerm |
 | General Medical | BiomedCLIP, MedCLIP, MedSigLIP |
 | MLLM Vision | Qwen2.5-VL, Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, HealthGPT, HuLuMed, LingShu |
-| Ultrasound | UltraFedFM, US-FMAE |
+| Ultrasound | UltraFedFM, US-FMAE, SAMUS |
 | Endoscopy | Endo-ViT, Endo-FM, Surgical-SAM |
 
 ### 11.2 Using a Foundation Model

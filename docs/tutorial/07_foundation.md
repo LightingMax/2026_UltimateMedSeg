@@ -146,7 +146,7 @@ This reduces trainable parameters by 90%+ while allowing full-model adaptation. 
 
 ### 3.1 Medical Modalities — 9 Categories
 
-APRIL-MedSeg covers 38 foundation models across 9 medical modalities:
+APRIL-MedSeg covers 39 foundation models across 9 medical modalities:
 
 | Modality | Models | Key Application |
 |----------|--------|----------------|
@@ -157,7 +157,7 @@ APRIL-MedSeg covers 38 foundation models across 9 medical modalities:
 | Dermatology | DermCLIP, MoNet, PanDerm | Skin lesion segmentation |
 | General Medical | BiomedCLIP, MedCLIP, MedSigLIP | General biomedical |
 | MLLM Vision | Qwen-VL, MedGemma, LLaVA-Med | Vision-language reasoning |
-| Ultrasound | UltraFedFM, US-FMAE | Ultrasound analysis |
+| Ultrasound | UltraFedFM, US-FMAE, SAMUS | Ultrasound analysis |
 | Endoscopy | EndoViT, Endo-FM, Surgical-SAM | GI tract imaging |
 
 ### 3.2 Foundation Encoder Output
@@ -260,7 +260,7 @@ On a pathology dataset, compare:
 
 ### Related Documentation
 
-- [Foundation Encoders](../models/encoders.md#foundation-models) -- All 38 foundation encoders across 9 modalities
+- [Foundation Encoders](../models/encoders.md#foundation-models) -- All 39 foundation encoders across 9 modalities
 - [Weight Management](../models/encoders.md#weight-management) -- Auto-download and cache system
 - [DPT Head](../models/encoders.md#dpt-head) -- Dense Prediction Transformer architecture details
 

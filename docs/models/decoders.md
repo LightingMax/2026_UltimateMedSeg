@@ -2,7 +2,7 @@
 
 [中文文档](decoders_CN.md)
 
-This project provides 47 decoder modules, grouped by category as follows.
+This project provides 45 decoder modules, grouped by category as follows.
 
 ## Basic (4)
 
