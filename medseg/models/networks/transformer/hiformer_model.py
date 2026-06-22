@@ -520,6 +520,8 @@ class HiFormer(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         self.orig_img_size = img_size
         self.patch_size = [4, 16]
 
@@ -563,6 +565,16 @@ class HiFormer(nn.Module):
             nn.ReLU(inplace=True),
             nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False))
         self.seg_head = nn.Conv2d(16, num_classes, 3, 1, 1)
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self,
+                pretrained_path=pretrained_path,
+                registry_key="swin_tiny_patch4_window7_224",
+                model_name="HiFormer",
+                strict=False,
+            )
 
     def forward(self, x):
         orig_h, orig_w = x.shape[-2:]

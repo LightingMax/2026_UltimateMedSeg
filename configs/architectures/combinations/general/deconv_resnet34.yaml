@@ -13,7 +13,7 @@ model:
     name: concat
     params: {}
   decoder:
-    name: deconv_catup
+    name: deconv
     params: {}
   bottleneck:
     name: none

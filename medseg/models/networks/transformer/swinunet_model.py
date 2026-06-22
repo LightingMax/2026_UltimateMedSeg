@@ -495,6 +495,8 @@ class SwinUNet(nn.Module):
     """
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         window_size = kwargs.get("window_size", 7)
         patch_size = kwargs.get("patch_size", 4)
         depths = kwargs.get("depths", [2, 2, 6, 2])
@@ -522,6 +524,16 @@ class SwinUNet(nn.Module):
             window_size=window_size,
             drop_path_rate=kwargs.get("drop_path_rate", 0.2),
         )
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self.model,
+                pretrained_path=pretrained_path,
+                registry_key="swin_tiny_patch4_window7_224",
+                model_name="SwinUNet",
+                strict=False,
+            )
 
     def forward(self, x):
         B, C, H, W = x.shape

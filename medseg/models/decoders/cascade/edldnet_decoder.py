@@ -4,7 +4,8 @@
 Faithfully ported from: https://github.com/riadhassan/EDLDNet
 Paper: An Efficient Dual-Line Decoder Network with Multi-Scale Convolutional
        Attention for Multi-organ Segmentation
-       (Biomedical Signal Processing and Control, 2025, Hassan et al.)
+       (Biomedical Signal Processing and Control, 2026, Hassan et al.)
+       DOI: 10.1016/j.bspc.2025.108611  arXiv: 2508.17007
 
 The decoder pipeline per stage:
     bottleneck -> MSCAM4 -> UCB3 + AG3(skip) -> add -> MSCAM3
@@ -14,9 +15,13 @@ The decoder pipeline per stage:
 MSCAM = CAB (Channel Attention Block) -> SAB (Spatial Attention Block)
        -> MSCB (Multi-Scale Convolution Block)
 
-The paper uses dual-line decoders (noise-free + noisy) during training.
-This implementation provides a single decoder line; the noisy training
-variant can be handled externally by the training loop.
+Dual-line architecture (faithful to the paper):
+  - Line 1 (noise-free): processes the bottleneck feature directly.
+  - Line 2 (noisy): adds uniformly distributed random noise U(-noise_scale,
+    noise_scale) to the bottleneck feature before decoding.
+  - During training both lines run; the training loop can compute the
+    mutation loss from the pair of outputs.
+  - During inference only the noise-free line runs.
 
 External skip_connection parameter is IGNORED (``has_internal_skip = True``).
 """
@@ -255,12 +260,11 @@ class SAB(nn.Module):
         return self.sigmoid(self.conv(out))
 
 
-# ── EDLDNet Decoder ─────────────────────────────────────────────────────────
+# ── Single decoder line ─────────────────────────────────────────────────────
 
-@DECODER_REGISTRY.register("edldnet")
-class EDLDNetDecoder(nn.Module):
-    """EDLDNet decoder with MSCAM + AG + UCB.
-        EDLDNet 解码器。
+class _EDLDNetDecoderLine(nn.Module):
+    """One EDLDNet decoder line (MSCAM + AG + UCB).
+        单条 EDLDNet 解码器线。
 
     Pipeline:
         bottleneck -> MSCAM4 -> UCB3 -> AG3(skip[0]) -> add -> MSCAM3
@@ -268,24 +272,10 @@ class EDLDNetDecoder(nn.Module):
                  -> UCB1 -> AG1(skip[2]) -> add -> MSCAM1
 
     MSCAM = CAB -> SAB -> MSCB (Multi-Scale Convolution Block).
-
-    Args:
-        encoder_channels: List of encoder stage output channels (shallow to deep).
-        bottleneck_channels: Channels of the bottleneck feature.
-        kernel_sizes: MSDC kernel sizes.
-        expansion_factor: MSCB expansion factor.
-        dw_parallel: Whether MSDC runs in parallel.
-        add: Whether to add (True) or concat (False) MSDC outputs.
-        ag_ks: Attention Gate kernel size.
-        activation: Activation function ('relu' or 'relu6').
-        skip_connection: IGNORED (internal skip used).
     """
-
-    has_internal_skip = True
 
     def __init__(self, encoder_channels: List[int],
                  bottleneck_channels: int,
-                 skip_connection=None,
                  kernel_sizes=None, expansion_factor=6,
                  dw_parallel=True, add=True,
                  ag_ks=3, activation='relu6',
@@ -364,3 +354,96 @@ class EDLDNetDecoder(nn.Module):
             d = self.mscbs[i](d)
 
         return d
+
+
+# ── EDLDNet Dual-Line Decoder ────────────────────────────────────────────────
+
+@DECODER_REGISTRY.register("edldnet")
+class EDLDNetDecoder(nn.Module):
+    """EDLDNet dual-line decoder (noise-free + noisy).
+        EDLDNet 双线解码器。
+
+    Faithful to the paper: two identical decoder lines run in parallel.
+    Line 1 (noise-free) processes the bottleneck directly; Line 2 (noisy)
+    perturbs the bottleneck with U(-noise_scale, noise_scale) noise.
+
+    - Training: both lines run, returning ``[clean_out, noisy_out]`` for
+      the mutation loss computation.
+    - Inference: only the noise-free line runs, returning a single tensor.
+
+    Args:
+        encoder_channels: List of encoder stage output channels (shallow to deep).
+        bottleneck_channels: Channels of the bottleneck feature.
+        noise_scale: Uniform noise range U(-s, s) for the noisy line (default 0.3).
+        kernel_sizes: MSDC kernel sizes.
+        expansion_factor: MSCB expansion factor.
+        dw_parallel: Whether MSDC runs in parallel.
+        add: Whether to add (True) or concat (False) MSDC outputs.
+        ag_ks: Attention Gate kernel size.
+        activation: Activation function ('relu' or 'relu6').
+        skip_connection: IGNORED (internal skip used).
+    """
+
+    has_internal_skip = True
+
+    def __init__(self, encoder_channels: List[int],
+                 bottleneck_channels: int,
+                 skip_connection=None,
+                 noise_scale: float = 0.3,
+                 kernel_sizes=None, expansion_factor=6,
+                 dw_parallel=True, add=True,
+                 ag_ks=3, activation='relu6',
+                 **kwargs):
+        super().__init__()
+        self.noise_scale = noise_scale
+
+        # 双线解码器: noise-free + noisy / Dual decoder lines: noise-free + noisy
+        self.clean_line = _EDLDNetDecoderLine(
+            encoder_channels=encoder_channels,
+            bottleneck_channels=bottleneck_channels,
+            kernel_sizes=kernel_sizes,
+            expansion_factor=expansion_factor,
+            dw_parallel=dw_parallel,
+            add=add,
+            ag_ks=ag_ks,
+            activation=activation,
+        )
+        self.noisy_line = _EDLDNetDecoderLine(
+            encoder_channels=encoder_channels,
+            bottleneck_channels=bottleneck_channels,
+            kernel_sizes=kernel_sizes,
+            expansion_factor=expansion_factor,
+            dw_parallel=dw_parallel,
+            add=add,
+            ag_ks=ag_ks,
+            activation=activation,
+        )
+        self._out_channels = self.clean_line.out_channels
+
+    @property
+    def out_channels(self) -> int:
+        return self._out_channels
+
+    def forward(self, bottleneck_feat: torch.Tensor,
+                skip_features: List[torch.Tensor]):
+        """Forward pass.
+            前向传播。
+
+        Returns:
+            - Training: ``[clean_out, noisy_out]`` (list of 2 tensors).
+            - Inference: ``clean_out`` (single tensor).
+        """
+        # Line 1: noise-free / 噪声自由线
+        clean_out = self.clean_line(bottleneck_feat, skip_features)
+
+        if not self.training:
+            return clean_out
+
+        # Line 2: noisy — perturb bottleneck with U(-s, s) / 噪声线: 对瓶颈层加均匀噪声
+        noise = torch.empty_like(bottleneck_feat).uniform_(
+            -self.noise_scale, self.noise_scale
+        )
+        noisy_feat = bottleneck_feat + noise
+        noisy_out = self.noisy_line(noisy_feat, skip_features)
+
+        return [clean_out, noisy_out]

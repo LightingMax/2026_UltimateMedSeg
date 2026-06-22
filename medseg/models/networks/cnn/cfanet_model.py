@@ -248,6 +248,8 @@ class CFANet(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         channel = 64
         act_fn = nn.ReLU(inplace=True)
         self.resnet = _Res2Net_model(50, in_channels)
@@ -340,6 +342,16 @@ class CFANet(nn.Module):
                                 align_corners=True)
         self.up_8 = nn.Upsample(scale_factor=8, mode='bilinear',
                                 align_corners=True)
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self.resnet,
+                pretrained_path=pretrained_path,
+                registry_key="res2net50_v1b_26w_4s",
+                model_name="CFANet",
+                strict=False,
+            )
 
     def forward(self, xx):
         x0, x1, x2, x3, x4 = self.resnet(xx)

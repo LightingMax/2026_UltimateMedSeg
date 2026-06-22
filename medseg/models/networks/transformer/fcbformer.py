@@ -356,6 +356,8 @@ class FCBFormer(nn.Module):
         **kwargs,
     ):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         self.TB = TB(in_channels)
         self.FCB = FCB(in_channels=in_channels, in_resolution=img_size)
         self.PH = nn.Sequential(
@@ -363,6 +365,16 @@ class FCBFormer(nn.Module):
             nn.Conv2d(64, num_classes, kernel_size=1)
         )
         self.img_size = img_size
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self.TB.backbone,
+                pretrained_path=pretrained_path,
+                registry_key="pvtv2_b3",
+                model_name="FCBFormer",
+                strict=False,
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H_in, W_in = x.shape[2:]

@@ -288,6 +288,8 @@ class MambaUNet(nn.Module):
                  embed_dim=96, depths=None, d_state=16,
                  drop_path_rate=0.1, deep_supervision=False, **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         if depths is None:
             depths = [2, 2, 9, 2]
         self.deep_supervision = deep_supervision
@@ -309,6 +311,16 @@ class MambaUNet(nn.Module):
                 nn.Conv2d(dims[num_layers - 2 - i], num_classes, 1)
                 for i in range(num_layers - 2)
             ])
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self.model,
+                pretrained_path=pretrained_path,
+                registry_key="mamba_unet_pretrained",
+                model_name="MambaUNet",
+                strict=False,
+            )
 
     def forward(self, x):
         if self.training and self.deep_supervision:

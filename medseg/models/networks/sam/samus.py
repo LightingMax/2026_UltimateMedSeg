@@ -2,9 +2,10 @@
     SAMUS: SAM-based UltraSound 分割 网络。
 
 Reference:
-    Xian Lin, Yangyang Xiang, Li Zhang, Xin Yang, Zengqiang Yan, Li Yu.
-    "SAMUS: Adapting Segment Anything Model for Clinically-Friendly and
-    Generalizable Ultrasound Image Segmentation." 2024.
+    Xian Lin, Yangyang Xiang, Li Yu, Zengqiang Yan.
+    "Beyond Adapting SAM: Towards End-to-End Ultrasound Image Segmentation
+    via Auto Prompting." MICCAI 2024.
+    arXiv: 2309.06824. DOI: 10.1007/978-3-031-72111-3_3
     Upstream code: https://github.com/xianlin7/SAMUS
 
 Architecture overview:

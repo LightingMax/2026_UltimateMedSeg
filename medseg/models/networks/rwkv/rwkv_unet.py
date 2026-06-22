@@ -491,9 +491,24 @@ class RWKVUNet(nn.Module):
     def __init__(self, in_channels=3, num_classes=2, img_size=224,
                  variant="b", **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         self.model = _RWKVUNet(
             variant=variant, in_channels=in_channels,
             num_classes=num_classes, img_size=img_size)
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            _variant_key = {"b": "rwkv_unet_encoder_b",
+                            "s": "rwkv_unet_encoder_s",
+                            "t": "rwkv_unet_encoder_t"}.get(variant, "rwkv_unet_encoder_b")
+            load_pretrained_standalone(
+                self.model.encoder,
+                pretrained_path=pretrained_path,
+                registry_key=_variant_key,
+                model_name=f"RWKVUNet({variant})",
+                strict=False,
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H_in, W_in = x.shape[2:]

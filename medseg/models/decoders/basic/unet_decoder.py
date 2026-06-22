@@ -35,15 +35,13 @@ class _DoubleConv(nn.Module):
 
 
 @DECODER_REGISTRY.register("unet")
-@DECODER_REGISTRY.register("deconv_upcat")
 class UNetDecoder(nn.Module):
     """Standard UNet decoder with transposed convolution upsampling.
         Standard UNet 解码器。
 
-    Registered as ``unet`` (canonical) and ``deconv_upcat`` (descriptive alias:
-    deconv with **up**sample-then-**cat** order).
-        注册名 ``unet``（规范名）与 ``deconv_upcat``（描述性别名：
-        转置卷积，先**上采样**后**拼接**）。
+    Architecture per stage: upsample-then-cat (ConvTranspose halves channels,
+    then concatenate with encoder skip, then DoubleConv to fuse).
+        每阶段架构：先上采样后拼接（转置卷积减半通道→拼接跳跃特征→DoubleConv融合）。
 
     Architecture per stage:
         1. ConvTranspose2d (2x upsample, halve channels)

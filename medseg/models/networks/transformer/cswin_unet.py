@@ -194,6 +194,8 @@ class CSWinUNet(nn.Module):
         **kwargs,
     ):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         depths = depths or [2, 2, 6, 2]
         num_heads = num_heads or [2, 4, 8, 16]
         dims = [embed_dim * (2 ** i) for i in range(len(depths))]
@@ -231,6 +233,16 @@ class CSWinUNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(dims[0] // 2, num_classes, 1),
         )
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self,
+                pretrained_path=pretrained_path,
+                registry_key="cswin_tiny_224",
+                model_name="CSWinUNet",
+                strict=False,
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H_in, W_in = x.shape[2:]

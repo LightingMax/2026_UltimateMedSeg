@@ -508,7 +508,7 @@ class TransNuSeg(nn.Module):
     img_size : int
         Input image size (must be divisible by patch_size × 2^num_layers).
     pretrained : bool
-        Not used (kept for interface compatibility).
+        Whether to load Swin-Tiny ImageNet pretrained weights.
     embed_dim : int
         Patch embedding dimension.
     depths : list[int]
@@ -529,6 +529,7 @@ class TransNuSeg(nn.Module):
                  norm_layer=nn.LayerNorm, patch_size=4, ape=False,
                  patch_norm=True, shared_ratio=0.5, **kwargs):
         super().__init__()
+        pretrained_path = kwargs.pop("pretrained_path", None)
         self.num_classes = num_classes
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
@@ -680,6 +681,16 @@ class TransNuSeg(nn.Module):
         self.output3 = nn.Conv2d(embed_dim, num_classes, 1, bias=False)
 
         self.apply(self._init_weights)
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self,
+                pretrained_path=pretrained_path,
+                registry_key="swin_tiny_patch4_window7_224",
+                model_name="TransNuSeg",
+                strict=False,
+            )
 
     @staticmethod
     def _init_weights(m):

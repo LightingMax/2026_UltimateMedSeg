@@ -370,6 +370,8 @@ class H2Former(nn.Module):
 
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         norm_layer = nn.BatchNorm2d
         self.inplanes = 64
         embed_dim = 64
@@ -414,6 +416,16 @@ class H2Former(nn.Module):
         self.decode0 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Conv2d(channels[0], num_classes, 1, bias=False))
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self,
+                pretrained_path=pretrained_path,
+                registry_key="swin_tiny_patch4_window7_224",
+                model_name="H2Former",
+                strict=False,
+            )
 
     def _make_layer(self, in_ch, planes, blocks, norm_layer, stride=1):
         downsample = None

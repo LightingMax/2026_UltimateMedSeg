@@ -484,6 +484,8 @@ class VMUNet(nn.Module):
         **kwargs,
     ):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         depths = depths or [2, 2, 9, 2]
         depths_decoder = depths_decoder or [2, 9, 2, 2]
         num_layers = len(depths)
@@ -551,6 +553,16 @@ class VMUNet(nn.Module):
         self.final_up = FinalPatchExpand2D(
             dim=dims_decoder[-1], dim_scale=4, norm_layer=norm_layer)
         self.final_conv = nn.Conv2d(dims_decoder[-1] // 4, num_classes, 1)
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self,
+                pretrained_path=pretrained_path,
+                registry_key="vmunet_vmamba_tiny",
+                model_name="VMUNet",
+                strict=False,
+            )
 
     def forward_features(self, x):
         x = self.patch_embed(x)  # (B, H, W, C)

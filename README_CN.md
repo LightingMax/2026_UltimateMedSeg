@@ -19,7 +19,7 @@
   </p>
 </div>
 
-> **132** 完整网络 · **176** 编码器 · **47** 解码器 · **81** 损失函数 · **25** 跳跃连接 · **17** 瓶颈层 · **6** 大训练范式 · **24** 种数据增强 · **918** YAML 配置 · 一行 YAML 完成切换
+> **133** 完整网络 · **177** 编码器 · **45** 解码器 · **81** 损失函数 · **25** 跳跃连接 · **17** 瓶颈层 · **6** 大训练范式 · **24** 种数据增强 · **918** YAML 配置 · 一行 YAML 完成切换
 
 ---
 <a id="更新日志"></a>
@@ -119,7 +119,7 @@ model:
 |---|---|---|
 | **A. WEIGHT_REGISTRY 自动下载** | `ensure_weight()` 从 GitHub/GCS/HF 下载 | swinunet, h2former, hiformer, transunet, vm_unet, rwkv_unet (B/S/T), cswin_unet, da_transunet, mamba_unet, fcbformer, transnuseg |
 | **B. timm / torchvision 运行时** | `pretrained: true` 触发内置下载 | segformer_b0–b5, esfpnet, cascade, emcad, polyp_pvt, fatnet, transfuse, mist, hsnet, ssformer, ldnet, dconnnet, cfanet, lv_unet, nulite, polyper |
-| **C. SAM 家族** | `pretrained: true` 自动下载 ViT/SAM 权重 | sam_b, sam_l, mobile_sam, sam2, sam_med2d, samed, samus, auto_sam, lite_medsam, medical_sam_adapter |
+| **C. SAM 家族** | `pretrained: true` 自动下载 ViT/SAM 权重 | sam_b, sam_l, mobile_sam, sam2, sam_med2d, samed, sammed2d_wrapper, samus, auto_sam, lite_medsam, medical_sam_adapter |
 
 ### 预训练权重自动下载
 
@@ -337,14 +337,14 @@ print(f"可训练参数量: {trainable / 1e6:.2f}M")
 segmentation_tool/
 ├── medseg/                                      # 核心框架
 │   ├── models/                                  # 模型组件
-│   │   ├── encoders/                            #   176 个编码器 (91 原生 + 85 timm 预设 + 1000+ 通过 timm_ 前缀)
+│   │   ├── encoders/                            #   177 个编码器 (92 原生 + 85 timm 预设 + 1000+ 通过 timm_ 前缀)
 │   │   │   ├── cnn/              (13 modules)   #     CNN: basic, DCSAU, CFA, MedNeXt, MEW, R2U, AttUNet, LV, MALU, EGE, ConvNeXt, EfficientNetV2, HRNet
 │   │   │   ├── transformer/      (18 modules)   #     Transformer: TransUNet, SwinUNet, MISSFormer, DAEFormer, HiFormer, PVTv2, MaxViT, ViT-Pyramid, ...
 │   │   │   ├── mamba/            (10 modules)   #     Mamba/SSM: VMUNet, UMamba, LKM, LoG-VMamba, UltraLight-VM, VMKLA, ...
 │   │   │   ├── rwkv/             (5 modules)    #     RWKV: RWKV-UNet, U-RWKV (MICCAI), U-RWKV (TIP), MD-RWKV, RIR-Zigzag
 │   │   │   ├── linear_attn/      (5 modules)    #     线性注意力: RetNet, Linformer, Performer, TTT, xLSTM
 │   │   │   ├── kan_mlp/          (4 modules)    #     KAN/MLP: UKAN, Rolling-UNet, UNeXt, WA-UKAN
-│   │   │   ├── foundation/       (38 modules)   #     Foundation 模型 (DPT head)
+│   │   │   ├── foundation/       (39 modules)   #     Foundation 模型 (DPT head)
 │   │   │   │   ├── general/      (5)            #       DINOv2, DINOv3, DINO, CLIP-ViT, SAM-ViT
 │   │   │   │   ├── pathology/    (6)            #       Phikon, Phikon-v2, UNI, PLIP, MUSK, KEEP
 │   │   │   │   ├── radiology/    (4)            #       Rad-DINO, OmniRad, BioViL, CheXZero
@@ -353,10 +353,10 @@ segmentation_tool/
 │   │   │   │   ├── general_medical/(3)          #       BiomedCLIP, MedCLIP, MedSigLIP
 │   │   │   │   ├── mllm_vision/  (8)            #       Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, ...
 │   │   │   │   ├── endoscopy/    (3)            #       EndoViT, Endo-FM, Surgical-SAM
-│   │   │   │   └── ultrasound/   (2)            #       UltraFedFM, USF-MAE
+│   │   │   │   └── ultrasound/   (3)            #       UltraFedFM, USF-MAE, SAMUS
 │   │   │   └── wrapper/          (1 module)     #     timm 动态 wrapper (85 预注册 + 1000+ 通过 timm_ 前缀)
-│   │   ├── decoders/                            #   47 个解码器
-│   │   │   ├── basic/            (6 registered) #     基础上采样: deconv_upcat (unet), Bilinear, deconv_catup (deconv), DepthwiseSep + 2 别名
+│   │   ├── decoders/                            #   45 个解码器
+│   │   │   ├── basic/            (4 registered) #     基础上采样: deconv_upcat (unet), Bilinear, deconv_catup (deconv), DepthwiseSep
 │   │   │   ├── dense/            (2 registered) #     密集连接: UNet++, UNet3+
 │   │   │   ├── cascade/          (10 registered)#     CASCADE, EMCAD (2 变体), G-CASCADE (2 变体), CFM, MERIT (2 变体), EDLDNet
 │   │   │   ├── attention/        (6 registered) #     注意力门控, BANet, CCNet, Lawin, OCRNet, UCTransNet
@@ -372,11 +372,11 @@ segmentation_tool/
 │   │   │   ├── transformer/      (5 modules)    #     Transformer: CrossAttn, TransFusion, AggAttn, MISSFormer, UCTrans
 │   │   │   ├── mamba/            (1 module)     #     Mamba: SK-VM++
 │   │   │   └── fusion/           (6 modules)    #     CNN融合: BiFusion, Deformable, MultiScale, FeatureRefine, CCM, SDI
-│   │   ├── networks/                            #   132 个完整网络 (合并变体)
+│   │   ├── networks/                            #   133 个完整网络 (合并变体)
 │   │   │   ├── cnn/              (36 registered)#     CNN: UNet, UNet3+, UNet++, AttUNet, nnUNet, MedNeXt, MEW-UNet, ...
 │   │   │   ├── transformer/      (37 registered)#     Transformer: SegFormer, TransUNet, SwinUNet, DAEFormer, PolypPVT, CASCADE, ...
 │   │   │   ├── mamba/            (24 registered)#     Mamba: VMUNet, U-Mamba, SwinUMamba, SkinMamba, DermoMamba, SerpMamba, ...
-│   │   │   ├── sam/              (10 registered)#     SAM 家族: MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, ...
+│   │   │   ├── sam/              (12 registered)#     SAM 家族: MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, ...
 │   │   │   ├── rwkv/             (5 registered) #     RWKV: U-RWKV (MICCAI 2025), U-RWKV (TIP 2026), RWKV-UNet, MD-RWKV, RIR-Zigzag
 │   │   │   ├── kan_mlp/          (4 registered) #     KAN/MLP: RollingUNet, UNeXt, UKAN, WA-UKAN
 │   │   │   └── linear_attn/      (3 registered) #     线性注意力: TTT-UNet, U-VixLSTM, xLSTM-UNet
@@ -427,12 +427,12 @@ segmentation_tool/
 │   └── logo.png                                 #   项目 logo
 ├── configs/                      (918 yamls)    # YAML 配置
 │   ├── architectures/            (783 yamls)    #   网络结构配置
-│   │   ├── networks/             (302 yamls)    #     完整网络 (132 arch across general/acdc/synapse)
+│   │   ├── networks/             (302 yamls)    #     完整网络 (133 arch across general/acdc/synapse)
 │   │   ├── combinations/         (169 yamls)    #     encoder+decoder 自由组合
 │   │   ├── decoder_study/        (133 yamls)    #     Decoder 消融 (3 enc × 44 dec + 1)
 │   │   ├── skip_study/           (75 yamls)     #     skip 消融 (3 enc × 25 skip)
 │   │   ├── bottleneck_study/     (51 yamls)     #     bottleneck 消融 (3 enc × 17 bn)
-│   │   └── foundation/           (53 yamls)     #     Foundation 模型 (9 模态 × 38 编码器)
+│   │   └── foundation/           (53 yamls)     #     Foundation 模型 (9 模态 × 39 编码器)
 │   ├── training_paradigms/       (105 yamls)    #   训练范式配置
 │   │   ├── semi_supervision/     (21 yamls)     #     半监督 (21 方法)
 │   │   ├── domain_adaptation/    (18 yamls)     #     域适应 (18 方法)
@@ -489,14 +489,14 @@ segmentation_tool/
 
 > 详细文档: [docs/models/](docs/models/README_CN.md)
 
-### 完整网络 — 132 个
+### 完整网络 — 133 个
 
 | 类别 | 数量 | 代表模型 |
 |---|---|---|
 | CNN | 36 | UNet, UNet3+, UNet++, Attention-UNet, nnU-Net, MedNeXt, MEW-UNet, DCSAU-Net |
 | Transformer | 37 | SegFormer, TransUNet, Swin-UNet, DAEFormer, MISSFormer, HiFormer, PolypPVT, CASCADE |
 | Mamba / SSM | 24 | VM-UNet, U-Mamba, Swin-UMamba, LKM-UNet, LoG-VMamba, HC-Mamba |
-| SAM 家族 | 10 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, LiteMedSAM |
+| SAM 家族 | 12 | MedSAM, SAM-Med2D, SAM2, SAMUS, AutoSAM, MobileSAM, LiteMedSAM, SAMed, Medical SAM Adapter |
 | KAN / MLP | 4 | RollingUNet, UNeXt, U-KAN, WA-UKAN |
 | 线性注意力 | 3 | TTT-UNet, U-VixLSTM, xLSTM-UNet |
 | RWKV | 5 | U-RWKV (MICCAI 2025), U-RWKV (TIP 2026), RWKV-UNet, MD-RWKV-UNet, RIR-Zigzag |
@@ -508,9 +508,9 @@ segmentation_tool/
 > - `u_rwkv` — **MICCAI 2025**：方向自适应 RWKV 模块 (DARM) + 阶段自适应挤压激励 (SASE)，轻量级设计，RWKV 嵌入卷积阶段内。源码：[hbyecoding/U-RWKV](https://github.com/hbyecoding/U-RWKV)
 > - `u_rwkv_tip` — **IEEE TIP 2026**：标准 U-Net + 卷积后 RWKV 注意力块，配合 OmniShift 多尺度卷积，最初用于体素分割。源码：[hbyecoding/U-RWKV](https://github.com/hbyecoding/U-RWKV)
 
-### 编码器 — 176 个
+### 编码器 — 177 个
 
-**亮点：38 个 Foundation 模型编码器，覆盖 9 个医学模态**
+**亮点：39 个 Foundation 模型编码器，覆盖 9 个医学模态**
 
 | 模态 | 数量 | 模型 |
 |---|---|---|
@@ -521,7 +521,7 @@ segmentation_tool/
 | 皮肤 | 3 | DermCLIP, MoNet, PanDerm |
 | 通用医学 | 3 | BiomedCLIP, MedCLIP, MedSigLIP |
 | MLLM视觉 | 8 | Qwen2.5-VL, Qwen3-VL, MedGemma, LLaVA-Med, HuatuoGPT, HealthGPT, HuLuMed, LingShu |
-| 超声 | 2 | UltraFedFM, US-FMAE |
+| 超声 | 3 | UltraFedFM, USF-MAE, SAMUS |
 | 内窥镜 | 3 | EndoViT, Endo-FM, Surgical-SAM |
 
 所有 Foundation ViT 使用 **DPT head**（从不同深度 block 提取多尺度特征），而非简单的 FPN-from-tokens。
@@ -536,11 +536,11 @@ encoder:
 
 > 详细列表: [docs/models/encoders.md](docs/models/encoders.md)
 
-### 解码器 — 47 个
+### 解码器 — 45 个
 
 | 类别 | 数量 | 代表模型 |
 |---|---|---|
-| 基础上采样 | 6 | deconv_upcat (unet), Bilinear, deconv_catup (deconv), DepthwiseSep + 2 别名 |
+| 基础上采样 | 4 | deconv_upcat (unet), Bilinear, deconv_catup (deconv), DepthwiseSep |
 | 密集连接 | 2 | UNet++, UNet3+ |
 | 级联 | 10 | CASCADE, EMCAD (2 变体), G-CASCADE (2 变体), CFM, MERIT (2 变体), EDLDNet |
 | 注意力 | 6 | Attention Gate, BANet, CCNet, Lawin, OCRNet, UCTransNet |

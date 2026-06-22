@@ -13,6 +13,7 @@ Standard interface:
 from __future__ import absolute_import, division, print_function
 
 import copy
+import logging
 import math
 from collections import OrderedDict
 from os.path import join as pjoin
@@ -23,6 +24,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Conv2d, CrossEntropyLoss, Dropout, LayerNorm, Linear, Softmax
 from torch.nn.modules.utils import _pair
+
+logger = logging.getLogger(__name__)
 
 
 # ─ ─ 轻量级 配置 ( replaces ml _ collections. ConfigDict ) ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ / ── lightweight config (replaces ml_collections.ConfigDict) ──────────────────
@@ -66,6 +69,17 @@ def _np2th(weights, conv=False):
     if conv:
         weights = weights.transpose([3, 2, 0, 1])
     return torch.from_numpy(weights)
+
+
+# JAX checkpoint key-name constants (from official TransUNet source)
+ATTENTION_Q = "MultiHeadDotProductAttention_1/query"
+ATTENTION_K = "MultiHeadDotProductAttention_1/key"
+ATTENTION_V = "MultiHeadDotProductAttention_1/value"
+ATTENTION_OUT = "MultiHeadDotProductAttention_1/out"
+FC_0 = "MlpBlock_3/Dense_0"
+FC_1 = "MlpBlock_3/Dense_1"
+ATTENTION_NORM = "LayerNorm_0"
+MLP_NORM = "LayerNorm_2"
 
 
 class StdConv2d(nn.Conv2d):
@@ -112,6 +126,41 @@ class PreActBottleneck(nn.Module):
         y = self.relu(self.gn2(self.conv2(y)))
         y = self.gn3(self.conv3(y))
         return self.relu(residual + y)
+
+    def load_from(self, weights, n_block, n_unit):
+        """Load weights from JAX checkpoint (faithful to official TransUNet)."""
+        conv1_weight = _np2th(weights[pjoin(n_block, n_unit, "conv1/kernel")], conv=True)
+        conv2_weight = _np2th(weights[pjoin(n_block, n_unit, "conv2/kernel")], conv=True)
+        conv3_weight = _np2th(weights[pjoin(n_block, n_unit, "conv3/kernel")], conv=True)
+
+        gn1_weight = _np2th(weights[pjoin(n_block, n_unit, "gn1/scale")])
+        gn1_bias = _np2th(weights[pjoin(n_block, n_unit, "gn1/bias")])
+
+        gn2_weight = _np2th(weights[pjoin(n_block, n_unit, "gn2/scale")])
+        gn2_bias = _np2th(weights[pjoin(n_block, n_unit, "gn2/bias")])
+
+        gn3_weight = _np2th(weights[pjoin(n_block, n_unit, "gn3/scale")])
+        gn3_bias = _np2th(weights[pjoin(n_block, n_unit, "gn3/bias")])
+
+        self.conv1.weight.copy_(conv1_weight)
+        self.conv2.weight.copy_(conv2_weight)
+        self.conv3.weight.copy_(conv3_weight)
+
+        self.gn1.weight.copy_(gn1_weight.view(-1))
+        self.gn1.bias.copy_(gn1_bias.view(-1))
+        self.gn2.weight.copy_(gn2_weight.view(-1))
+        self.gn2.bias.copy_(gn2_bias.view(-1))
+        self.gn3.weight.copy_(gn3_weight.view(-1))
+        self.gn3.bias.copy_(gn3_bias.view(-1))
+
+        if hasattr(self, 'downsample'):
+            proj_conv_weight = _np2th(weights[pjoin(n_block, n_unit, "conv_proj/kernel")], conv=True)
+            proj_gn_weight = _np2th(weights[pjoin(n_block, n_unit, "gn_proj/scale")])
+            proj_gn_bias = _np2th(weights[pjoin(n_block, n_unit, "gn_proj/bias")])
+
+            self.downsample.weight.copy_(proj_conv_weight)
+            self.gn_proj.weight.copy_(proj_gn_weight.view(-1))
+            self.gn_proj.bias.copy_(proj_gn_bias.view(-1))
 
 
 class ResNetV2(nn.Module):
@@ -286,6 +335,52 @@ class Block(nn.Module):
         x = self.ffn(self.ffn_norm(x))
         return x + h, weights
 
+    def load_from(self, weights, n_block):
+        """Load weights from JAX checkpoint (faithful to official TransUNet)."""
+        ROOT = f"Transformer/encoderblock_{n_block}"
+        with torch.no_grad():
+            query_weight = _np2th(weights[pjoin(ROOT, ATTENTION_Q, "kernel")]).view(
+                self.hidden_size, self.hidden_size).t()
+            key_weight = _np2th(weights[pjoin(ROOT, ATTENTION_K, "kernel")]).view(
+                self.hidden_size, self.hidden_size).t()
+            value_weight = _np2th(weights[pjoin(ROOT, ATTENTION_V, "kernel")]).view(
+                self.hidden_size, self.hidden_size).t()
+            out_weight = _np2th(weights[pjoin(ROOT, ATTENTION_OUT, "kernel")]).view(
+                self.hidden_size, self.hidden_size).t()
+
+            query_bias = _np2th(weights[pjoin(ROOT, ATTENTION_Q, "bias")]).view(-1)
+            key_bias = _np2th(weights[pjoin(ROOT, ATTENTION_K, "bias")]).view(-1)
+            value_bias = _np2th(weights[pjoin(ROOT, ATTENTION_V, "bias")]).view(-1)
+            out_bias = _np2th(weights[pjoin(ROOT, ATTENTION_OUT, "bias")]).view(-1)
+
+            self.attn.query.weight.copy_(query_weight)
+            self.attn.key.weight.copy_(key_weight)
+            self.attn.value.weight.copy_(value_weight)
+            self.attn.out.weight.copy_(out_weight)
+            self.attn.query.bias.copy_(query_bias)
+            self.attn.key.bias.copy_(key_bias)
+            self.attn.value.bias.copy_(value_bias)
+            self.attn.out.bias.copy_(out_bias)
+
+            mlp_weight_0 = _np2th(weights[pjoin(ROOT, FC_0, "kernel")]).t()
+            mlp_weight_1 = _np2th(weights[pjoin(ROOT, FC_1, "kernel")]).t()
+            mlp_bias_0 = _np2th(weights[pjoin(ROOT, FC_0, "bias")]).t()
+            mlp_bias_1 = _np2th(weights[pjoin(ROOT, FC_1, "bias")]).t()
+
+            self.ffn.fc1.weight.copy_(mlp_weight_0)
+            self.ffn.fc2.weight.copy_(mlp_weight_1)
+            self.ffn.fc1.bias.copy_(mlp_bias_0)
+            self.ffn.fc2.bias.copy_(mlp_bias_1)
+
+            self.attention_norm.weight.copy_(
+                _np2th(weights[pjoin(ROOT, ATTENTION_NORM, "scale")]))
+            self.attention_norm.bias.copy_(
+                _np2th(weights[pjoin(ROOT, ATTENTION_NORM, "bias")]))
+            self.ffn_norm.weight.copy_(
+                _np2th(weights[pjoin(ROOT, MLP_NORM, "scale")]))
+            self.ffn_norm.bias.copy_(
+                _np2th(weights[pjoin(ROOT, MLP_NORM, "bias")]))
+
 
 class Encoder(nn.Module):
     def __init__(self, config, vis=False):
@@ -407,6 +502,60 @@ class _VisionTransformer(nn.Module):
         x = self.decoder(x, features)
         return self.segmentation_head(x)
 
+    def load_from(self, weights):
+        """Load weights from JAX checkpoint (faithful to official TransUNet)."""
+        from scipy import ndimage
+        with torch.no_grad():
+            res_weight = weights
+            self.transformer.embeddings.patch_embeddings.weight.copy_(
+                _np2th(weights["embedding/kernel"], conv=True))
+            self.transformer.embeddings.patch_embeddings.bias.copy_(
+                _np2th(weights["embedding/bias"]))
+
+            self.transformer.encoder.encoder_norm.weight.copy_(
+                _np2th(weights["Transformer/encoder_norm/scale"]))
+            self.transformer.encoder.encoder_norm.bias.copy_(
+                _np2th(weights["Transformer/encoder_norm/bias"]))
+
+            posemb = _np2th(weights["Transformer/posembed_input/pos_embedding"])
+            posemb_new = self.transformer.embeddings.position_embeddings
+            if posemb.size() == posemb_new.size():
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            elif posemb.size()[1] - 1 == posemb_new.size()[1]:
+                posemb = posemb[:, 1:]
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            else:
+                logger.info("load_pretrained: resized variant: %s to %s" % (posemb.size(), posemb_new.size()))
+                ntok_new = posemb_new.size(1)
+                if self.classifier == "seg":
+                    _, posemb_grid = posemb[:, :1], posemb[0, 1:]
+                gs_old = int(np.sqrt(len(posemb_grid)))
+                gs_new = int(np.sqrt(ntok_new))
+                logger.info('load_pretrained: grid-size from %s to %s' % (gs_old, gs_new))
+                posemb_grid = posemb_grid.reshape(gs_old, gs_old, -1)
+                zoom = (gs_new / gs_old, gs_new / gs_old, 1)
+                posemb_grid = ndimage.zoom(posemb_grid.numpy(), zoom, order=1)
+                posemb_grid = posemb_grid.reshape(1, gs_new * gs_new, -1)
+                self.transformer.embeddings.position_embeddings.copy_(
+                    torch.from_numpy(posemb_grid))
+
+            # Encoder whole
+            for bname, block in self.transformer.encoder.named_children():
+                for uname, unit in block.named_children():
+                    unit.load_from(weights, n_block=uname)
+
+            if self.transformer.embeddings.hybrid:
+                self.transformer.embeddings.hybrid_model.root.conv.weight.copy_(
+                    _np2th(res_weight["conv_root/kernel"], conv=True))
+                gn_weight = _np2th(res_weight["gn_root/scale"]).view(-1)
+                gn_bias = _np2th(res_weight["gn_root/bias"]).view(-1)
+                self.transformer.embeddings.hybrid_model.root.gn.weight.copy_(gn_weight)
+                self.transformer.embeddings.hybrid_model.root.gn.bias.copy_(gn_bias)
+
+                for bname, block in self.transformer.embeddings.hybrid_model.body.named_children():
+                    for uname, unit in block.named_children():
+                        unit.load_from(res_weight, n_block=bname, n_unit=uname)
+
 
 class TransUNet(nn.Module):
     """TransUNet wrapper with standard interface.
@@ -419,6 +568,8 @@ class TransUNet(nn.Module):
     """
     def __init__(self, in_channels=3, num_classes=2, img_size=224, **kwargs):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         config = _get_r50_b16_config()
         config.n_classes = num_classes
         # 计算 grid dynamically based on img _ 大小 / Compute grid dynamically based on img_size
@@ -445,6 +596,31 @@ class TransUNet(nn.Module):
             config.n_skip = kwargs["n_skip"]
         self.model = _VisionTransformer(config, img_size=img_size,
                                         num_classes=num_classes)
+
+        if pretrained:
+            self._load_jax_pretrained(pretrained_path)
+
+    def _load_jax_pretrained(self, pretrained_path=None):
+        """Load R50+ViT-B/16 JAX checkpoint (faithful to official TransUNet).
+
+        Delegates key remapping to _VisionTransformer.load_from, which mirrors
+        the official repository's load_from method exactly.
+        """
+        from medseg.utils.weight_downloader import ensure_weight
+
+        weight_path = pretrained_path
+        if weight_path is None:
+            weight_path = str(ensure_weight("transunet_r50_vit_b16"))
+
+        try:
+            npz = np.load(weight_path)
+            self.model.load_from(npz)
+            logger.info("TransUNet: loaded JAX pretrained from %s", weight_path)
+        except Exception as e:
+            import warnings
+            warnings.warn(
+                f"TransUNet: failed to load pretrained weights from "
+                f"{weight_path}: {e}. Model initialized from scratch.")
 
     def forward(self, x):
         return self.model(x)

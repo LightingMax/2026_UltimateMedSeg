@@ -196,6 +196,8 @@ class DATransUNet(nn.Module):
         **kwargs,
     ):
         super().__init__()
+        pretrained = kwargs.pop("pretrained", True)
+        pretrained_path = kwargs.pop("pretrained_path", None)
         if embed_dim is not None:
             embed_dims = [embed_dim, embed_dim * 2, embed_dim * 4, embed_dim * 8]
         embed_dims = embed_dims or [64, 128, 256, 512]
@@ -247,6 +249,16 @@ class DATransUNet(nn.Module):
             _ConvBnReLU(embed_dims[0], embed_dims[0] // 2),
             nn.Conv2d(embed_dims[0] // 2, num_classes, 1),
         )
+
+        if pretrained:
+            from medseg.utils.weight_downloader import load_pretrained_standalone
+            load_pretrained_standalone(
+                self,
+                pretrained_path=pretrained_path,
+                registry_key="da_transunet_r50_vit",
+                model_name="DATransUNet",
+                strict=False,
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         H_in, W_in = x.shape[2:]
