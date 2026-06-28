@@ -113,13 +113,14 @@ model:
 
 > **说明**：需要特定预训练权重的模型（`REQUIRES_PRETRAINED` 中的 **43** 个架构）在设置 `pretrained: false` 时会显示 10 秒倒计时警告。所有可自动下载的权重都支持通过 `pretrained_path` 或 `transfer_learning_path` 手动指定本地路径。
 
-#### 预训练权重来源（3 类）
+#### 预训练权重来源（4 类）
 
 | 类别 | 加载机制 | 模型 |
 |---|---|---|
 | **A. WEIGHT_REGISTRY 自动下载** | `ensure_weight()` 从 GitHub/GCS/HF 下载 | swinunet, h2former, hiformer, transunet, vm_unet, rwkv_unet (B/S/T), cswin_unet, da_transunet, mamba_unet, fcbformer, transnuseg |
 | **B. timm / torchvision 运行时** | `pretrained: true` 触发内置下载 | segformer_b0–b5, esfpnet, cascade, emcad, polyp_pvt, fatnet, transfuse, mist, hsnet, ssformer, ldnet, dconnnet, cfanet, lv_unet, nulite, polyper |
 | **C. SAM 家族** | `pretrained: true` 自动下载 ViT/SAM 权重 | sam_b, sam_l, mobile_sam, sam2, sam_med2d, samed, sammed2d_wrapper, samus, auto_sam, lite_medsam, medical_sam_adapter |
+| **D. Foundation & MLLM 编码器** | HuggingFace Hub / open_clip / transformers 自动下载 | 39 个 foundation 编码器 (dinov2, dino, clip_vit, sam_vit, dinov3, phikon, uni, plip, musk, phikon_v2, keep, raddino, omnirad, biovil, chexzero, retfound, retfound_dinov2, flair, ophmae, panderm, dermclip, monet_derm, endo_vit, endo_fm, surgical_sam, biomedclip, medclip, medsiglip, usfmae, ultrafedfm, samus) + 8 个 MLLM 视觉塔 (qwen3_vl, qwen25_vl, llava_med, medgemma, healthgpt, huatuogpt, hulumed, lingshu) |
 
 ### 预训练权重自动下载
 

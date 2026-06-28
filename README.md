@@ -111,13 +111,14 @@ model:
 
 > **Note**: Models requiring specific pretrained weights (**43** architectures in `REQUIRES_PRETRAINED`) will display a 10-second warning when `pretrained: false`. All auto-downloadable weights support manual path override via `pretrained_path` or `transfer_learning_path`.
 
-#### Pretrained Weight Sources (3 Categories)
+#### Pretrained Weight Sources (4 Categories)
 
 | Category | Mechanism | Models |
 |---|---|---|
 | **A. WEIGHT_REGISTRY auto-download** | `ensure_weight()` with GitHub/GCS/HF sources | swinunet, h2former, hiformer, transunet, vm_unet, rwkv_unet (B/S/T), cswin_unet, da_transunet, mamba_unet, fcbformer, transnuseg |
 | **B. timm / torchvision runtime** | `pretrained: true` triggers built-in download | segformer_b0–b5, esfpnet, cascade, emcad, polyp_pvt, fatnet, transfuse, mist, hsnet, ssformer, ldnet, dconnnet, cfanet, lv_unet, nulite, polyper |
 | **C. SAM family** | `pretrained: true` auto-downloads ViT/SAM weights | sam_b, sam_l, mobile_sam, sam2, sam_med2d, samed, sammed2d_wrapper, samus, auto_sam, lite_medsam, medical_sam_adapter |
+| **D. Foundation & MLLM encoders** | HuggingFace Hub / open_clip / transformers auto-download | 39 foundation encoders (dinov2, dino, clip_vit, sam_vit, dinov3, phikon, uni, plip, musk, phikon_v2, keep, raddino, omnirad, biovil, chexzero, retfound, retfound_dinov2, flair, ophmae, panderm, dermclip, monet_derm, endo_vit, endo_fm, surgical_sam, biomedclip, medclip, medsiglip, usfmae, ultrafedfm, samus) + 8 MLLM vision towers (qwen3_vl, qwen25_vl, llava_med, medgemma, healthgpt, huatuogpt, hulumed, lingshu) |
 
 ### Automatic Weight Download
 
