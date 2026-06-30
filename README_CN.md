@@ -915,11 +915,14 @@ class MyAugmentation:
 ## 📜 引用与许可
 
 ```bibtex
-@software{APRIL-MedSeg_2026,
-  title  = {APRIL-MedSeg: A Modern Modular 2D Medical Image Segmentation Toolbox},
-  author = {Juntao Jiang and Jinsheng Bai and Linxuan Fan and Yali Bi and Jiangning Zhang and Yong Liu},
-  year   = {2026},
-  url    = {https://github.com/juntaoJianggavin/APRIL-MedSeg},
+@misc{jiang2026aprilmedsegmodularmedicalimage,
+      title={APRIL-MedSeg: A Modular Medical Image Segmentation Toolbox Embracing Modern Paradigms}, 
+      author={Juntao Jiang and Jinsheng Bai and Linxuan Fan and Yali Bi and Jiangning Zhang and Yong Liu},
+      year={2026},
+      eprint={2606.30577},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2606.30577}, 
 }
 ```
 
